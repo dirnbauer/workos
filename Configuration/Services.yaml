@@ -1,0 +1,23 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  WebConsulting\WorkosAuth\:
+    resource: '../Classes/*'
+
+  WebConsulting\WorkosAuth\Controller\Backend\SetupAssistantController:
+    public: true
+
+  WebConsulting\WorkosAuth\Controller\Frontend\LoginController:
+    public: true
+
+  WebConsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider:
+    public: true
+
+  WebConsulting\WorkosAuth\Middleware\FrontendWorkosAuthMiddleware:
+    public: true
+
+  WebConsulting\WorkosAuth\Middleware\BackendWorkosAuthMiddleware:
+    public: true

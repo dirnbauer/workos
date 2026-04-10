@@ -1,0 +1,68 @@
+# cat=workos/required; type=string; label=WorkOS API key
+apiKey =
+
+# cat=workos/required; type=string; label=WorkOS Client ID
+clientId =
+
+# cat=workos/required; type=string; label=Cookie password (minimum 32 characters)
+cookiePassword =
+
+# cat=frontend/basic; type=boolean; label=Enable frontend login
+frontendEnabled = 1
+
+# cat=frontend/basic; type=boolean; label=Create missing frontend users automatically
+frontendAutoCreateUsers = 1
+
+# cat=frontend/basic; type=boolean; label=Link existing frontend users by email
+frontendLinkByEmail = 1
+
+# cat=frontend/basic; type=int+; label=Frontend storage PID for auto-created users
+frontendStoragePid = 0
+
+# cat=frontend/basic; type=string; label=Default frontend group UIDs (comma separated)
+frontendDefaultGroupUids =
+
+# cat=frontend/routes; type=string; label=Frontend login path
+frontendLoginPath = /workos-auth/frontend/login
+
+# cat=frontend/routes; type=string; label=Frontend callback path
+frontendCallbackPath = /workos-auth/frontend/callback
+
+# cat=frontend/routes; type=string; label=Frontend logout path
+frontendLogoutPath = /workos-auth/frontend/logout
+
+# cat=frontend/routes; type=string; label=Frontend success redirect
+frontendSuccessRedirect = /
+
+# cat=backend/basic; type=boolean; label=Enable backend login
+backendEnabled = 1
+
+# cat=backend/basic; type=boolean; label=Create missing backend users automatically
+backendAutoCreateUsers = 0
+
+# cat=backend/basic; type=boolean; label=Link existing backend users by email
+backendLinkByEmail = 1
+
+# cat=backend/basic; type=string; label=Default backend group UIDs for auto-created users (comma separated)
+backendDefaultGroupUids =
+
+# cat=backend/basic; type=string; label=Allowed backend email domains for auto-created users (comma separated)
+backendAllowedDomains =
+
+# cat=backend/routes; type=string; label=Backend login path
+backendLoginPath = /workos-auth/backend/login
+
+# cat=backend/routes; type=string; label=Backend callback path
+backendCallbackPath = /workos-auth/backend/callback
+
+# cat=backend/routes; type=string; label=Backend success path
+backendSuccessPath = /main
+
+# cat=workos/options; type=string; label=Optional WorkOS organization ID
+authkitOrganizationId =
+
+# cat=workos/options; type=string; label=Optional WorkOS connection ID
+authkitConnectionId =
+
+# cat=workos/options; type=string; label=Optional domain hint
+authkitDomainHint =

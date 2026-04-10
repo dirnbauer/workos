@@ -1,0 +1,26 @@
+<f:layout name="Login" />
+
+<f:section name="loginFormFields">
+    <div class="form-group">
+        <f:if condition="{enabled}">
+            <f:then>
+                <f:if condition="{configured}">
+                    <a href="{loginUrl}" class="btn btn-login btn-default btn-block">
+                        Continue with WorkOS
+                    </a>
+                </f:if>
+                <f:if condition="!{configured}">
+                    <div class="alert alert-warning">
+                        WorkOS backend login is enabled, but not configured.
+                        <a href="{setupUrl}">Open the setup assistant</a>.
+                    </div>
+                </f:if>
+            </f:then>
+            <f:else>
+                <div class="alert alert-info">
+                    WorkOS backend login is currently disabled. Configure it in the setup assistant if you want to use it here.
+                </div>
+            </f:else>
+        </f:if>
+    </div>
+</f:section>

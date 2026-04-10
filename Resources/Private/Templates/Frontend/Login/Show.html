@@ -1,0 +1,29 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<div class="workos-auth-plugin">
+    <f:if condition="{configured}">
+        <f:then>
+            <f:if condition="{isLoggedIn}">
+                <div class="alert alert-success">
+                    Signed in with WorkOS
+                    <f:if condition="{displayName}">
+                        as <strong>{displayName}</strong>
+                    </f:if>.
+                </div>
+                <p>
+                    <a href="{logoutUrl}" class="btn btn-secondary">Sign out</a>
+                </p>
+            </f:if>
+            <f:if condition="!{isLoggedIn}">
+                <p>
+                    <a href="{loginUrl}" class="btn btn-primary">Continue with WorkOS</a>
+                </p>
+            </f:if>
+        </f:then>
+        <f:else>
+            <div class="alert alert-warning">
+                WorkOS frontend login is not configured yet. Ask an administrator to finish the WorkOS setup assistant in the TYPO3 backend.
+            </div>
+        </f:else>
+    </f:if>
+</div>

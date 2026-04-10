@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.0">
+    <file source-language="en" datatype="plaintext" original="messages" product-name="workos_auth">
+        <header/>
+        <body>
+            <trans-unit id="plugin.login.title">
+                <source>WorkOS Login</source>
+            </trans-unit>
+            <trans-unit id="loginprovider.label">
+                <source>Continue with WorkOS</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

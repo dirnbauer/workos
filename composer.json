@@ -1,0 +1,33 @@
+{
+    "name": "webconsulting/workos-auth",
+    "description": "TYPO3 v14 extension for WorkOS-powered frontend and backend login.",
+    "type": "typo3-cms-extension",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": "^8.2",
+        "typo3/cms-backend": "^14.0",
+        "typo3/cms-core": "^14.0",
+        "typo3/cms-extbase": "^14.0",
+        "typo3/cms-fluid": "^14.0",
+        "typo3/cms-frontend": "^14.0",
+        "workos/workos-php": "^4.32"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebConsulting\\WorkosAuth\\": "Classes/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebConsulting\\WorkosAuth\\Tests\\": "Tests/"
+        }
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "workos_auth"
+        }
+    }
+}
