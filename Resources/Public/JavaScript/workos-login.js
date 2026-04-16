@@ -32,9 +32,6 @@ function mountWorkosLogin() {
     newForm.setAttribute('novalidate', 'novalidate');
     newForm.className = 'workos-login-form';
 
-    // Move region's content into the new form, then place the new form
-    // outside (right after) TYPO3's form so it becomes a first-class
-    // sibling in the DOM.
     newForm.appendChild(region);
     if (hostForm && hostForm.parentNode) {
         hostForm.parentNode.insertBefore(newForm, hostForm.nextSibling);
@@ -42,10 +39,8 @@ function mountWorkosLogin() {
         document.body.appendChild(newForm);
     }
 
-    // Normalize the submit button so native form submission is used.
     submitButton.type = 'submit';
 
-    // Make sure email/password inputs are part of the submission.
     const emailInput = region.querySelector('#workos-email');
     const passwordInput = region.querySelector('#workos-password');
     if (emailInput) {

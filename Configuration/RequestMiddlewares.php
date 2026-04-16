@@ -21,7 +21,8 @@ return [
         'webconsulting/workos-auth/backend' => [
             'target' => BackendWorkosAuthMiddleware::class,
             'before' => [
-                'typo3/cms-backend/site-resolver',
+                'typo3/cms-backend/authentication',
+                'typo3/cms-backend/backend-routing',
             ],
             'after' => [
                 'typo3/cms-core/normalized-params-attribute',
