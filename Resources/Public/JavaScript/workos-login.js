@@ -5,62 +5,92 @@
 // on click (or Enter in our inputs) we build a detached <form> outside
 // of #typo3-login-form and submit that directly to our middleware.
 
-const submitButton = document.querySelector('#workos-password-submit');
-const emailInput = document.querySelector('[data-workos-field="email"]');
-const passwordInput = document.querySelector('[data-workos-field="password"]');
+function init() {
+    const submitButton = document.querySelector('#workos-password-submit');
+    const emailInput = document.querySelector('[data-workos-field="email"]');
+    const passwordInput = document.querySelector('[data-workos-field="password"]');
+    const loginForm = document.querySelector('#typo3-login-form');
 
-function submitWorkosLogin() {
     if (!submitButton || !emailInput || !passwordInput) {
         return;
     }
 
-    const email = (emailInput.value || '').trim();
-    const password = passwordInput.value || '';
-    const action = submitButton.getAttribute('data-workos-password-url') || '';
+    function submitWorkosLogin() {
+        const email = (emailInput.value || '').trim();
+        const password = passwordInput.value || '';
+        const action = submitButton.getAttribute('data-workos-password-url') || '';
 
-    if (!email || !password || !action) {
-        emailInput.focus();
-        return;
+        if (!email) {
+            emailInput.focus();
+            return;
+        }
+        if (!password) {
+            passwordInput.focus();
+            return;
+        }
+        if (!action) {
+            return;
+        }
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = action;
+        form.style.display = 'none';
+
+        const emailField = document.createElement('input');
+        emailField.type = 'hidden';
+        emailField.name = 'email';
+        emailField.value = email;
+        form.appendChild(emailField);
+
+        const passwordField = document.createElement('input');
+        passwordField.type = 'hidden';
+        passwordField.name = 'password';
+        passwordField.value = password;
+        form.appendChild(passwordField);
+
+        document.body.appendChild(form);
+        form.submit();
     }
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = action;
-    form.style.display = 'none';
-
-    const emailField = document.createElement('input');
-    emailField.type = 'hidden';
-    emailField.name = 'email';
-    emailField.value = email;
-    form.appendChild(emailField);
-
-    const passwordField = document.createElement('input');
-    passwordField.type = 'hidden';
-    passwordField.name = 'password';
-    passwordField.value = password;
-    form.appendChild(passwordField);
-
-    document.body.appendChild(form);
-    form.submit();
-}
-
-if (submitButton) {
     submitButton.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopImmediatePropagation();
         submitWorkosLogin();
     });
-}
 
-[emailInput, passwordInput].forEach((input) => {
-    if (!input) {
-        return;
-    }
-    input.addEventListener('keydown', (event) => {
+    const handleEnter = (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             event.stopImmediatePropagation();
             submitWorkosLogin();
         }
-    });
-});
+    };
+
+    emailInput.addEventListener('keydown', handleEnter);
+    passwordInput.addEventListener('keydown', handleEnter);
+
+    // Safety net: if the TYPO3 login form is ever submitted while focus
+    // is inside our inputs (e.g. TYPO3's JS fires submit programmatically),
+    // redirect the submission through our password-auth endpoint instead.
+    if (loginForm) {
+        loginForm.addEventListener(
+            'submit',
+            (event) => {
+                const active = document.activeElement;
+                if (active === emailInput || active === passwordInput || active === submitButton) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    submitWorkosLogin();
+                }
+            },
+            true,
+        );
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+} else {
+    init();
+}
