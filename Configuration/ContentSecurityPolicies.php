@@ -8,6 +8,7 @@ use TYPO3\CMS\Core\Security\ContentSecurityPolicy\MutationCollection;
 use TYPO3\CMS\Core\Security\ContentSecurityPolicy\MutationMode;
 use TYPO3\CMS\Core\Security\ContentSecurityPolicy\Scope;
 use TYPO3\CMS\Core\Security\ContentSecurityPolicy\SourceKeyword;
+use TYPO3\CMS\Core\Security\ContentSecurityPolicy\SourceScheme;
 use TYPO3\CMS\Core\Security\ContentSecurityPolicy\UriValue;
 use TYPO3\CMS\Core\Type\Map;
 
@@ -46,14 +47,14 @@ return Map::fromEntries([
             new UriValue('https://*.workoscdn.com'),
             new UriValue('https://workoscdn.com'),
             new UriValue('https://api.workos.com'),
-            new UriValue('data:'),
+            SourceScheme::data,
         ),
         new Mutation(
             MutationMode::Extend,
             Directive::FontSrc,
             new UriValue('https://esm.sh'),
             new UriValue('https://cdn.esm.sh'),
-            new UriValue('data:'),
+            SourceScheme::data,
         ),
     ),
 ]);
