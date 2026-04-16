@@ -18,8 +18,14 @@ final class WorkosAuthenticationService
         private StateService $stateService,
     ) {}
 
-    public function buildFrontendAuthorizationUrl(ServerRequestInterface $request, string $returnTo): string
-    {
+    public function buildFrontendAuthorizationUrl(
+        ServerRequestInterface $request,
+        string $returnTo,
+        string $screenHint = 'sign-in',
+        ?string $provider = null,
+        ?string $loginHint = null,
+        ?string $organizationId = null,
+    ): string {
         $callbackPath = PathUtility::getPathRelativeToSiteBase(
             PathUtility::joinBaseAndPath((string)$request->getAttribute('site')->getBase()->getPath(), $this->configuration->getFrontendCallbackPath()),
             '/'
@@ -29,11 +35,19 @@ final class WorkosAuthenticationService
             callbackUrl: PathUtility::buildAbsoluteUrlFromRequest($request, $callbackPath),
             context: 'frontend',
             returnTo: $returnTo,
+            screenHint: $screenHint,
+            provider: $provider,
+            loginHint: $loginHint,
+            organizationId: $organizationId,
         );
     }
 
-    public function buildBackendAuthorizationUrl(ServerRequestInterface $request, string $backendBasePath, string $returnTo): string
-    {
+    public function buildBackendAuthorizationUrl(
+        ServerRequestInterface $request,
+        string $backendBasePath,
+        string $returnTo,
+        ?string $loginHint = null,
+    ): string {
         return $this->buildAuthorizationUrl(
             callbackUrl: PathUtility::buildAbsoluteUrlFromRequest(
                 $request,
@@ -41,6 +55,7 @@ final class WorkosAuthenticationService
             ),
             context: 'backend',
             returnTo: $returnTo,
+            loginHint: $loginHint,
         );
     }
 
@@ -76,8 +91,15 @@ final class WorkosAuthenticationService
         ];
     }
 
-    private function buildAuthorizationUrl(string $callbackUrl, string $context, string $returnTo): string
-    {
+    private function buildAuthorizationUrl(
+        string $callbackUrl,
+        string $context,
+        string $returnTo,
+        string $screenHint = 'sign-in',
+        ?string $provider = null,
+        ?string $loginHint = null,
+        ?string $organizationId = null,
+    ): string {
         $this->assertBaseConfiguration();
 
         $userManagement = $this->workosClientFactory->createUserManagement();
@@ -86,15 +108,18 @@ final class WorkosAuthenticationService
             'returnTo' => $returnTo,
         ]);
 
+        $effectiveProvider = $provider ?? UserManagement::AUTHORIZATION_PROVIDER_AUTHKIT;
+        $effectiveOrgId = $organizationId ?: ($this->configuration->getAuthkitOrganizationId() ?: null);
+
         return $userManagement->getAuthorizationUrl(
             $callbackUrl,
             ['token' => $stateToken],
-            UserManagement::AUTHORIZATION_PROVIDER_AUTHKIT,
-            $this->configuration->getAuthkitConnectionId(),
-            $this->configuration->getAuthkitOrganizationId(),
-            $this->configuration->getAuthkitDomainHint(),
-            null,
-            'sign-in',
+            $effectiveProvider,
+            $this->configuration->getAuthkitConnectionId() ?: null,
+            $effectiveOrgId,
+            $this->configuration->getAuthkitDomainHint() ?: null,
+            $loginHint,
+            $provider === null ? $screenHint : null,
         );
     }
 

@@ -41,13 +41,21 @@ final class LoginController extends ActionController
 
         $loginPath = PathUtility::joinBaseAndPath($siteBasePath, $this->configuration->getFrontendLoginPath());
         $logoutPath = PathUtility::joinBaseAndPath($siteBasePath, $this->configuration->getFrontendLogoutPath());
+        $returnParam = ['returnTo' => $currentUrl];
 
         $this->view->assignMultiple([
             'configured' => $this->configuration->isFrontendReady(),
             'isLoggedIn' => $isLoggedIn,
             'displayName' => $displayName,
-            'loginUrl' => PathUtility::appendQueryParameters($loginPath, ['returnTo' => $currentUrl]),
-            'logoutUrl' => PathUtility::appendQueryParameters($logoutPath, ['returnTo' => $currentUrl]),
+            'loginUrl' => PathUtility::appendQueryParameters($loginPath, $returnParam),
+            'signUpUrl' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['screen' => 'sign-up'])),
+            'logoutUrl' => PathUtility::appendQueryParameters($logoutPath, $returnParam),
+            'socialProviders' => [
+                ['key' => 'GoogleOAuth', 'label' => 'Google', 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'GoogleOAuth']))],
+                ['key' => 'MicrosoftOAuth', 'label' => 'Microsoft', 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'MicrosoftOAuth']))],
+                ['key' => 'GitHubOAuth', 'label' => 'GitHub', 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'GitHubOAuth']))],
+                ['key' => 'AppleOAuth', 'label' => 'Apple', 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'AppleOAuth']))],
+            ],
             'workosProfile' => $workosProfile,
         ]);
 

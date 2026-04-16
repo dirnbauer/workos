@@ -68,9 +68,21 @@
                 </f:if>
             </f:if>
             <f:if condition="!{isLoggedIn}">
-                <p>
-                    <a href="{loginUrl}" class="btn btn-primary">Continue with WorkOS</a>
-                </p>
+                <div class="workos-auth-actions">
+                    <p>
+                        <a href="{loginUrl}" class="btn btn-primary">Sign in</a>
+                        <a href="{signUpUrl}" class="btn btn-outline-primary" style="margin-left:0.5rem;">Create account</a>
+                    </p>
+
+                    <div class="workos-social-providers" style="margin-top:1rem;">
+                        <p style="margin-bottom:0.5rem; font-size:0.9rem; color:#666;">Or continue with:</p>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                            <f:for each="{socialProviders}" as="provider">
+                                <a href="{provider.url}" class="btn btn-outline-secondary btn-sm">{provider.label}</a>
+                            </f:for>
+                        </div>
+                    </div>
+                </div>
             </f:if>
         </f:then>
         <f:else>

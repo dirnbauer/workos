@@ -60,14 +60,34 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
         }
 
         try {
+            $queryParams = $request->getQueryParams();
             $returnTo = PathUtility::sanitizeReturnTo(
                 $request,
-                (string)($request->getQueryParams()['returnTo'] ?? ''),
+                (string)($queryParams['returnTo'] ?? ''),
                 $this->configuration->getFrontendSuccessRedirect()
             );
 
+            $screenHint = in_array($queryParams['screen'] ?? '', ['sign-in', 'sign-up'], true)
+                ? $queryParams['screen']
+                : 'sign-in';
+
+            $allowedProviders = ['GoogleOAuth', 'MicrosoftOAuth', 'GitHubOAuth', 'AppleOAuth'];
+            $provider = in_array($queryParams['provider'] ?? '', $allowedProviders, true)
+                ? $queryParams['provider']
+                : null;
+
+            $loginHint = isset($queryParams['login_hint']) ? trim((string)$queryParams['login_hint']) : null;
+            $organizationId = isset($queryParams['organization']) ? trim((string)$queryParams['organization']) : null;
+
             return new RedirectResponse(
-                $this->workosAuthenticationService->buildFrontendAuthorizationUrl($request, $returnTo),
+                $this->workosAuthenticationService->buildFrontendAuthorizationUrl(
+                    $request,
+                    $returnTo,
+                    $screenHint,
+                    $provider,
+                    $loginHint ?: null,
+                    $organizationId ?: null,
+                ),
                 302
             );
         } catch (\Throwable $exception) {
