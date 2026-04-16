@@ -15,7 +15,7 @@
             </p>
             <button type="button" class="btn btn-sm btn-secondary" data-action-copy-urls>Copy all callback URLs</button>
 
-            <details>
+            <details class="mt-3">
                 <summary>Show callback URLs</summary>
                 <div class="mt-3">
                     <h5>Backend</h5>
@@ -39,6 +39,16 @@
                             <p class="text-muted mb-0">No frontend sites configured yet.</p>
                         </f:else>
                     </f:if>
+
+                    <hr class="my-4">
+                    <h5>Where to add them in WorkOS</h5>
+                    <p class="text-muted">
+                        Open your WorkOS Dashboard, go to <strong>Redirects</strong>, and add each callback URL listed above.
+                        Use the <strong>+ Add</strong> button to add one URL at a time, then click <strong>Save changes</strong>.
+                    </p>
+                    <img src="{f:uri.resource(path: 'Images/workos-redirect-uris.png', extensionName: 'WorkosAuth')}"
+                         alt="WorkOS Dashboard – Redirect URIs configuration"
+                         class="img-fluid border rounded" />
                 </div>
             </details>
         </div>
