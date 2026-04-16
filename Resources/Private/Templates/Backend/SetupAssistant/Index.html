@@ -2,9 +2,18 @@
 
 <div class="module-body">
     <f:if condition="{saved}">
-        <div class="alert alert-success">
-            The WorkOS configuration has been saved to TYPO3 system settings.
-        </div>
+        <f:if condition="{savedWithWarnings}">
+            <f:then>
+                <div class="alert alert-warning">
+                    The WorkOS configuration has been saved, but the setup is not ready yet. Fix the highlighted fields before using WorkOS login.
+                </div>
+            </f:then>
+            <f:else>
+                <div class="alert alert-success">
+                    The WorkOS configuration has been saved to TYPO3 system settings.
+                </div>
+            </f:else>
+        </f:if>
     </f:if>
 
     <f:if condition="{errors.general}">

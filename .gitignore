@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Composer
+/vendor/
+composer.lock
+
+# DDEV
+.ddev/
+
+# Environment
+.env
+.env.local
+
+# Build artifacts
+/var/

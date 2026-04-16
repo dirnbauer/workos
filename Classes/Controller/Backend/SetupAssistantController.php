@@ -29,6 +29,7 @@ final class SetupAssistantController
         $formValues = $this->configuration->all();
         $errors = [];
         $saved = false;
+        $savedWithWarnings = false;
 
         if (strtoupper($request->getMethod()) === 'POST') {
             $parsedBody = $request->getParsedBody();
@@ -43,10 +44,9 @@ final class SetupAssistantController
                 $errors['general'] = 'The form token is invalid. Reload the module and try again.';
             } else {
                 $errors = $this->configuration->validate($formValues);
-                if ($errors === []) {
-                    $this->extensionConfiguration->set(WorkosConfiguration::EXTENSION_KEY, $formValues);
-                    $saved = true;
-                }
+                $this->extensionConfiguration->set(WorkosConfiguration::EXTENSION_KEY, $formValues);
+                $saved = true;
+                $savedWithWarnings = $errors !== [];
             }
         }
 
@@ -82,6 +82,7 @@ final class SetupAssistantController
             'formValues' => $formValues,
             'errors' => $errors,
             'saved' => $saved,
+            'savedWithWarnings' => $savedWithWarnings,
             'csrfToken' => $this->generateToken(),
             'backendUrls' => $backendUrls,
             'frontendSites' => $frontendSites,
