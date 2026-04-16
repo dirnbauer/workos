@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.0">
+    <file source-language="en" target-language="de" datatype="plaintext" original="messages" product-name="workos_auth">
+        <header/>
+        <body>
+            <!-- Plugin & provider -->
+            <trans-unit id="plugin.login.title">
+                <source>WorkOS Login</source>
+                <target>WorkOS-Anmeldung</target>
+            </trans-unit>
+            <trans-unit id="loginprovider.label">
+                <source>Continue with WorkOS</source>
+                <target>Weiter mit WorkOS</target>
+            </trans-unit>
+
+            <!-- Social provider labels -->
+            <trans-unit id="provider.google">
+                <source>Google</source>
+                <target>Google</target>
+            </trans-unit>
+            <trans-unit id="provider.microsoft">
+                <source>Microsoft</source>
+                <target>Microsoft</target>
+            </trans-unit>
+            <trans-unit id="provider.github">
+                <source>GitHub</source>
+                <target>GitHub</target>
+            </trans-unit>
+            <trans-unit id="provider.apple">
+                <source>Apple</source>
+                <target>Apple</target>
+            </trans-unit>
+
+            <!-- Common -->
+            <trans-unit id="common.or">
+                <source>or</source>
+                <target>oder</target>
+            </trans-unit>
+            <trans-unit id="common.email">
+                <source>Email</source>
+                <target>E-Mail</target>
+            </trans-unit>
+            <trans-unit id="common.password">
+                <source>Password</source>
+                <target>Passwort</target>
+            </trans-unit>
+            <trans-unit id="common.notConfigured">
+                <source>WorkOS frontend login is not configured yet. Ask an administrator to finish the WorkOS setup assistant in the TYPO3 backend.</source>
+                <target>Die WorkOS-Frontend-Anmeldung ist noch nicht konfiguriert. Bitten Sie einen Administrator, den WorkOS-Einrichtungsassistenten im TYPO3-Backend abzuschließen.</target>
+            </trans-unit>
+
+            <!-- Frontend login (Show) -->
+            <trans-unit id="frontend.login.signedIn">
+                <source>Signed in</source>
+                <target>Angemeldet</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.signedInAs">
+                <source>as</source>
+                <target>als</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.signOut">
+                <source>Sign out</source>
+                <target>Abmelden</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.profileData">
+                <source>WorkOS profile data</source>
+                <target>WorkOS-Profildaten</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.profileId">
+                <source>ID</source>
+                <target>ID</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.profileEmail">
+                <source>Email</source>
+                <target>E-Mail</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.profileFirstName">
+                <source>First name</source>
+                <target>Vorname</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.profileLastName">
+                <source>Last name</source>
+                <target>Nachname</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.profileEmailVerified">
+                <source>Email verified</source>
+                <target>E-Mail bestätigt</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.profileLastSignIn">
+                <source>Last sign-in</source>
+                <target>Letzte Anmeldung</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.profileCreated">
+                <source>Created</source>
+                <target>Erstellt</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.profileUpdated">
+                <source>Updated</source>
+                <target>Aktualisiert</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.customMetadata">
+                <source>Custom metadata</source>
+                <target>Benutzerdefinierte Metadaten</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.emailPlaceholder">
+                <source>you@example.com</source>
+                <target>name@beispiel.de</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.passwordPlaceholder">
+                <source>Enter your password</source>
+                <target>Passwort eingeben</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.signIn">
+                <source>Sign in</source>
+                <target>Anmelden</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.emailCode">
+                <source>Email code</source>
+                <target>Code senden</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.noAccount">
+                <source>Don't have an account?</source>
+                <target>Noch kein Konto?</target>
+            </trans-unit>
+            <trans-unit id="frontend.login.signUp">
+                <source>Sign up</source>
+                <target>Registrieren</target>
+            </trans-unit>
+
+            <!-- Frontend sign-up -->
+            <trans-unit id="frontend.signup.title">
+                <source>Create your account</source>
+                <target>Konto erstellen</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.subtitle">
+                <source>Sign up to get started</source>
+                <target>Registrieren Sie sich, um loszulegen</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.firstName">
+                <source>First name</source>
+                <target>Vorname</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.lastName">
+                <source>Last name</source>
+                <target>Nachname</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.confirmPassword">
+                <source>Confirm password</source>
+                <target>Passwort bestätigen</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.passwordPlaceholder">
+                <source>Min. 10 characters</source>
+                <target>Mind. 10 Zeichen</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.passwordConfirmPlaceholder">
+                <source>Repeat your password</source>
+                <target>Passwort wiederholen</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.passwordHint">
+                <source>At least 10 characters. Use a mix of letters, numbers, and symbols.</source>
+                <target>Mindestens 10 Zeichen. Verwenden Sie eine Mischung aus Buchstaben, Zahlen und Sonderzeichen.</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.submit">
+                <source>Create account</source>
+                <target>Konto erstellen</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.hasAccount">
+                <source>Already have an account?</source>
+                <target>Bereits ein Konto?</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.signIn">
+                <source>Sign in</source>
+                <target>Anmelden</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.firstNamePlaceholder">
+                <source>Jane</source>
+                <target>Maria</target>
+            </trans-unit>
+            <trans-unit id="frontend.signup.lastNamePlaceholder">
+                <source>Doe</source>
+                <target>Muster</target>
+            </trans-unit>
+
+            <!-- Frontend magic auth code -->
+            <trans-unit id="frontend.magicauth.checkEmail">
+                <source>Check your email</source>
+                <target>Prüfen Sie Ihre E-Mail</target>
+            </trans-unit>
+            <trans-unit id="frontend.magicauth.codeSent">
+                <source>We sent a six-digit code to</source>
+                <target>Wir haben einen sechsstelligen Code gesendet an</target>
+            </trans-unit>
+            <trans-unit id="frontend.magicauth.verifyCode">
+                <source>Verify code</source>
+                <target>Code bestätigen</target>
+            </trans-unit>
+            <trans-unit id="frontend.magicauth.backToSignIn">
+                <source>Back to sign in</source>
+                <target>Zurück zur Anmeldung</target>
+            </trans-unit>
+
+            <!-- Backend login provider -->
+            <trans-unit id="backend.login.signInWithEmail">
+                <source>Sign in with email</source>
+                <target>Mit E-Mail anmelden</target>
+            </trans-unit>
+            <trans-unit id="backend.login.emailLoginCode">
+                <source>Email a login code</source>
+                <target>Anmeldecode per E-Mail senden</target>
+            </trans-unit>
+            <trans-unit id="backend.login.emailPlaceholder">
+                <source>Email address</source>
+                <target>E-Mail-Adresse</target>
+            </trans-unit>
+            <trans-unit id="backend.login.passwordPlaceholder">
+                <source>Password</source>
+                <target>Passwort</target>
+            </trans-unit>
+            <trans-unit id="backend.login.notConfigured">
+                <source>WorkOS backend login is enabled, but not configured.</source>
+                <target>Die WorkOS-Backend-Anmeldung ist aktiviert, aber noch nicht konfiguriert.</target>
+            </trans-unit>
+            <trans-unit id="backend.login.openSetup">
+                <source>Open the setup assistant</source>
+                <target>Einrichtungsassistenten öffnen</target>
+            </trans-unit>
+            <trans-unit id="backend.login.disabled">
+                <source>WorkOS backend login is currently disabled. Configure it in the setup assistant if you want to use it here.</source>
+                <target>Die WorkOS-Backend-Anmeldung ist derzeit deaktiviert. Konfigurieren Sie sie im Einrichtungsassistenten, wenn Sie sie hier verwenden möchten.</target>
+            </trans-unit>
+
+            <!-- Backend setup assistant -->
+            <trans-unit id="setup.title">
+                <source>WorkOS Setup Assistant</source>
+                <target>WorkOS-Einrichtungsassistent</target>
+            </trans-unit>
+            <trans-unit id="setup.flashTitle">
+                <source>WorkOS Setup</source>
+                <target>WorkOS-Einrichtung</target>
+            </trans-unit>
+            <trans-unit id="setup.redirectUrls.title">
+                <source>Redirect URLs for WorkOS</source>
+                <target>Weiterleitungs-URLs für WorkOS</target>
+            </trans-unit>
+            <trans-unit id="setup.redirectUrls.description">
+                <source>Register these callback URLs in the WorkOS Dashboard under Redirects so WorkOS can redirect back to your site after authentication.</source>
+                <target>Registrieren Sie diese Callback-URLs im WorkOS-Dashboard unter Redirects, damit WorkOS nach der Authentifizierung zu Ihrer Website zurückleiten kann.</target>
+            </trans-unit>
+            <trans-unit id="setup.redirectUrls.copyAll">
+                <source>Copy all callback URLs</source>
+                <target>Alle Callback-URLs kopieren</target>
+            </trans-unit>
+            <trans-unit id="setup.redirectUrls.showUrls">
+                <source>Show callback URLs</source>
+                <target>Callback-URLs anzeigen</target>
+            </trans-unit>
+            <trans-unit id="setup.redirectUrls.backend">
+                <source>Backend</source>
+                <target>Backend</target>
+            </trans-unit>
+            <trans-unit id="setup.redirectUrls.frontend">
+                <source>Frontend</source>
+                <target>Frontend</target>
+            </trans-unit>
+            <trans-unit id="setup.redirectUrls.noSites">
+                <source>No frontend sites configured yet.</source>
+                <target>Noch keine Frontend-Sites konfiguriert.</target>
+            </trans-unit>
+            <trans-unit id="setup.redirectUrls.whereToAdd">
+                <source>Where to add them in WorkOS</source>
+                <target>Wo sie in WorkOS hinzugefügt werden</target>
+            </trans-unit>
+            <trans-unit id="setup.redirectUrls.instruction">
+                <source>Open your WorkOS Dashboard, go to Redirects, and add each callback URL listed above. Use the + Add button to add one URL at a time, then click Save changes.</source>
+                <target>Öffnen Sie Ihr WorkOS-Dashboard, gehen Sie zu Redirects und fügen Sie jede oben aufgeführte Callback-URL hinzu. Verwenden Sie die Schaltfläche + Add, um jeweils eine URL hinzuzufügen, und klicken Sie dann auf Save changes.</target>
+            </trans-unit>
+            <trans-unit id="setup.credentials.title">
+                <source>WorkOS credentials</source>
+                <target>WorkOS-Zugangsdaten</target>
+            </trans-unit>
+            <trans-unit id="setup.credentials.apiKey">
+                <source>API key</source>
+                <target>API-Schlüssel</target>
+            </trans-unit>
+            <trans-unit id="setup.credentials.clientId">
+                <source>Client ID</source>
+                <target>Client-ID</target>
+            </trans-unit>
+            <trans-unit id="setup.credentials.cookiePassword">
+                <source>Cookie password</source>
+                <target>Cookie-Passwort</target>
+            </trans-unit>
+            <trans-unit id="setup.credentials.cookiePasswordHint">
+                <source>WorkOS requires a strong cookie password with at least 32 characters.</source>
+                <target>WorkOS benötigt ein starkes Cookie-Passwort mit mindestens 32 Zeichen.</target>
+            </trans-unit>
+            <trans-unit id="setup.credentials.generateCookiePassword">
+                <source>Generate a fresh cookie password on save</source>
+                <target>Beim Speichern ein neues Cookie-Passwort generieren</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.title">
+                <source>Frontend login</source>
+                <target>Frontend-Anmeldung</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.enable">
+                <source>Enable frontend login</source>
+                <target>Frontend-Anmeldung aktivieren</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.autoCreate">
+                <source>Auto-create missing frontend users</source>
+                <target>Fehlende Frontend-Benutzer automatisch anlegen</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.linkByEmail">
+                <source>Link existing frontend users by email</source>
+                <target>Bestehende Frontend-Benutzer per E-Mail verknüpfen</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.storagePid">
+                <source>Frontend storage PID</source>
+                <target>Frontend-Speicher-PID</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.defaultGroupUids">
+                <source>Default frontend group UIDs</source>
+                <target>Standard-Frontend-Gruppen-UIDs</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.loginPath">
+                <source>Login path</source>
+                <target>Anmeldepfad</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.callbackPath">
+                <source>Callback path</source>
+                <target>Callback-Pfad</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.logoutPath">
+                <source>Logout path</source>
+                <target>Abmeldepfad</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.successRedirect">
+                <source>Success redirect</source>
+                <target>Weiterleitung nach Erfolg</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.title">
+                <source>Backend login</source>
+                <target>Backend-Anmeldung</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.enable">
+                <source>Enable backend login</source>
+                <target>Backend-Anmeldung aktivieren</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.autoCreate">
+                <source>Auto-create missing backend users</source>
+                <target>Fehlende Backend-Benutzer automatisch anlegen</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.linkByEmail">
+                <source>Link existing backend users by email</source>
+                <target>Bestehende Backend-Benutzer per E-Mail verknüpfen</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.defaultGroupUids">
+                <source>Default backend group UIDs</source>
+                <target>Standard-Backend-Gruppen-UIDs</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.allowedDomains">
+                <source>Allowed backend email domains</source>
+                <target>Erlaubte Backend-E-Mail-Domains</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.allowedDomainsHint">
+                <source>Leave empty to allow every domain when auto-creation is enabled.</source>
+                <target>Leer lassen, um bei aktivierter Auto-Erstellung jede Domain zu erlauben.</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.loginPath">
+                <source>Login path</source>
+                <target>Anmeldepfad</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.callbackPath">
+                <source>Callback path</source>
+                <target>Callback-Pfad</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.successPath">
+                <source>Success path</source>
+                <target>Erfolgspfad</target>
+            </trans-unit>
+            <trans-unit id="setup.authkit.title">
+                <source>Optional AuthKit hints</source>
+                <target>Optionale AuthKit-Hinweise</target>
+            </trans-unit>
+            <trans-unit id="setup.authkit.organizationId">
+                <source>Organization ID</source>
+                <target>Organisations-ID</target>
+            </trans-unit>
+            <trans-unit id="setup.authkit.connectionId">
+                <source>Connection ID</source>
+                <target>Verbindungs-ID</target>
+            </trans-unit>
+            <trans-unit id="setup.authkit.domainHint">
+                <source>Domain hint</source>
+                <target>Domain-Hinweis</target>
+            </trans-unit>
+            <trans-unit id="setup.save">
+                <source>Save configuration</source>
+                <target>Konfiguration speichern</target>
+            </trans-unit>
+
+            <!-- Error messages -->
+            <trans-unit id="error.invalidEmailOrPassword">
+                <source>Invalid email or password.</source>
+                <target>Ungültige E-Mail oder ungültiges Passwort.</target>
+            </trans-unit>
+            <trans-unit id="error.magicAuthDisabled">
+                <source>Magic Auth is not enabled. Enable it in the WorkOS Dashboard under Authentication → Methods → Magic Auth.</source>
+                <target>Magic Auth ist nicht aktiviert. Aktivieren Sie es im WorkOS-Dashboard unter Authentication → Methods → Magic Auth.</target>
+            </trans-unit>
+            <trans-unit id="error.methodNotAllowed">
+                <source>This authentication method is not enabled. Check your WorkOS Dashboard under Authentication → Methods.</source>
+                <target>Diese Authentifizierungsmethode ist nicht aktiviert. Prüfen Sie Ihr WorkOS-Dashboard unter Authentication → Methods.</target>
+            </trans-unit>
+            <trans-unit id="error.invalidOrExpiredCode">
+                <source>Invalid or expired code. Please try again.</source>
+                <target>Ungültiger oder abgelaufener Code. Bitte versuchen Sie es erneut.</target>
+            </trans-unit>
+            <trans-unit id="error.userNotFound">
+                <source>No account found for this email. Please sign up first.</source>
+                <target>Kein Konto für diese E-Mail gefunden. Bitte registrieren Sie sich zuerst.</target>
+            </trans-unit>
+            <trans-unit id="error.magicAuthSessionExpired">
+                <source>Magic auth session expired. Please try again.</source>
+                <target>Magic-Auth-Sitzung abgelaufen. Bitte versuchen Sie es erneut.</target>
+            </trans-unit>
+            <trans-unit id="error.enterEmailAndPassword">
+                <source>Please enter both email and password.</source>
+                <target>Bitte geben Sie E-Mail und Passwort ein.</target>
+            </trans-unit>
+            <trans-unit id="error.enterEmail">
+                <source>Please enter your email address.</source>
+                <target>Bitte geben Sie Ihre E-Mail-Adresse ein.</target>
+            </trans-unit>
+            <trans-unit id="error.fillEmailAndPassword">
+                <source>Please fill in email and password.</source>
+                <target>Bitte füllen Sie E-Mail und Passwort aus.</target>
+            </trans-unit>
+            <trans-unit id="error.passwordsDoNotMatch">
+                <source>Passwords do not match.</source>
+                <target>Die Passwörter stimmen nicht überein.</target>
+            </trans-unit>
+            <trans-unit id="error.passwordTooShortClient">
+                <source>Password must be at least 10 characters.</source>
+                <target>Das Passwort muss mindestens 10 Zeichen lang sein.</target>
+            </trans-unit>
+            <trans-unit id="error.passwordTooShort">
+                <source>Password is too short. Use at least 10 characters.</source>
+                <target>Das Passwort ist zu kurz. Verwenden Sie mindestens 10 Zeichen.</target>
+            </trans-unit>
+            <trans-unit id="error.passwordTooWeak">
+                <source>Password is too weak. Use a mix of letters, numbers, and symbols to make it harder to guess.</source>
+                <target>Das Passwort ist zu schwach. Verwenden Sie eine Mischung aus Buchstaben, Zahlen und Sonderzeichen.</target>
+            </trans-unit>
+            <trans-unit id="error.passwordBreached">
+                <source>This password has appeared in a data breach. Please choose a different password.</source>
+                <target>Dieses Passwort wurde in einem Datenleck gefunden. Bitte wählen Sie ein anderes Passwort.</target>
+            </trans-unit>
+            <trans-unit id="error.userAlreadyExists">
+                <source>An account with this email already exists. Please sign in instead.</source>
+                <target>Ein Konto mit dieser E-Mail existiert bereits. Bitte melden Sie sich stattdessen an.</target>
+            </trans-unit>
+            <trans-unit id="error.passwordInvalid">
+                <source>Password does not meet the requirements. Use at least 10 characters with a mix of letters, numbers, and symbols.</source>
+                <target>Das Passwort erfüllt nicht die Anforderungen. Verwenden Sie mindestens 10 Zeichen mit einer Mischung aus Buchstaben, Zahlen und Sonderzeichen.</target>
+            </trans-unit>
+            <trans-unit id="error.invalidMagicAuthSession">
+                <source>Invalid magic auth session. Please try again.</source>
+                <target>Ungültige Magic-Auth-Sitzung. Bitte versuchen Sie es erneut.</target>
+            </trans-unit>
+            <trans-unit id="error.csrfTokenInvalid">
+                <source>The form token is invalid. Reload the module and try again.</source>
+                <target>Das Formular-Token ist ungültig. Laden Sie das Modul neu und versuchen Sie es erneut.</target>
+            </trans-unit>
+            <trans-unit id="error.backendLoginDisabled">
+                <source>Backend WorkOS login is disabled.</source>
+                <target>Die WorkOS-Backend-Anmeldung ist deaktiviert.</target>
+            </trans-unit>
+            <trans-unit id="error.frontendLoginDisabled">
+                <source>Frontend WorkOS login is disabled.</source>
+                <target>Die WorkOS-Frontend-Anmeldung ist deaktiviert.</target>
+            </trans-unit>
+            <trans-unit id="error.loginError">
+                <source>WorkOS login error</source>
+                <target>WorkOS-Anmeldefehler</target>
+            </trans-unit>
+
+            <!-- Flash messages -->
+            <trans-unit id="flash.configSaved">
+                <source>The WorkOS configuration has been saved to TYPO3 system settings.</source>
+                <target>Die WorkOS-Konfiguration wurde in den TYPO3-Systemeinstellungen gespeichert.</target>
+            </trans-unit>
+            <trans-unit id="flash.configSavedNotReady">
+                <source>The configuration has been saved, but the setup is not ready yet: </source>
+                <target>Die Konfiguration wurde gespeichert, aber die Einrichtung ist noch nicht abgeschlossen: </target>
+            </trans-unit>
+            <trans-unit id="flash.configSaveError">
+                <source>Could not save configuration: </source>
+                <target>Konfiguration konnte nicht gespeichert werden: </target>
+            </trans-unit>
+
+            <!-- Validation (WorkosConfiguration) -->
+            <trans-unit id="validation.apiKeyRequired">
+                <source>A WorkOS API key is required when frontend or backend login is enabled.</source>
+                <target>Ein WorkOS-API-Schlüssel ist erforderlich, wenn die Frontend- oder Backend-Anmeldung aktiviert ist.</target>
+            </trans-unit>
+            <trans-unit id="validation.clientIdRequired">
+                <source>A WorkOS client ID is required when frontend or backend login is enabled.</source>
+                <target>Eine WorkOS-Client-ID ist erforderlich, wenn die Frontend- oder Backend-Anmeldung aktiviert ist.</target>
+            </trans-unit>
+            <trans-unit id="validation.cookiePasswordTooShort">
+                <source>The WorkOS cookie password must be at least 32 characters long.</source>
+                <target>Das WorkOS-Cookie-Passwort muss mindestens 32 Zeichen lang sein.</target>
+            </trans-unit>
+            <trans-unit id="validation.frontendStoragePidRequired">
+                <source>Automatic frontend user creation needs a storage PID greater than 0.</source>
+                <target>Die automatische Erstellung von Frontend-Benutzern benötigt eine Speicher-PID größer als 0.</target>
+            </trans-unit>
+            <trans-unit id="validation.backendGroupUidsRequired">
+                <source>Automatic backend user creation needs at least one backend group UID.</source>
+                <target>Die automatische Erstellung von Backend-Benutzern benötigt mindestens eine Backend-Gruppen-UID.</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
