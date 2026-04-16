@@ -1,0 +1,21 @@
+{
+  "name": "workos-user-management-widget-bundle",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Builds a self-contained IIFE bundle of the WorkOS User Management widget so the TYPO3 backend can load it without relying on esm.sh's runtime code-splitting (which breaks @radix-ui/themes ThemeContext).",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:verbose": "node build.mjs --verbose"
+  },
+  "dependencies": {
+    "@radix-ui/themes": "^3.3.0",
+    "@tanstack/react-query": "^5.90.0",
+    "@workos-inc/widgets": "1.10.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "swr": "^2.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

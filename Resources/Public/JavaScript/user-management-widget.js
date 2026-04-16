@@ -1,51 +1,10 @@
-// Mounts the WorkOS User Management widget inside the TYPO3 backend
-// module (workos_users). The upstream package @workos-inc/widgets is a
-// React 19 library, so we load React, ReactDOM and the widgets bundle
-// from esm.sh (pinned versions, with `deps` so every module shares the
-// same React instance). Our PHP controller hands us a token endpoint
-// from which we fetch a short-lived widget token.
-//
-// Docs: https://workos.com/docs/widgets/user-management
+// Thin loader that mounts the WorkOS User Management widget inside the
+// TYPO3 backend module (workos_users). The actual React/Radix/widget
+// code lives in user-management-widget.bundle.js which is built locally
+// by the Build/user-management-widget/ esbuild pipeline; that avoids
+// the esm.sh code-splitting that breaks the Radix ThemeContext.
 
-const WIDGETS_VERSION = '1.10.1';
-const REACT_VERSION = '19';
-const RADIX_THEMES_VERSION = '3';
-const REACT_QUERY_VERSION = '5';
-
-// `@workos-inc/widgets` declares these as peer dependencies. We must pin
-// them in the `deps=` param of every esm.sh URL so the widget and all of
-// its internal submodules share the *same* instance of React, Radix
-// Themes and React Query. Otherwise Radix context providers from inside
-// `<WorkOsWidgets>` cannot be seen by the inner components and the
-// widget fails with "useThemeContext must be used within a Theme".
-const SHARED_DEPS = [
-    `react@${REACT_VERSION}`,
-    `react-dom@${REACT_VERSION}`,
-    `@radix-ui/themes@${RADIX_THEMES_VERSION}`,
-    `@tanstack/react-query@${REACT_QUERY_VERSION}`,
-].join(',');
-
-// esm.sh encodes the "deps" context into each module's URL path, so a
-// module loaded with different deps becomes a DIFFERENT JS module in the
-// browser (and therefore has a separate React.createContext instance).
-// The widget bundle internally loads `@radix-ui/themes` with the deps
-// `react-dom@19.2.5,react@19.2.5` (alphabetical order, no `@radix-ui`
-// self-reference, no `@tanstack/react-query`). To share the Theme
-// context we MUST request our own `@radix-ui/themes` with exactly that
-// same deps string.
-const RADIX_DEPS = `react-dom@${REACT_VERSION},react@${REACT_VERSION}`;
-
-const REACT_URL = `https://esm.sh/react@${REACT_VERSION}`;
-const REACT_DOM_CLIENT_URL = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=react@${REACT_VERSION}`;
-// `bundle-deps` inlines the widgets' own dependencies (Radix primitives,
-// clsx, bowser, etc.) into one module and forces all internal submodules
-// to share the Radix/React Query singletons declared as peer deps.
-const WIDGETS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}?bundle-deps&deps=${SHARED_DEPS}`;
-// Must use the same `deps` as the widget bundle's internal Radix import
-// so both code paths resolve to the same JS module URL on esm.sh.
-const RADIX_THEMES_URL = `https://esm.sh/@radix-ui/themes@${RADIX_THEMES_VERSION}?deps=${RADIX_DEPS}`;
-const WIDGETS_CSS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}/styles.css`;
-const RADIX_THEME_CSS_URL = `https://esm.sh/@radix-ui/themes@${RADIX_THEMES_VERSION}/styles.css`;
+import { mount as mountWorkosWidget } from '@webconsulting/workos-auth/user-management-widget.bundle.js';
 
 function ensureStylesheet(href, id) {
     if (document.getElementById(id)) {
@@ -81,7 +40,12 @@ function renderError(mountEl, message) {
     mountEl.appendChild(note);
 }
 
-async function mount() {
+function resolveAsset(relativePath) {
+    const base = new URL('.', import.meta.url);
+    return new URL(relativePath, base).toString();
+}
+
+async function bootstrap() {
     const mountEl = document.querySelector('[data-workos-user-management-mount]');
     if (!mountEl) {
         return;
@@ -93,25 +57,10 @@ async function mount() {
     }
 
     try {
-        ensureStylesheet(RADIX_THEME_CSS_URL, 'workos-radix-theme-css');
-        ensureStylesheet(WIDGETS_CSS_URL, 'workos-widgets-css');
+        ensureStylesheet(resolveAsset('radix-themes.css'), 'workos-radix-theme-css');
+        ensureStylesheet(resolveAsset('user-management-widget.bundle.css'), 'workos-widgets-css');
 
-        const [token, React, ReactDOM, RadixModule, WidgetsModule] = await Promise.all([
-            fetchWidgetToken(tokenUri),
-            import(REACT_URL),
-            import(REACT_DOM_CLIENT_URL),
-            import(RADIX_THEMES_URL),
-            import(WIDGETS_URL),
-        ]);
-
-        const { Theme } = RadixModule;
-        const { WorkOsWidgets, UsersManagement } = WidgetsModule;
-        if (!Theme) {
-            throw new Error('Failed to load Radix Themes.');
-        }
-        if (!WorkOsWidgets || !UsersManagement) {
-            throw new Error('Unexpected WorkOS widgets bundle.');
-        }
+        const token = await fetchWidgetToken(tokenUri);
 
         const container = document.createElement('div');
         container.style.display = 'block';
@@ -120,19 +69,7 @@ async function mount() {
         mountEl.innerHTML = '';
         mountEl.appendChild(container);
 
-        const { createElement } = React;
-        const root = ReactDOM.createRoot(container);
-        root.render(
-            createElement(
-                Theme,
-                { appearance: 'inherit' },
-                createElement(
-                    WorkOsWidgets,
-                    null,
-                    createElement(UsersManagement, { authToken: token })
-                )
-            )
-        );
+        mountWorkosWidget({ container, authToken: token, appearance: 'inherit' });
     } catch (error) {
         const message = error && error.message ? error.message : 'Unable to load the WorkOS widget.';
         renderError(mountEl, message);
@@ -140,7 +77,7 @@ async function mount() {
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mount, { once: true });
+    document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
 } else {
-    mount();
+    bootstrap();
 }

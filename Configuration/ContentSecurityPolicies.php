@@ -14,31 +14,21 @@ use TYPO3\CMS\Core\Type\Map;
 
 // The backend module "workos_users" embeds the official WorkOS User
 // Management widget (https://workos.com/docs/widgets/user-management).
-// That package is a React library, so we load React, ReactDOM and the
-// widgets bundle from esm.sh at runtime. The widget itself talks to
-// api.workos.com and loads avatars from WorkOS CDNs.
+// The widget is pre-bundled and shipped with this extension, so no
+// third-party script/style CDNs are needed. We only relax the backend
+// CSP for the WorkOS API (XHR) and the WorkOS avatar CDN (images).
 
 return Map::fromEntries([
     Scope::backend(),
     new MutationCollection(
         new Mutation(
             MutationMode::Extend,
-            Directive::ScriptSrc,
-            new UriValue('https://esm.sh'),
-            new UriValue('https://cdn.esm.sh'),
-        ),
-        new Mutation(
-            MutationMode::Extend,
             Directive::StyleSrc,
-            new UriValue('https://esm.sh'),
-            new UriValue('https://cdn.esm.sh'),
             SourceKeyword::unsafeInline,
         ),
         new Mutation(
             MutationMode::Extend,
             Directive::ConnectSrc,
-            new UriValue('https://esm.sh'),
-            new UriValue('https://cdn.esm.sh'),
             new UriValue('https://api.workos.com'),
         ),
         new Mutation(
@@ -52,8 +42,6 @@ return Map::fromEntries([
         new Mutation(
             MutationMode::Extend,
             Directive::FontSrc,
-            new UriValue('https://esm.sh'),
-            new UriValue('https://cdn.esm.sh'),
             SourceScheme::data,
         ),
     ),
