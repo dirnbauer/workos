@@ -11,23 +11,26 @@
         justify-content: center;
         gap: 0.5rem;
         padding: 0.55rem 0.75rem;
-        border: 1px solid rgba(255,255,255,0.25);
+        border: 1px solid #d1d5db;
         border-radius: 6px;
         font-size: 0.9rem;
         font-weight: 500;
-        color: #fff;
-        background: rgba(255,255,255,0.08);
+        color: #1f2937;
+        background: #fff;
         text-decoration: none;
         transition: background 0.15s, border-color 0.15s;
     }
     .workos-social-btn:hover, .workos-social-btn:focus {
-        background: rgba(255,255,255,0.15);
-        border-color: rgba(255,255,255,0.4);
+        background: #f9fafb;
+        border-color: #9ca3af;
         text-decoration: none;
-        color: #fff;
+        color: #111827;
     }
-    .workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; background: #fff; border-radius: 3px; padding: 2px; }
+    .workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .workos-social-btn__icon svg { display: block; }
+    .workos-divider { display: flex; align-items: center; margin: 0.75rem 0; gap: 0.75rem; }
+    .workos-divider__line { flex: 1; height: 1px; background: #e5e7eb; }
+    .workos-divider__text { font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
     @media (max-width: 480px) {
         .workos-social-btn { flex: 1 1 0; padding: 0.55rem; }
         .workos-social-btn__label { display: none; }
@@ -76,10 +79,10 @@
                                     </f:for>
                                 </div>
 
-                                <div style="display:flex; align-items:center; margin:0.75rem 0; gap:0.75rem;">
-                                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.2);"></div>
-                                    <span style="font-size:0.8rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.05em;"><f:translate key="workos_auth.messages:common.or" /></span>
-                                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.2);"></div>
+                                <div class="workos-divider">
+                                    <div class="workos-divider__line"></div>
+                                    <span class="workos-divider__text"><f:translate key="workos_auth.messages:common.or" /></span>
+                                    <div class="workos-divider__line"></div>
                                 </div>
 
                                 <div style="margin-bottom:0.75rem;">
