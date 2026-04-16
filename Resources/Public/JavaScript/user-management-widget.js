@@ -25,19 +25,25 @@ const SHARED_DEPS = [
     `@tanstack/react-query@${REACT_QUERY_VERSION}`,
 ].join(',');
 
-const REACT_URL = `https://esm.sh/react@${REACT_VERSION}?deps=${SHARED_DEPS}`;
-const REACT_DOM_CLIENT_URL = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=${SHARED_DEPS}`;
+// esm.sh encodes the "deps" context into each module's URL path, so a
+// module loaded with different deps becomes a DIFFERENT JS module in the
+// browser (and therefore has a separate React.createContext instance).
+// The widget bundle internally loads `@radix-ui/themes` with the deps
+// `react-dom@19.2.5,react@19.2.5` (alphabetical order, no `@radix-ui`
+// self-reference, no `@tanstack/react-query`). To share the Theme
+// context we MUST request our own `@radix-ui/themes` with exactly that
+// same deps string.
+const RADIX_DEPS = `react-dom@${REACT_VERSION},react@${REACT_VERSION}`;
+
+const REACT_URL = `https://esm.sh/react@${REACT_VERSION}`;
+const REACT_DOM_CLIENT_URL = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=react@${REACT_VERSION}`;
 // `bundle-deps` inlines the widgets' own dependencies (Radix primitives,
 // clsx, bowser, etc.) into one module and forces all internal submodules
 // to share the Radix/React Query singletons declared as peer deps.
 const WIDGETS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}?bundle-deps&deps=${SHARED_DEPS}`;
-// We explicitly load `@radix-ui/themes` ourselves and wrap the widget in
-// our own <Theme>. Even though <WorkOsWidgets> already renders a Radix
-// <Theme>, some widget components end up resolving `useThemeContext`
-// against a subtly different Radix module instance loaded by esm.sh.
-// Providing an outer Theme guarantees that any `useThemeContext` call
-// finds a matching provider.
-const RADIX_THEMES_URL = `https://esm.sh/@radix-ui/themes@${RADIX_THEMES_VERSION}?deps=${SHARED_DEPS}`;
+// Must use the same `deps` as the widget bundle's internal Radix import
+// so both code paths resolve to the same JS module URL on esm.sh.
+const RADIX_THEMES_URL = `https://esm.sh/@radix-ui/themes@${RADIX_THEMES_VERSION}?deps=${RADIX_DEPS}`;
 const WIDGETS_CSS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}/styles.css`;
 const RADIX_THEME_CSS_URL = `https://esm.sh/@radix-ui/themes@${RADIX_THEMES_VERSION}/styles.css`;
 
