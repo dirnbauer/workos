@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Http\RedirectResponse;
@@ -28,6 +29,7 @@ final class SetupAssistantController
         private readonly FormProtectionFactory $formProtectionFactory,
         private readonly UriBuilder $uriBuilder,
         private readonly FlashMessageService $flashMessageService,
+        private readonly CacheManager $cacheManager,
     ) {}
 
     public function indexAction(ServerRequestInterface $request): ResponseInterface
@@ -98,7 +100,17 @@ final class SetupAssistantController
         }
 
         $errors = $this->configuration->validate($formValues);
-        $this->extensionConfiguration->set(WorkosConfiguration::EXTENSION_KEY, $formValues);
+
+        try {
+            $this->extensionConfiguration->set(WorkosConfiguration::EXTENSION_KEY, $formValues);
+            $this->cacheManager->flushCachesInGroup('system');
+        } catch (\Throwable $e) {
+            $this->enqueueFlashMessage(
+                'Could not save configuration: ' . $e->getMessage(),
+                ContextualFeedbackSeverity::ERROR,
+            );
+            return new RedirectResponse($this->uriBuilder->buildUriFromRoute('system_workosauth'));
+        }
 
         if ($errors !== []) {
             $this->enqueueFlashMessage(
