@@ -481,28 +481,28 @@
                 <target>Die Passwörter stimmen nicht überein.</target>
             </trans-unit>
             <trans-unit id="error.passwordTooShortClient">
-                <source>Password must be at least 10 characters.</source>
+                <source>Your password must be at least 10 characters long.</source>
                 <target>Das Passwort muss mindestens 10 Zeichen lang sein.</target>
             </trans-unit>
             <trans-unit id="error.passwordTooShort">
-                <source>Password is too short. Use at least 10 characters.</source>
-                <target>Das Passwort ist zu kurz. Verwenden Sie mindestens 10 Zeichen.</target>
+                <source>Your password must be at least 10 characters long. Please add more characters and try again.</source>
+                <target>Das Passwort muss mindestens 10 Zeichen lang sein. Bitte ergänzen Sie weitere Zeichen und versuchen Sie es erneut.</target>
             </trans-unit>
             <trans-unit id="error.passwordTooWeak">
-                <source>Password is too weak. Use a mix of letters, numbers, and symbols to make it harder to guess.</source>
-                <target>Das Passwort ist zu schwach. Verwenden Sie eine Mischung aus Buchstaben, Zahlen und Sonderzeichen.</target>
+                <source>Your password is too easy to guess. Please choose one that is at least 10 characters long and combines uppercase letters, lowercase letters, numbers, and at least one symbol (for example ! ? @ # $). Avoid your name, email, common words, keyboard patterns like "qwerty" or "1234", and repeated characters.</source>
+                <target>Ihr Passwort ist zu leicht zu erraten. Bitte wählen Sie ein Passwort mit mindestens 10 Zeichen, das Groß- und Kleinbuchstaben, Zahlen sowie mindestens ein Sonderzeichen (zum Beispiel ! ? @ # $) kombiniert. Vermeiden Sie Ihren Namen, Ihre E-Mail-Adresse, gebräuchliche Wörter, Tastaturmuster wie „qwertz“ oder „1234“ und wiederholte Zeichen.</target>
             </trans-unit>
             <trans-unit id="error.passwordBreached">
-                <source>This password has appeared in a data breach. Please choose a different password.</source>
-                <target>Dieses Passwort wurde in einem Datenleck gefunden. Bitte wählen Sie ein anderes Passwort.</target>
+                <source>This password has appeared in a known data breach and is no longer safe to use. Please choose a different password that you have never used on another website.</source>
+                <target>Dieses Passwort ist in einem bekannten Datenleck aufgetaucht und nicht mehr sicher. Bitte wählen Sie ein anderes Passwort, das Sie noch nie auf einer anderen Website verwendet haben.</target>
             </trans-unit>
             <trans-unit id="error.userAlreadyExists">
                 <source>An account with this email already exists. Please sign in instead.</source>
                 <target>Ein Konto mit dieser E-Mail existiert bereits. Bitte melden Sie sich stattdessen an.</target>
             </trans-unit>
             <trans-unit id="error.passwordInvalid">
-                <source>Password does not meet the requirements. Use at least 10 characters with a mix of letters, numbers, and symbols.</source>
-                <target>Das Passwort erfüllt nicht die Anforderungen. Verwenden Sie mindestens 10 Zeichen mit einer Mischung aus Buchstaben, Zahlen und Sonderzeichen.</target>
+                <source>Your password does not meet the requirements. Please choose one that is at least 10 characters long and combines uppercase letters, lowercase letters, numbers, and at least one symbol (for example ! ? @ # $).</source>
+                <target>Das Passwort erfüllt nicht die Anforderungen. Bitte wählen Sie ein Passwort mit mindestens 10 Zeichen, das Groß- und Kleinbuchstaben, Zahlen sowie mindestens ein Sonderzeichen (zum Beispiel ! ? @ # $) kombiniert.</target>
             </trans-unit>
             <trans-unit id="error.invalidMagicAuthSession">
                 <source>Invalid magic auth session. Please try again.</source>

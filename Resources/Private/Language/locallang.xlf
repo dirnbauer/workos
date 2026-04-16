@@ -366,22 +366,22 @@
                 <source>Passwords do not match.</source>
             </trans-unit>
             <trans-unit id="error.passwordTooShortClient">
-                <source>Password must be at least 10 characters.</source>
+                <source>Your password must be at least 10 characters long.</source>
             </trans-unit>
             <trans-unit id="error.passwordTooShort">
-                <source>Password is too short. Use at least 10 characters.</source>
+                <source>Your password must be at least 10 characters long. Please add more characters and try again.</source>
             </trans-unit>
             <trans-unit id="error.passwordTooWeak">
-                <source>Password is too weak. Use a mix of letters, numbers, and symbols to make it harder to guess.</source>
+                <source>Your password is too easy to guess. Please choose one that is at least 10 characters long and combines uppercase letters, lowercase letters, numbers, and at least one symbol (for example ! ? @ # $). Avoid your name, email, common words, keyboard patterns like "qwerty" or "1234", and repeated characters.</source>
             </trans-unit>
             <trans-unit id="error.passwordBreached">
-                <source>This password has appeared in a data breach. Please choose a different password.</source>
+                <source>This password has appeared in a known data breach and is no longer safe to use. Please choose a different password that you have never used on another website.</source>
             </trans-unit>
             <trans-unit id="error.userAlreadyExists">
                 <source>An account with this email already exists. Please sign in instead.</source>
             </trans-unit>
             <trans-unit id="error.passwordInvalid">
-                <source>Password does not meet the requirements. Use at least 10 characters with a mix of letters, numbers, and symbols.</source>
+                <source>Your password does not meet the requirements. Please choose one that is at least 10 characters long and combines uppercase letters, lowercase letters, numbers, and at least one symbol (for example ! ? @ # $).</source>
             </trans-unit>
             <trans-unit id="error.invalidMagicAuthSession">
                 <source>Invalid magic auth session. Please try again.</source>
