@@ -375,8 +375,8 @@
                 <target>Ihr Backend-Benutzer ist nicht mit einem WorkOS-Konto verknüpft. Melden Sie sich einmal über den WorkOS-Anmeldetab an und kehren Sie dann zu diesem Modul zurück.</target>
             </trans-unit>
             <trans-unit id="module.users.error.noOrganization">
-                <source>Your WorkOS user is not a member of any organization. Assign yourself to an organization in the WorkOS dashboard or set a default organization in the Setup Assistant.</source>
-                <target>Ihr WorkOS-Benutzer gehört keiner Organisation an. Ordnen Sie sich im WorkOS-Dashboard einer Organisation zu oder hinterlegen Sie eine Standard-Organisation im Setup-Assistenten.</target>
+                <source>Your WorkOS user is not a member of any organization yet. Pick an existing organization or create a new one to unlock the user management widget.</source>
+                <target>Ihr WorkOS-Benutzer gehört noch keiner Organisation an. Treten Sie einer bestehenden Organisation bei oder legen Sie eine neue an, um das Benutzerverwaltungs-Widget freizuschalten.</target>
             </trans-unit>
             <trans-unit id="module.users.error.tokenFailed">
                 <source>WorkOS could not issue a widget token. Verify your API key has the "widgets:users-table:manage" scope.</source>
@@ -385,6 +385,82 @@
             <trans-unit id="module.users.error.generic">
                 <source>The WorkOS widget is currently unavailable.</source>
                 <target>Das WorkOS-Widget ist derzeit nicht verfügbar.</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.missingOrganization">
+                <source>Please select an organization to join.</source>
+                <target>Bitte wählen Sie eine Organisation zum Beitreten aus.</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.missingOrganizationName">
+                <source>Please provide a name for the new organization.</source>
+                <target>Bitte geben Sie einen Namen für die neue Organisation an.</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.joinFailed">
+                <source>Could not join the selected organization.</source>
+                <target>Beitritt zur gewählten Organisation ist fehlgeschlagen.</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.createFailed">
+                <source>Could not create the organization.</source>
+                <target>Die Organisation konnte nicht angelegt werden.</target>
+            </trans-unit>
+            <trans-unit id="module.users.flashTitle">
+                <source>WorkOS User Management</source>
+                <target>WorkOS-Benutzerverwaltung</target>
+            </trans-unit>
+            <trans-unit id="module.users.message.joined">
+                <source>You have been added to the organization as an admin.</source>
+                <target>Sie wurden der Organisation als Administrator hinzugefügt.</target>
+            </trans-unit>
+            <trans-unit id="module.users.message.createdAndJoined">
+                <source>Organization "%s" created and linked to your user.</source>
+                <target>Organisation „%s“ wurde angelegt und Ihrem Benutzer zugeordnet.</target>
+            </trans-unit>
+            <trans-unit id="module.users.join.title">
+                <source>One more step before you can manage users</source>
+                <target>Noch ein Schritt bis zur Benutzerverwaltung</target>
+            </trans-unit>
+            <trans-unit id="module.users.join.intro">
+                <source>WorkOS organizes user management around organizations. Assign yourself to one to enable the widget.</source>
+                <target>WorkOS organisiert die Benutzerverwaltung über Organisationen. Ordnen Sie sich einer Organisation zu, um das Widget zu aktivieren.</target>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.title">
+                <source>Join an existing organization</source>
+                <target>Bestehender Organisation beitreten</target>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.label">
+                <source>Pick an organization</source>
+                <target>Organisation auswählen</target>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.submit">
+                <source>Join organization</source>
+                <target>Organisation beitreten</target>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.single">
+                <source>You currently have access to one organization: %s.</source>
+                <target>Derzeit ist eine Organisation verfügbar: %s.</target>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.singleSubmit">
+                <source>Join "%s"</source>
+                <target>„%s“ beitreten</target>
+            </trans-unit>
+            <trans-unit id="module.users.join.advancedHint">
+                <source>Prefer to configure this manually?</source>
+                <target>Lieber manuell konfigurieren?</target>
+            </trans-unit>
+            <trans-unit id="module.users.create.title">
+                <source>Create a new organization</source>
+                <target>Neue Organisation anlegen</target>
+            </trans-unit>
+            <trans-unit id="module.users.create.intro">
+                <source>A new organization will be created in WorkOS and you will be linked to it as an admin.</source>
+                <target>Es wird eine neue Organisation in WorkOS angelegt und Ihr Benutzer wird als Administrator zugewiesen.</target>
+            </trans-unit>
+            <trans-unit id="module.users.create.label">
+                <source>Organization name</source>
+                <target>Organisationsname</target>
+            </trans-unit>
+            <trans-unit id="module.users.create.submit">
+                <source>Create and join</source>
+                <target>Anlegen und beitreten</target>
             </trans-unit>
 
             <!-- Backend setup assistant -->

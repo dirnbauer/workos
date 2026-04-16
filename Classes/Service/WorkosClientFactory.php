@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebConsulting\WorkosAuth\Service;
 
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WorkOS\Organizations;
 use WorkOS\UserManagement;
 use WorkOS\Widgets;
 use WorkOS\WorkOS;
@@ -25,6 +26,12 @@ final class WorkosClientFactory
     {
         $this->primeClient();
         return new Widgets();
+    }
+
+    public function createOrganizations(): Organizations
+    {
+        $this->primeClient();
+        return new Organizations();
     }
 
     private function primeClient(): void

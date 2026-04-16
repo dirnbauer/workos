@@ -27,6 +27,14 @@ return [
                 'target' => UserManagementController::class . '::tokenAction',
                 'methods' => ['POST'],
             ],
+            'join' => [
+                'target' => UserManagementController::class . '::joinAction',
+                'methods' => ['POST'],
+            ],
+            'createOrganization' => [
+                'target' => UserManagementController::class . '::createOrganizationAction',
+                'methods' => ['POST'],
+            ],
         ],
     ],
     'workos_setup' => [

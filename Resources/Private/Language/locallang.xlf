@@ -286,13 +286,70 @@
                 <source>Your backend user is not linked to a WorkOS account. Sign in once via the WorkOS login tab to link it, then return to this module.</source>
             </trans-unit>
             <trans-unit id="module.users.error.noOrganization">
-                <source>Your WorkOS user is not a member of any organization. Assign yourself to an organization in the WorkOS dashboard or set a default organization in the Setup Assistant.</source>
+                <source>Your WorkOS user is not a member of any organization yet. Pick an existing organization or create a new one to unlock the user management widget.</source>
             </trans-unit>
             <trans-unit id="module.users.error.tokenFailed">
                 <source>WorkOS could not issue a widget token. Verify your API key has the "widgets:users-table:manage" scope.</source>
             </trans-unit>
             <trans-unit id="module.users.error.generic">
                 <source>The WorkOS widget is currently unavailable.</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.missingOrganization">
+                <source>Please select an organization to join.</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.missingOrganizationName">
+                <source>Please provide a name for the new organization.</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.joinFailed">
+                <source>Could not join the selected organization.</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.createFailed">
+                <source>Could not create the organization.</source>
+            </trans-unit>
+            <trans-unit id="module.users.flashTitle">
+                <source>WorkOS User Management</source>
+            </trans-unit>
+            <trans-unit id="module.users.message.joined">
+                <source>You have been added to the organization as an admin.</source>
+            </trans-unit>
+            <trans-unit id="module.users.message.createdAndJoined">
+                <source>Organization "%s" created and linked to your user.</source>
+            </trans-unit>
+            <trans-unit id="module.users.join.title">
+                <source>One more step before you can manage users</source>
+            </trans-unit>
+            <trans-unit id="module.users.join.intro">
+                <source>WorkOS organizes user management around organizations. Assign yourself to one to enable the widget.</source>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.title">
+                <source>Join an existing organization</source>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.label">
+                <source>Pick an organization</source>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.submit">
+                <source>Join organization</source>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.single">
+                <source>You currently have access to one organization: %s.</source>
+            </trans-unit>
+            <trans-unit id="module.users.join.existing.singleSubmit">
+                <source>Join "%s"</source>
+            </trans-unit>
+            <trans-unit id="module.users.join.advancedHint">
+                <source>Prefer to configure this manually?</source>
+            </trans-unit>
+            <trans-unit id="module.users.create.title">
+                <source>Create a new organization</source>
+            </trans-unit>
+            <trans-unit id="module.users.create.intro">
+                <source>A new organization will be created in WorkOS and you will be linked to it as an admin.</source>
+            </trans-unit>
+            <trans-unit id="module.users.create.label">
+                <source>Organization name</source>
+            </trans-unit>
+            <trans-unit id="module.users.create.submit">
+                <source>Create and join</source>
             </trans-unit>
 
             <!-- Backend setup assistant -->
