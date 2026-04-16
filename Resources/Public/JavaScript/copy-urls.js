@@ -13,10 +13,10 @@ if (button) {
         const originalText = button.textContent;
         navigator.clipboard.writeText(urls.join('\n')).then(() => {
             button.textContent = 'Copied ' + urls.length + ' URLs!';
-            button.classList.replace('btn-outline-secondary', 'btn-success');
+            button.classList.replace('btn-secondary', 'btn-success');
             setTimeout(() => {
                 button.textContent = originalText;
-                button.classList.replace('btn-success', 'btn-outline-secondary');
+                button.classList.replace('btn-success', 'btn-secondary');
             }, 2000);
         }).catch(() => {
             const textarea = document.createElement('textarea');
