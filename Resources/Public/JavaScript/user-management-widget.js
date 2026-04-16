@@ -25,15 +25,19 @@ const SHARED_DEPS = [
     `@tanstack/react-query@${REACT_QUERY_VERSION}`,
 ].join(',');
 
-const REACT_URL = `https://esm.sh/react@${REACT_VERSION}`;
+const REACT_URL = `https://esm.sh/react@${REACT_VERSION}?deps=${SHARED_DEPS}`;
 const REACT_DOM_CLIENT_URL = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=${SHARED_DEPS}`;
 // `bundle-deps` inlines the widgets' own dependencies (Radix primitives,
 // clsx, bowser, etc.) into one module and forces all internal submodules
-// to share the Radix/React Query singletons declared as peer deps. This
-// is what actually fixes the "useThemeContext must be used within a
-// Theme" error that otherwise appears because submodules load their own
-// copy of @radix-ui/themes.
+// to share the Radix/React Query singletons declared as peer deps.
 const WIDGETS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}?bundle-deps&deps=${SHARED_DEPS}`;
+// We explicitly load `@radix-ui/themes` ourselves and wrap the widget in
+// our own <Theme>. Even though <WorkOsWidgets> already renders a Radix
+// <Theme>, some widget components end up resolving `useThemeContext`
+// against a subtly different Radix module instance loaded by esm.sh.
+// Providing an outer Theme guarantees that any `useThemeContext` call
+// finds a matching provider.
+const RADIX_THEMES_URL = `https://esm.sh/@radix-ui/themes@${RADIX_THEMES_VERSION}?deps=${SHARED_DEPS}`;
 const WIDGETS_CSS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}/styles.css`;
 const RADIX_THEME_CSS_URL = `https://esm.sh/@radix-ui/themes@${RADIX_THEMES_VERSION}/styles.css`;
 
@@ -86,14 +90,19 @@ async function mount() {
         ensureStylesheet(RADIX_THEME_CSS_URL, 'workos-radix-theme-css');
         ensureStylesheet(WIDGETS_CSS_URL, 'workos-widgets-css');
 
-        const [token, React, ReactDOM, WidgetsModule] = await Promise.all([
+        const [token, React, ReactDOM, RadixModule, WidgetsModule] = await Promise.all([
             fetchWidgetToken(tokenUri),
             import(REACT_URL),
             import(REACT_DOM_CLIENT_URL),
+            import(RADIX_THEMES_URL),
             import(WIDGETS_URL),
         ]);
 
+        const { Theme } = RadixModule;
         const { WorkOsWidgets, UsersManagement } = WidgetsModule;
+        if (!Theme) {
+            throw new Error('Failed to load Radix Themes.');
+        }
         if (!WorkOsWidgets || !UsersManagement) {
             throw new Error('Unexpected WorkOS widgets bundle.');
         }
@@ -109,9 +118,13 @@ async function mount() {
         const root = ReactDOM.createRoot(container);
         root.render(
             createElement(
-                WorkOsWidgets,
-                null,
-                createElement(UsersManagement, { authToken: token })
+                Theme,
+                { appearance: 'inherit' },
+                createElement(
+                    WorkOsWidgets,
+                    null,
+                    createElement(UsersManagement, { authToken: token })
+                )
             )
         );
     } catch (error) {
