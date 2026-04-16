@@ -86,7 +86,7 @@ final class WorkosAuthenticationService
         }
 
         return [
-            'workosUser' => $authenticationResponse->user,
+            'workosUser' => $this->enrichUser($userManagement, $authenticationResponse->user),
             'returnTo' => (string)($payload['returnTo'] ?? '/'),
         ];
     }
@@ -139,7 +139,7 @@ final class WorkosAuthenticationService
             throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277810);
         }
 
-        return ['workosUser' => $response->user];
+        return ['workosUser' => $this->enrichUser($userManagement, $response->user)];
     }
 
     public function sendMagicAuthCode(string $email): array
@@ -171,7 +171,16 @@ final class WorkosAuthenticationService
             throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277811);
         }
 
-        return ['workosUser' => $response->user];
+        return ['workosUser' => $this->enrichUser($userManagement, $response->user)];
+    }
+
+    private function enrichUser(UserManagement $userManagement, User $user): User
+    {
+        try {
+            return $userManagement->getUser((string)$user->id);
+        } catch (\Throwable) {
+            return $user;
+        }
     }
 
     private function assertBaseConfiguration(): void
