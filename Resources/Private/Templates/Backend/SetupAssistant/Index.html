@@ -3,55 +3,50 @@
 <div class="module-body">
     <f:flashMessages queueIdentifier="workos-auth-setup" />
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3 class="card-title">Configuration storage</h3>
-        </div>
-        <div class="card-body">
-            <p class="mb-2">
-                This extension stores its settings as TYPO3 extension configuration under <code>EXTENSIONS.workos_auth</code>.
-            </p>
-            <p class="mb-0">
-                In a Composer-based TYPO3 v14 installation that means the values are persisted in <code>config/system/settings.php</code>, which is the right place for installation-wide auth settings and secrets.
-            </p>
-        </div>
-    </div>
+    <details class="mb-4">
+        <summary class="card-header" style="cursor:pointer; list-style:none">
+            <h3 class="card-title d-inline">Redirect URLs to add in WorkOS</h3>
+            <small class="text-muted ms-2">Click to expand</small>
+        </summary>
+        <div class="card">
+            <div class="card-body">
+                <p class="mb-3">
+                    Add these redirect URIs in the
+                    <a href="https://dashboard.workos.com" target="_blank" rel="noopener">WorkOS Dashboard</a>
+                    under <strong>Redirects</strong>.
+                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="
+                        var urls = Array.from(this.closest('.card-body').querySelectorAll('[data-callback-url]')).map(function(el){ return el.textContent; });
+                        navigator.clipboard.writeText(urls.join('\n')).then(function(){ alert('Copied ' + urls.length + ' URLs to clipboard.'); });
+                    ">Copy all callback URLs</button>
+                </p>
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3 class="card-title">Redirect URLs to add in WorkOS</h3>
-        </div>
-        <div class="card-body">
-            <h4>Backend</h4>
-            <ul>
-                <li><strong>Login URL:</strong> <code>{backendUrls.login}</code></li>
-                <li><strong>Callback URL:</strong> <code>{backendUrls.callback}</code></li>
-                <li><strong>Success URL:</strong> <code>{backendUrls.success}</code></li>
-            </ul>
+                <h4>Backend</h4>
+                <ul>
+                    <li><strong>Callback URL:</strong> <code data-callback-url>{backendUrls.callback}</code></li>
+                </ul>
 
-            <h4>Frontend</h4>
-            <f:if condition="{frontendSites}">
-                <f:then>
-                    <f:for each="{frontendSites}" as="site">
-                        <div class="mb-3">
-                            <h5 class="mb-2">Site: {site.identifier}</h5>
-                            <ul>
-                                <li><strong>Base URL:</strong> <code>{site.baseUrl}</code></li>
-                                <li><strong>Login URL:</strong> <code>{site.loginUrl}</code></li>
-                                <li><strong>Callback URL:</strong> <code>{site.callbackUrl}</code></li>
-                                <li><strong>Logout URL:</strong> <code>{site.logoutUrl}</code></li>
-                            </ul>
+                <h4>Frontend</h4>
+                <f:if condition="{frontendSites}">
+                    <f:then>
+                        <f:for each="{frontendSites}" as="site">
+                            <div class="mb-3">
+                                <h5 class="mb-2">Site: {site.identifier}</h5>
+                                <ul>
+                                    <li><strong>Base URL:</strong> <code>{site.baseUrl}</code></li>
+                                    <li><strong>Callback URL:</strong> <code data-callback-url>{site.callbackUrl}</code></li>
+                                </ul>
+                            </div>
+                        </f:for>
+                    </f:then>
+                    <f:else>
+                        <div class="alert alert-warning mb-0">
+                            No frontend sites are configured yet, so only the backend redirect URLs can be generated right now.
                         </div>
-                    </f:for>
-                </f:then>
-                <f:else>
-                    <div class="alert alert-warning">
-                        No frontend sites are configured yet, so only the backend redirect URLs can be generated right now.
-                    </div>
-                </f:else>
-            </f:if>
+                    </f:else>
+                </f:if>
+            </div>
         </div>
-    </div>
+    </details>
 
     <form method="post" action="{saveUri}">
         <input type="hidden" name="csrfToken" value="{csrfToken}">
