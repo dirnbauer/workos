@@ -44,7 +44,7 @@ final class UserProvisioningService
                 $updatedUser = $context === 'frontend'
                     ? $this->synchronizeFrontendProfile($linkedUser, $workosUser)
                     : $this->synchronizeBackendProfile($linkedUser, $workosUser);
-                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, (int)$updatedUser['uid']);
+                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, (int)$updatedUser['uid'], $this->extractProfile($workosUser));
                 return $updatedUser;
             }
         }
@@ -59,7 +59,7 @@ final class UserProvisioningService
                 $updatedUser = $context === 'frontend'
                     ? $this->synchronizeFrontendProfile($user, $workosUser)
                     : $this->synchronizeBackendProfile($user, $workosUser);
-                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, (int)$updatedUser['uid']);
+                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, (int)$updatedUser['uid'], $this->extractProfile($workosUser));
                 return $updatedUser;
             }
         }
@@ -68,7 +68,7 @@ final class UserProvisioningService
             ? $this->createFrontendUser($workosUser)
             : $this->createBackendUser($workosUser);
 
-        $this->identityService->storeIdentity($context, $workosUserId, $email, $table, (int)$user['uid']);
+        $this->identityService->storeIdentity($context, $workosUserId, $email, $table, (int)$user['uid'], $this->extractProfile($workosUser));
         return $user;
     }
 
@@ -261,5 +261,17 @@ final class UserProvisioningService
         if ($domain === '' || !in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException('This WorkOS account is not allowed to create a TYPO3 backend user.', 1744277608);
         }
+    }
+
+    private function extractProfile(User $workosUser): array
+    {
+        $profile = [];
+        foreach (User::RESOURCE_ATTRIBUTES as $attribute) {
+            $value = $workosUser->$attribute ?? null;
+            if ($value !== null) {
+                $profile[$attribute] = $value;
+            }
+        }
+        return $profile;
     }
 }

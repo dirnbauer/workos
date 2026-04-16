@@ -8,6 +8,7 @@ CREATE TABLE tx_workosauth_identity (
   email varchar(255) DEFAULT '' NOT NULL,
   user_table varchar(32) DEFAULT '' NOT NULL,
   user_uid int(11) DEFAULT '0' NOT NULL,
+  workos_profile_json text,
   PRIMARY KEY (uid),
   UNIQUE KEY workos_context_user (login_context, workos_user_id),
   KEY login_context_local_user (login_context, user_table, user_uid)

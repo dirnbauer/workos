@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebConsulting\WorkosAuth\Service;
 
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 final class IdentityService
@@ -38,6 +39,7 @@ final class IdentityService
         string $email,
         string $userTable,
         int $userUid,
+        array $workosProfile = [],
     ): void {
         $connection = $this->connectionPool->getConnectionForTable(self::TABLE);
         $existingIdentity = $this->findIdentity($context, $workosUserId);
@@ -48,6 +50,7 @@ final class IdentityService
             'email' => $email,
             'user_table' => $userTable,
             'user_uid' => $userUid,
+            'workos_profile_json' => json_encode($workosProfile, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
         ];
 
         if ($existingIdentity === null) {
@@ -64,5 +67,34 @@ final class IdentityService
             $data,
             ['uid' => (int)$existingIdentity['uid']]
         );
+    }
+
+    public function findProfileByLocalUser(string $context, string $userTable, int $userUid): ?array
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $row = $queryBuilder
+            ->select('workos_profile_json')
+            ->from(self::TABLE)
+            ->where(
+                $queryBuilder->expr()->eq('login_context', $queryBuilder->createNamedParameter($context)),
+                $queryBuilder->expr()->eq('user_table', $queryBuilder->createNamedParameter($userTable)),
+                $queryBuilder->expr()->eq('user_uid', $queryBuilder->createNamedParameter($userUid, Connection::PARAM_INT))
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if (!is_array($row) || empty($row['workos_profile_json'])) {
+            return null;
+        }
+
+        try {
+            $profile = json_decode($row['workos_profile_json'], true, 512, JSON_THROW_ON_ERROR);
+            return is_array($profile) ? $profile : null;
+        } catch (\JsonException) {
+            return null;
+        }
     }
 }

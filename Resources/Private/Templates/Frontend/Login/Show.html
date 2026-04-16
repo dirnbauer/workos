@@ -13,6 +13,59 @@
                 <p>
                     <a href="{logoutUrl}" class="btn btn-secondary">Sign out</a>
                 </p>
+
+                <f:if condition="{workosProfile}">
+                    <details class="workos-profile-debug" style="margin-top:1.5rem;">
+                        <summary style="cursor:pointer; font-weight:600; margin-bottom:0.75rem;">WorkOS profile data</summary>
+
+                        <table class="workos-profile-table" style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                            <f:if condition="{workosProfile.id}">
+                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">ID</td><td style="padding:0.35rem 0.75rem;">{workosProfile.id}</td></tr>
+                            </f:if>
+                            <f:if condition="{workosProfile.email}">
+                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Email</td><td style="padding:0.35rem 0.75rem;">{workosProfile.email}</td></tr>
+                            </f:if>
+                            <f:if condition="{workosProfile.firstName}">
+                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">First name</td><td style="padding:0.35rem 0.75rem;">{workosProfile.firstName}</td></tr>
+                            </f:if>
+                            <f:if condition="{workosProfile.lastName}">
+                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Last name</td><td style="padding:0.35rem 0.75rem;">{workosProfile.lastName}</td></tr>
+                            </f:if>
+                            <f:if condition="{workosProfile.emailVerified}">
+                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Email verified</td><td style="padding:0.35rem 0.75rem;">{workosProfile.emailVerified}</td></tr>
+                            </f:if>
+                            <f:if condition="{workosProfile.profilePictureUrl}">
+                                <tr>
+                                    <td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Profile picture</td>
+                                    <td style="padding:0.35rem 0.75rem;">
+                                        <img src="{workosProfile.profilePictureUrl}" alt="Profile picture" style="max-width:64px; border-radius:50%;" />
+                                    </td>
+                                </tr>
+                            </f:if>
+                            <f:if condition="{workosProfile.lastSignInAt}">
+                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Last sign-in</td><td style="padding:0.35rem 0.75rem;">{workosProfile.lastSignInAt}</td></tr>
+                            </f:if>
+                            <f:if condition="{workosProfile.createdAt}">
+                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Created</td><td style="padding:0.35rem 0.75rem;">{workosProfile.createdAt}</td></tr>
+                            </f:if>
+                            <f:if condition="{workosProfile.updatedAt}">
+                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Updated</td><td style="padding:0.35rem 0.75rem;">{workosProfile.updatedAt}</td></tr>
+                            </f:if>
+                        </table>
+
+                        <f:if condition="{workosProfile.metadata}">
+                            <h4 style="margin-top:1rem; font-size:0.95rem;">Custom metadata</h4>
+                            <table class="workos-profile-table" style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                                <f:for each="{workosProfile.metadata}" as="value" key="key">
+                                    <tr>
+                                        <td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">{key}</td>
+                                        <td style="padding:0.35rem 0.75rem;">{value}</td>
+                                    </tr>
+                                </f:for>
+                            </table>
+                        </f:if>
+                    </details>
+                </f:if>
             </f:if>
             <f:if condition="!{isLoggedIn}">
                 <p>
