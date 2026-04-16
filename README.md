@@ -1,96 +1,115 @@
 # WorkOS Auth for TYPO3 14
 
-`workos_auth` adds WorkOS AuthKit login flows for both TYPO3 frontend users and TYPO3 backend users.
+`workos_auth` adds [WorkOS](https://workos.com) authentication to both the
+TYPO3 **frontend** and the TYPO3 **backend**. It supports the full WorkOS
+AuthKit feature set: email + password, passwordless magic auth, and
+social sign-in with Google, Microsoft, GitHub, and Apple.
 
-## What it does
+Requirements: TYPO3 `^14.0`, PHP `^8.2`.
 
-- Adds a frontend plugin with a WorkOS sign-in / sign-out button.
-- Adds a TYPO3 backend login provider with a "Continue with WorkOS" button.
-- Creates or links TYPO3 users from WorkOS identities.
-- Provides a backend setup assistant so the extension can be configured without editing PHP arrays by hand.
+---
 
-## PHP and TYPO3 target
+## What you get
 
-- TYPO3: `^14.0`
-- PHP: `^8.2`
+| Area | Feature |
+|---|---|
+| Frontend plugin | Email + password form, magic-auth form, social buttons, self sign-up |
+| Frontend plugin | Shows the current WorkOS profile (including custom metadata) when signed in |
+| Backend login | "Continue with WorkOS" button, email-code login, social sign-in |
+| Backend module | Setup assistant at `System > WorkOS Auth` (no PHP editing required) |
+| Provisioning | Create or link TYPO3 users from WorkOS identities (frontend & backend) |
+| Storage | Identity mapping table `tx_workosauth_identity` (with full WorkOS profile JSON) |
+| Localization | English and German out of the box, XLIFF 1.2 with ICU MessageFormat |
 
-## Configuration decision
+## Quick install
 
-This extension stores its settings in TYPO3 extension configuration under `EXTENSIONS.workos_auth`.
+```bash
+composer require webconsulting/workos-auth
+```
 
-For Composer-based TYPO3 14 projects that means the values are persisted into `config/system/settings.php`, which is the correct place for installation-wide auth settings and secrets like:
+1. Activate the extension in TYPO3.
+2. Open **System > WorkOS Auth** in the backend.
+3. Enter your **API key**, **Client ID**, and a **cookie password** (≥ 32 characters).
+4. Copy all **Redirect URIs** from the setup assistant into the WorkOS Dashboard.
+5. In the WorkOS Dashboard, enable the authentication methods you need (Magic Auth, Email + Password, Social providers).
+6. Add the **WorkOS Login** content element to a frontend page.
 
-- `apiKey`
-- `clientId`
-- `cookiePassword`
-- auto-provisioning rules
-- frontend / backend callback paths
+A detailed walk-through is in [`Documentation/Configuration.md`](Documentation/Configuration.md).
 
-I deliberately did not put this into site config or TypoScript because frontend and backend authentication are installation-wide concerns, and the WorkOS secret values belong in system configuration.
+## Frontend login
 
-## Installation
+Place the **WorkOS Login** plugin on a page and users get a ready-to-go card:
 
-1. Require the extension and install it in TYPO3.
-2. Open `System > WorkOS Auth`.
-3. Enter the WorkOS API key, client ID, and a cookie password with at least 32 characters.
-4. Decide whether frontend and backend users should be linked by email or auto-created.
-5. For frontend auto-creation, set a storage PID.
-6. For backend auto-creation, set at least one backend group UID.
-7. Add the generated callback URLs from the setup assistant to your WorkOS application.
-8. Add the `WorkOS Login` frontend plugin to a page where editors or users should start the frontend login flow.
+- Email + password form
+- "Email me a login code" (magic auth, six-digit code)
+- One-tap social buttons (Google, Microsoft, GitHub, Apple)
+- Link to the native sign-up form
 
-## WorkOS authentication methods
+Signed-in users see their WorkOS profile, including any **custom metadata**
+stored on the WorkOS user record.
 
-The frontend login plugin supports several authentication methods.
-Each method must be **enabled in the WorkOS Dashboard** before it works in TYPO3 — the extension only calls the WorkOS API, it does not control which methods are available.
+Detailed feature guide: [`Documentation/Features.md`](Documentation/Features.md).
 
-### AuthKit (hosted login)
+## Backend login
 
-Enabled by default. Users are redirected to the WorkOS-hosted AuthKit page, which handles sign-in, sign-up, and social providers. No extra setup required beyond adding redirect URIs.
+TYPO3's backend login gains a WorkOS section with:
 
-### Enabling authentication methods
+- "Continue with WorkOS" (full AuthKit experience)
+- Social sign-in buttons
+- An email field that sends a six-digit magic-auth code
+- A visible code-entry step for verification
 
-All authentication methods are managed in the WorkOS Dashboard under **Authentication → Methods**.
+Standard TYPO3 username + password login keeps working in parallel via
+the "Login with username and password" switcher.
 
-![WorkOS Dashboard – Authentication Methods](Documentation/Images/workos-auth-methods.png)
+## WorkOS Dashboard setup
 
-Each method has an **Enable** / **Manage** button. Click it to open the configuration dialog, toggle it on, and click **Save changes**.
+All authentication methods (AuthKit, Magic Auth, Email + Password, Social
+providers) are **enabled in the WorkOS Dashboard**, not in TYPO3.
 
-### Magic Auth (email code)
+See [`Documentation/WorkosDashboard.md`](Documentation/WorkosDashboard.md)
+for step-by-step screenshots of:
 
-Sends a six-digit code to the user's email address. Codes expire after 10 minutes.
+- Adding Redirect URIs
+- Enabling Magic Auth
+- Enabling social providers
 
-1. Open the [WorkOS Dashboard](https://dashboard.workos.com)
-2. Go to **Authentication → Methods**
-3. Find **Magic Auth** and click **Enable** (or **Manage** if already configured)
-4. Toggle **Enable** on and click **Save changes**
+## Dynamic AuthKit parameters
 
-![WorkOS Dashboard – Enable Magic Auth](Documentation/Images/workos-magic-auth-enable.png)
+The frontend login URL accepts optional query parameters that customise
+the AuthKit experience without changing any TYPO3 configuration:
 
-Once enabled, the "Email code" option on the TYPO3 login form will work immediately — no code changes needed.
+| Query param | Value | Effect |
+|---|---|---|
+| `screen` | `sign-in` or `sign-up` | Open AuthKit on the given screen |
+| `provider` | `GoogleOAuth`, `MicrosoftOAuth`, `GitHubOAuth`, `AppleOAuth` | Jump directly to one social provider |
+| `login_hint` | Any email | Pre-fill the email field |
+| `organization` | WorkOS organization id | Scope the login to an organization |
+| `returnTo` | Target URL | Where to land after login |
 
-### Email + Password
+Example — open the hosted sign-up screen pre-filled with an email:
 
-Users sign in with their email and password directly on the TYPO3 site.
+```
+/workos-auth/frontend/login?screen=sign-up&login_hint=jane@example.com
+```
 
-1. Open the [WorkOS Dashboard](https://dashboard.workos.com)
-2. Go to **Authentication → Methods**
-3. Find **Email + Password** and click **Manage**
-4. Configure password rules as needed
+## Configuration location
 
-### Social login (Google, Microsoft, GitHub, Apple)
+Settings live in TYPO3 extension configuration under
+`EXTENSIONS.workos_auth`. In a Composer-based TYPO3 14 project they are
+persisted to `config/system/settings.php`, which is the right place for
+installation-wide auth secrets.
 
-Social providers are configured in the WorkOS Dashboard and appear automatically on the TYPO3 login form.
+The full list of keys is in
+[`Documentation/Configuration.md`](Documentation/Configuration.md#all-configuration-keys).
 
-1. Open the [WorkOS Dashboard](https://dashboard.workos.com)
-2. Go to **Authentication → Providers**
-3. Enable the providers you want (Google, Microsoft, GitHub, Apple)
-4. Configure OAuth credentials for each provider as described in the WorkOS docs
+## Documentation
 
-Social login buttons redirect through AuthKit, so no additional redirect URIs are needed beyond the standard ones.
+- [Configuration](Documentation/Configuration.md) – Setup assistant, every config key
+- [Features](Documentation/Features.md) – Frontend/backend flows, profile display, dynamic parameters
+- [WorkOS Dashboard](Documentation/WorkosDashboard.md) – Redirect URIs and enabling auth methods
+- [Troubleshooting](Documentation/Troubleshooting.md) – Common errors and fixes
 
-## Notes
+## Licence
 
-- Backend auto-creation is intentionally off by default because granting TYPO3 backend access should be explicit.
-- Frontend and backend logins use TYPO3 sessions after the WorkOS callback succeeds.
-- Identity links are stored in `tx_workosauth_identity`.
+GPL-2.0-or-later
