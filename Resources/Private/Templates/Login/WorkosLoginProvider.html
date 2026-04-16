@@ -70,15 +70,16 @@
         font-weight: 500;
         line-height: 1.5;
         background: transparent !important;
-        color: var(--typo3-text-color-base, #1f2937) !important;
-        border: 1px solid #cbd5e1 !important;
+        color: currentColor !important;
+        border: 1px solid color-mix(in srgb, currentColor 35%, transparent) !important;
         border-radius: var(--typo3-btn-border-radius, 6px);
         cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
     }
     button.workos-secondary-btn:hover, button.workos-secondary-btn:focus {
-        background: var(--typo3-btn-hover-bg, #f9fafb) !important;
-        border-color: var(--typo3-btn-hover-border-color, #9ca3af) !important;
-        color: var(--typo3-btn-hover-color, #111827) !important;
+        background: color-mix(in srgb, currentColor 10%, transparent) !important;
+        border-color: color-mix(in srgb, currentColor 55%, transparent) !important;
+        color: currentColor !important;
     }
     .workos-divider {
         display: flex;
