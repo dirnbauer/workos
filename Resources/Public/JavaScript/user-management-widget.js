@@ -27,7 +27,13 @@ const SHARED_DEPS = [
 
 const REACT_URL = `https://esm.sh/react@${REACT_VERSION}`;
 const REACT_DOM_CLIENT_URL = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=${SHARED_DEPS}`;
-const WIDGETS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}?deps=${SHARED_DEPS}`;
+// `bundle-deps` inlines the widgets' own dependencies (Radix primitives,
+// clsx, bowser, etc.) into one module and forces all internal submodules
+// to share the Radix/React Query singletons declared as peer deps. This
+// is what actually fixes the "useThemeContext must be used within a
+// Theme" error that otherwise appears because submodules load their own
+// copy of @radix-ui/themes.
+const WIDGETS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}?bundle-deps&deps=${SHARED_DEPS}`;
 const WIDGETS_CSS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}/styles.css`;
 const RADIX_THEME_CSS_URL = `https://esm.sh/@radix-ui/themes@${RADIX_THEMES_VERSION}/styles.css`;
 
