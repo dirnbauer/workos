@@ -10,6 +10,9 @@ services:
   WebConsulting\WorkosAuth\Controller\Backend\SetupAssistantController:
     public: true
 
+  WebConsulting\WorkosAuth\Controller\Backend\UserManagementController:
+    public: true
+
   WebConsulting\WorkosAuth\Controller\Frontend\LoginController:
     public: true
 
