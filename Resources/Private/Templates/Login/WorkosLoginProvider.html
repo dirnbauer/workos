@@ -26,7 +26,7 @@
                                 </div>
                                 <input type="hidden" name="userId" value="{magicAuthUserId}" />
                                 <button type="submit" formaction="{magicAuthVerifyUrl}" formmethod="post"
-                                        class="btn btn-login btn-block">
+                                        class="btn btn-login btn-block t3js-login-submit">
                                     <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.magicauth.verifyCode" />
                                 </button>
                                 <div style="text-align:center; margin-top:0.75rem;">
@@ -34,33 +34,9 @@
                                 </div>
                             </f:then>
                             <f:else>
-                                <div style="margin-bottom:0.75rem;">
-                                    <label for="workos-be-email" class="hidden"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:common.email" /></label>
-                                    <input id="workos-be-email" type="email" name="email" required autocomplete="email"
-                                           placeholder="{f:translate(key: 'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.emailPlaceholder')}" class="form-control" />
-                                </div>
-                                <div style="margin-bottom:1rem;">
-                                    <label for="workos-be-password" class="hidden"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:common.password" /></label>
-                                    <input id="workos-be-password" type="password" name="password" autocomplete="current-password"
-                                           placeholder="{f:translate(key: 'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.passwordPlaceholder')}" class="form-control" />
-                                </div>
-                                <button type="submit" formaction="{passwordAuthUrl}" formmethod="post"
-                                        class="btn btn-login btn-block">
-                                    <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.signInWithEmail" />
-                                </button>
-
-                                <div style="display:flex; align-items:center; margin:1rem 0; gap:0.75rem;">
-                                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.2);"></div>
-                                    <span style="font-size:0.8rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.05em;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:common.or" /></span>
-                                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.2);"></div>
-                                </div>
-
-                                <div style="margin-bottom:0.75rem;">
-                                    <button type="submit" formaction="{magicAuthSendUrl}" formmethod="post"
-                                            class="btn btn-default btn-block" style="width:100%;">
-                                        <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.emailLoginCode" />
-                                    </button>
-                                </div>
+                                <a href="{loginUrl}" class="btn btn-login btn-block" style="display:block; text-align:center; margin-bottom:0.75rem;">
+                                    <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:loginprovider.label" />
+                                </a>
 
                                 <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;">
                                     <f:for each="{socialProviders}" as="provider">
@@ -78,9 +54,15 @@
                                     <div style="flex:1; height:1px; background:rgba(255,255,255,0.2);"></div>
                                 </div>
 
-                                <a href="{loginUrl}" class="btn btn-default btn-block" style="width:100%;">
-                                    <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:loginprovider.label" />
-                                </a>
+                                <div style="margin-bottom:0.75rem;">
+                                    <input type="email" name="email" autocomplete="email"
+                                           placeholder="{f:translate(key: 'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.emailPlaceholder')}"
+                                           class="form-control" />
+                                </div>
+                                <button type="submit" formaction="{magicAuthSendUrl}" formmethod="post"
+                                        class="btn btn-default btn-block" style="width:100%;">
+                                    <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.emailLoginCode" />
+                                </button>
                             </f:else>
                         </f:if>
                     </f:then>
