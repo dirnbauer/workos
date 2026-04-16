@@ -205,6 +205,27 @@
             <trans-unit id="backend.login.magic.back">
                 <source>Back to sign in</source>
             </trans-unit>
+            <trans-unit id="backend.login.error.title">
+                <source>Sign-in failed</source>
+            </trans-unit>
+            <trans-unit id="backend.login.error.emailLabel">
+                <source>E-Mail</source>
+            </trans-unit>
+            <trans-unit id="backend.login.error.userIdLabel">
+                <source>WorkOS ID</source>
+            </trans-unit>
+            <trans-unit id="backend.login.error.notLinked.title">
+                <source>This WorkOS account is not linked to a TYPO3 user</source>
+            </trans-unit>
+            <trans-unit id="backend.login.error.notLinked.summary">
+                <source>We authenticated %s with WorkOS, but no matching backend user exists in TYPO3 and automatic provisioning is turned off.</source>
+            </trans-unit>
+            <trans-unit id="backend.login.error.notLinked.hint">
+                <source>Ask a TYPO3 administrator to set this e-mail on your backend user, or open the WorkOS setup assistant to enable automatic backend provisioning for trusted domains.</source>
+            </trans-unit>
+            <trans-unit id="backend.login.error.notLinked.action">
+                <source>Open WorkOS setup assistant</source>
+            </trans-unit>
             <trans-unit id="backend.login.verifyEmail.title">
                 <source>Verify your email</source>
             </trans-unit>

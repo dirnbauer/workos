@@ -104,6 +104,78 @@
         color: var(--typo3-text-color-base, #374151);
     }
     .workos-magic-note strong { font-weight: 600; }
+    .workos-alert {
+        display: flex;
+        gap: 0.65rem;
+        align-items: flex-start;
+        padding: 0.75rem 0.85rem;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        margin-bottom: 1rem;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        text-align: left;
+    }
+    .workos-alert--danger {
+        background: color-mix(in srgb, var(--typo3-state-danger-bg, #fef2f2) 85%, transparent);
+        border-color: var(--typo3-state-danger-border-color, rgba(220, 38, 38, 0.25));
+        color: var(--typo3-state-danger-color, #991b1b);
+    }
+    .workos-alert--success {
+        background: color-mix(in srgb, var(--typo3-state-success-bg, #ecfdf5) 85%, transparent);
+        border-color: var(--typo3-state-success-border-color, rgba(5, 150, 105, 0.25));
+        color: var(--typo3-state-success-color, #065f46);
+    }
+    .workos-alert__icon {
+        flex: 0 0 auto;
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: currentColor;
+        color: var(--typo3-state-danger-bg, #fef2f2);
+        font-weight: 700;
+        font-size: 0.8rem;
+        line-height: 1;
+    }
+    .workos-alert--success .workos-alert__icon {
+        color: var(--typo3-state-success-bg, #ecfdf5);
+    }
+    .workos-alert__body { flex: 1 1 auto; min-width: 0; }
+    .workos-alert__title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin: 0 0 0.15rem;
+        color: inherit;
+    }
+    .workos-alert__summary { margin: 0 0 0.35rem; word-break: break-word; }
+    .workos-alert__meta {
+        margin: 0 0 0.35rem;
+        font-size: 0.78rem;
+        opacity: 0.9;
+        font-family: var(--typo3-font-family-monospace, ui-monospace, SFMono-Regular, Menlo, monospace);
+        word-break: break-all;
+    }
+    .workos-alert__meta-label { opacity: 0.7; margin-right: 0.25rem; }
+    .workos-alert__hint {
+        margin: 0.35rem 0 0;
+        font-size: 0.82rem;
+        opacity: 0.95;
+    }
+    .workos-alert__action {
+        display: inline-block;
+        margin-top: 0.5rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: inherit;
+        text-decoration: underline;
+    }
+    .workos-alert__action:hover, .workos-alert__action:focus {
+        text-decoration: none;
+        color: inherit;
+    }
     @media (max-width: 480px) {
         .workos-social-btn { flex: 1 1 0; padding: 0.55rem; }
         .workos-social-btn__label { display: none; }
@@ -120,10 +192,44 @@
                 <f:if condition="{configured}">
                     <f:then>
                         <f:if condition="{authError}">
-                            <div class="alert alert-danger" style="margin-bottom:1rem;">{authError}</div>
+                            <div class="workos-alert workos-alert--danger" role="alert">
+                                <span class="workos-alert__icon" aria-hidden="true">!</span>
+                                <div class="workos-alert__body">
+                                    <f:if condition="{authErrorDetails}">
+                                        <f:then>
+                                            <p class="workos-alert__title">{authErrorDetails.title}</p>
+                                            <p class="workos-alert__summary">{authErrorDetails.summary}</p>
+                                            <f:if condition="{authErrorDetails.email}">
+                                                <p class="workos-alert__meta">
+                                                    <span class="workos-alert__meta-label"><f:translate key="workos_auth.messages:backend.login.error.emailLabel" default="E-Mail" />:</span>{authErrorDetails.email}
+                                                </p>
+                                            </f:if>
+                                            <f:if condition="{authErrorDetails.userId}">
+                                                <p class="workos-alert__meta">
+                                                    <span class="workos-alert__meta-label"><f:translate key="workos_auth.messages:backend.login.error.userIdLabel" default="WorkOS ID" />:</span>{authErrorDetails.userId}
+                                                </p>
+                                            </f:if>
+                                            <f:if condition="{authErrorDetails.hint}">
+                                                <p class="workos-alert__hint">{authErrorDetails.hint}</p>
+                                            </f:if>
+                                            <f:if condition="{authErrorDetails.actionUrl}">
+                                                <a class="workos-alert__action" href="{authErrorDetails.actionUrl}">{authErrorDetails.actionLabel}</a>
+                                            </f:if>
+                                        </f:then>
+                                        <f:else>
+                                            <p class="workos-alert__summary">{authError}</p>
+                                        </f:else>
+                                    </f:if>
+                                </div>
+                            </div>
                         </f:if>
                         <f:if condition="{authNotice}">
-                            <div class="alert alert-success" style="margin-bottom:1rem;">{authNotice}</div>
+                            <div class="workos-alert workos-alert--success" role="status">
+                                <span class="workos-alert__icon" aria-hidden="true">&#10003;</span>
+                                <div class="workos-alert__body">
+                                    <p class="workos-alert__summary">{authNotice}</p>
+                                </div>
+                            </div>
                         </f:if>
 
                         <f:if condition="{emailVerificationState}">

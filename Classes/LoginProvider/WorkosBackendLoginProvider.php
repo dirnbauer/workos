@@ -46,6 +46,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         $queryParams = $request->getQueryParams();
         $authError = (string)($queryParams['workosAuthError'] ?? '');
         $authNotice = (string)($queryParams['workosAuthNotice'] ?? '');
+        $authErrorDetails = $this->buildAuthErrorDetails($authError, $backendBasePath);
 
         $passwordAuthUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/password-auth');
         $magicSendUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-send');
@@ -130,10 +131,51 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             'emailVerificationPendingToken' => $emailVerificationPendingToken,
             'socialProviders' => $socialProviders,
             'authError' => $authError,
+            'authErrorDetails' => $authErrorDetails,
             'authNotice' => $authNotice,
         ]);
 
         return 'Login/WorkosLoginProvider';
+    }
+
+    private function buildAuthErrorDetails(string $rawMessage, string $backendBasePath): ?array
+    {
+        $rawMessage = trim($rawMessage);
+        if ($rawMessage === '') {
+            return null;
+        }
+
+        $setupUrl = PathUtility::joinBaseAndPath($backendBasePath, '/module/workos/setup');
+        $details = [
+            'title' => $this->translate('backend.login.error.title'),
+            'summary' => $rawMessage,
+            'email' => '',
+            'userId' => '',
+            'hint' => '',
+            'actionUrl' => '',
+            'actionLabel' => '',
+            'isProvisioningDisabled' => false,
+        ];
+
+        if (preg_match(
+            '/No backend user matched the WorkOS account \(email "([^"]*)", id "([^"]*)"\) and automatic backend provisioning is disabled\./i',
+            $rawMessage,
+            $matches
+        ) === 1) {
+            $details['title'] = $this->translate('backend.login.error.notLinked.title');
+            $details['summary'] = $this->translate(
+                'backend.login.error.notLinked.summary',
+                [$matches[1]]
+            );
+            $details['email'] = $matches[1];
+            $details['userId'] = $matches[2];
+            $details['hint'] = $this->translate('backend.login.error.notLinked.hint');
+            $details['actionUrl'] = $setupUrl;
+            $details['actionLabel'] = $this->translate('backend.login.error.notLinked.action');
+            $details['isProvisioningDisabled'] = true;
+        }
+
+        return $details;
     }
 
     private function translate(string $key, array $arguments = []): string

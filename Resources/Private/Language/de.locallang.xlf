@@ -268,6 +268,34 @@
                 <source>Back to sign in</source>
                 <target>Zurück zur Anmeldung</target>
             </trans-unit>
+            <trans-unit id="backend.login.error.title">
+                <source>Sign-in failed</source>
+                <target>Anmeldung fehlgeschlagen</target>
+            </trans-unit>
+            <trans-unit id="backend.login.error.emailLabel">
+                <source>E-Mail</source>
+                <target>E-Mail</target>
+            </trans-unit>
+            <trans-unit id="backend.login.error.userIdLabel">
+                <source>WorkOS ID</source>
+                <target>WorkOS-ID</target>
+            </trans-unit>
+            <trans-unit id="backend.login.error.notLinked.title">
+                <source>This WorkOS account is not linked to a TYPO3 user</source>
+                <target>Dieses WorkOS-Konto ist keinem TYPO3-Benutzer zugeordnet</target>
+            </trans-unit>
+            <trans-unit id="backend.login.error.notLinked.summary">
+                <source>We authenticated %s with WorkOS, but no matching backend user exists in TYPO3 and automatic provisioning is turned off.</source>
+                <target>%s wurde bei WorkOS erfolgreich authentifiziert, aber in TYPO3 existiert kein passender Backend-Benutzer und das automatische Anlegen ist deaktiviert.</target>
+            </trans-unit>
+            <trans-unit id="backend.login.error.notLinked.hint">
+                <source>Ask a TYPO3 administrator to set this e-mail on your backend user, or open the WorkOS setup assistant to enable automatic backend provisioning for trusted domains.</source>
+                <target>Lass eine Administratorin oder einen Administrator diese E-Mail-Adresse an deinem Backend-Benutzer eintragen, oder öffne den WorkOS-Einrichtungsassistenten und aktiviere das automatische Anlegen für vertrauenswürdige Domains.</target>
+            </trans-unit>
+            <trans-unit id="backend.login.error.notLinked.action">
+                <source>Open WorkOS setup assistant</source>
+                <target>WorkOS-Einrichtungsassistent öffnen</target>
+            </trans-unit>
             <trans-unit id="backend.login.verifyEmail.title">
                 <source>Verify your email</source>
                 <target>E-Mail-Adresse bestätigen</target>
