@@ -1,26 +1,7 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
 
 <div class="module-body">
-    <f:if condition="{saved}">
-        <f:if condition="{savedWithWarnings}">
-            <f:then>
-                <div class="alert alert-warning">
-                    The WorkOS configuration has been saved, but the setup is not ready yet. Fix the highlighted fields before using WorkOS login.
-                </div>
-            </f:then>
-            <f:else>
-                <div class="alert alert-success">
-                    The WorkOS configuration has been saved to TYPO3 system settings.
-                </div>
-            </f:else>
-        </f:if>
-    </f:if>
-
-    <f:if condition="{errors.general}">
-        <div class="alert alert-danger">
-            {errors.general}
-        </div>
-    </f:if>
+    <f:flashMessages />
 
     <div class="card mb-4">
         <div class="card-header">
@@ -72,7 +53,7 @@
         </div>
     </div>
 
-    <form method="post">
+    <form method="post" action="{saveUri}">
         <input type="hidden" name="csrfToken" value="{csrfToken}">
 
         <div class="card mb-4">

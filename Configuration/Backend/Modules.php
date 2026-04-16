@@ -16,6 +16,10 @@ return [
             '_default' => [
                 'target' => SetupAssistantController::class . '::indexAction',
             ],
+            'save' => [
+                'target' => SetupAssistantController::class . '::saveAction',
+                'methods' => ['POST'],
+            ],
         ],
     ],
 ];
