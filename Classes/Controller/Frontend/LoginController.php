@@ -191,10 +191,10 @@ final class LoginController extends ActionController implements LoggerAwareInter
             return 'Invalid email or password.';
         }
         if (str_contains($lower, 'magic') && (str_contains($lower, 'not enabled') || str_contains($lower, 'disabled'))) {
-            return 'Magic Auth is not enabled. Enable it in the WorkOS Dashboard under Authentication → Magic Auth.';
+            return 'Magic Auth is not enabled. Enable it in the WorkOS Dashboard under Authentication → Methods → Magic Auth.';
         }
         if (str_contains($lower, 'authentication_method_not_allowed') || str_contains($lower, 'method_not_allowed')) {
-            return 'This authentication method is not enabled. Check your WorkOS Dashboard under Authentication.';
+            return 'This authentication method is not enabled. Check your WorkOS Dashboard under Authentication → Methods.';
         }
         if (str_contains($lower, 'code') && (str_contains($lower, 'expired') || str_contains($lower, 'invalid'))) {
             return 'Invalid or expired code. Please try again.';
