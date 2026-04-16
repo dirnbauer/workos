@@ -37,10 +37,10 @@ final class LoginController extends ActionController
             : '';
 
         $authError = null;
-        if (!$isLoggedIn) {
-            $authError = $GLOBALS['TSFE']->fe_user->getSessionData('workos_auth_error');
+        if (!$isLoggedIn && $frontendUser instanceof FrontendUserAuthentication) {
+            $authError = $frontendUser->getSessionData('workos_auth_error');
             if (is_string($authError) && $authError !== '') {
-                $GLOBALS['TSFE']->fe_user->setAndSaveSessionData('workos_auth_error', null);
+                $frontendUser->setAndSaveSessionData('workos_auth_error', null);
             } else {
                 $authError = null;
             }
@@ -109,7 +109,7 @@ final class LoginController extends ActionController
 
         try {
             $magicAuth = $this->workosAuthenticationService->sendMagicAuthCode($email);
-            $GLOBALS['TSFE']->fe_user->setAndSaveSessionData('workos_magic_auth', [
+            $this->getFrontendUser()->setAndSaveSessionData('workos_magic_auth', [
                 'userId' => $magicAuth['userId'],
                 'email' => $email,
                 'returnTo' => $returnTo,
@@ -123,7 +123,7 @@ final class LoginController extends ActionController
 
     public function magicAuthCodeAction(): ResponseInterface
     {
-        $sessionData = $GLOBALS['TSFE']->fe_user->getSessionData('workos_magic_auth');
+        $sessionData = $this->getFrontendUser()->getSessionData('workos_magic_auth');
         if (!is_array($sessionData) || empty($sessionData['email'])) {
             return $this->redirect('show');
         }
@@ -139,7 +139,7 @@ final class LoginController extends ActionController
     public function magicAuthVerifyAction(): ResponseInterface
     {
         $code = trim((string)($this->request->getParsedBody()['code'] ?? ''));
-        $sessionData = $GLOBALS['TSFE']->fe_user->getSessionData('workos_magic_auth');
+        $sessionData = $this->getFrontendUser()->getSessionData('workos_magic_auth');
 
         if (!is_array($sessionData) || empty($sessionData['userId'])) {
             return $this->redirectToShowWithError('Magic auth session expired. Please try again.');
@@ -157,7 +157,7 @@ final class LoginController extends ActionController
             );
             $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
             $returnTo = $sessionData['returnTo'] ?? '/';
-            $GLOBALS['TSFE']->fe_user->setAndSaveSessionData('workos_magic_auth', null);
+            $this->getFrontendUser()->setAndSaveSessionData('workos_magic_auth', null);
             return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo);
         } catch (\Throwable $e) {
             return $this->redirectToShowWithError($this->sanitizeErrorMessage($e->getMessage()));
@@ -166,8 +166,17 @@ final class LoginController extends ActionController
 
     private function redirectToShowWithError(string $message): ResponseInterface
     {
-        $GLOBALS['TSFE']->fe_user->setAndSaveSessionData('workos_auth_error', $message);
+        $this->getFrontendUser()->setAndSaveSessionData('workos_auth_error', $message);
         return $this->redirect('show');
+    }
+
+    private function getFrontendUser(): FrontendUserAuthentication
+    {
+        $frontendUser = $this->request->getAttribute('frontend.user');
+        if (!$frontendUser instanceof FrontendUserAuthentication) {
+            throw new \RuntimeException('No frontend user session available.', 1744277820);
+        }
+        return $frontendUser;
     }
 
     private function sanitizeErrorMessage(string $message): string
