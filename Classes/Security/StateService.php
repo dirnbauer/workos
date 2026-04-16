@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace WebConsulting\WorkosAuth\Security;
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Crypto\HashService;
 
 final class StateService
 {
     private const TTL = 600;
 
+    public function __construct(
+        private readonly HashService $hashService,
+    ) {}
+
     public function issue(array $payload): string
     {
         $payload['issuedAt'] = $payload['issuedAt'] ?? time();
         $encodedPayload = $this->base64UrlEncode((string)json_encode($payload, JSON_THROW_ON_ERROR));
-        $hmac = GeneralUtility::hmac($encodedPayload, self::class);
+        $hmac = $this->hashService->hmac($encodedPayload, self::class);
 
         return $encodedPayload . '.' . $hmac;
     }
@@ -27,7 +31,7 @@ final class StateService
         }
 
         [$encodedPayload, $givenHmac] = $parts;
-        $expectedHmac = GeneralUtility::hmac($encodedPayload, self::class);
+        $expectedHmac = $this->hashService->hmac($encodedPayload, self::class);
         if (!hash_equals($expectedHmac, $givenHmac)) {
             throw new \RuntimeException('The WorkOS state token could not be verified.', 1744277402);
         }
