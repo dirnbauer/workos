@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xliff version="1.0">
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
     <file source-language="en" datatype="plaintext" original="messages" product-name="workos_auth">
         <header/>
         <body>
@@ -44,7 +44,7 @@
                 <source>Signed in</source>
             </trans-unit>
             <trans-unit id="frontend.login.signedInAs">
-                <source>as</source>
+                <source>Signed in as {name}</source>
             </trans-unit>
             <trans-unit id="frontend.login.signOut">
                 <source>Sign out</source>
@@ -144,7 +144,7 @@
                 <source>Check your email</source>
             </trans-unit>
             <trans-unit id="frontend.magicauth.codeSent">
-                <source>We sent a six-digit code to</source>
+                <source>We sent a six-digit code to {email}</source>
             </trans-unit>
             <trans-unit id="frontend.magicauth.verifyCode">
                 <source>Verify code</source>
@@ -374,10 +374,10 @@
                 <source>The WorkOS configuration has been saved to TYPO3 system settings.</source>
             </trans-unit>
             <trans-unit id="flash.configSavedNotReady">
-                <source>The configuration has been saved, but the setup is not ready yet: </source>
+                <source>The configuration has been saved, but the setup is not ready yet: {errors}</source>
             </trans-unit>
             <trans-unit id="flash.configSaveError">
-                <source>Could not save configuration: </source>
+                <source>Could not save configuration: {error}</source>
             </trans-unit>
 
             <!-- Validation (WorkosConfiguration) -->

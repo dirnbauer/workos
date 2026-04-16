@@ -6,7 +6,7 @@
                 <div style="margin-bottom:1.25rem;">
                     <p style="font-size:1.1rem; font-weight:600; margin:0 0 0.5rem;"><f:translate key="workos_auth.messages:frontend.magicauth.checkEmail" /></p>
                     <p style="font-size:0.9rem; color:#6b7280; margin:0;">
-                        <f:translate key="workos_auth.messages:frontend.magicauth.codeSent" /> <strong>{magicAuthEmail}</strong>
+                        <f:translate key="workos_auth.messages:frontend.magicauth.codeSent" arguments="{email: magicAuthEmail}" />
                     </p>
                 </div>
                 <f:form action="magicAuthVerify" method="post">

@@ -39,9 +39,13 @@
                             <img src="{workosProfile.profilePictureUrl}" alt="" style="width:56px; height:56px; border-radius:50%; margin-bottom:0.75rem;" />
                         </f:if>
                         <p style="margin:0; font-size:1.05rem;">
-                            <f:translate key="workos_auth.messages:frontend.login.signedIn" />
                             <f:if condition="{displayName}">
-                                <f:translate key="workos_auth.messages:frontend.login.signedInAs" /> <strong>{displayName}</strong>
+                                <f:then>
+                                    <f:translate key="workos_auth.messages:frontend.login.signedInAs" arguments="{name: displayName}" />
+                                </f:then>
+                                <f:else>
+                                    <f:translate key="workos_auth.messages:frontend.login.signedIn" />
+                                </f:else>
                             </f:if>
                         </p>
                     </div>

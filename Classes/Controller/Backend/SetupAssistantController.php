@@ -111,7 +111,7 @@ final class SetupAssistantController
             $this->cacheManager->flushCachesInGroup('system');
         } catch (\Throwable $e) {
             $this->enqueueFlashMessage(
-                $this->translate('flash.configSaveError') . $e->getMessage(),
+                $this->translate('flash.configSaveError', ['error' => $e->getMessage()]),
                 ContextualFeedbackSeverity::ERROR,
             );
             return new RedirectResponse($this->uriBuilder->buildUriFromRoute('system_workosauth'));
@@ -119,7 +119,7 @@ final class SetupAssistantController
 
         if ($errors !== []) {
             $this->enqueueFlashMessage(
-                $this->translate('flash.configSavedNotReady') . implode(' ', $errors),
+                $this->translate('flash.configSavedNotReady', ['errors' => implode(' ', $errors)]),
                 ContextualFeedbackSeverity::WARNING,
             );
         } else {
@@ -139,10 +139,10 @@ final class SetupAssistantController
             ->addMessage(new FlashMessage($body, $this->translate('setup.flashTitle'), $severity, true));
     }
 
-    private function translate(string $key): string
+    private function translate(string $key, array $arguments = []): string
     {
         $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
-        return $languageService->sL('workos_auth.messages:' . $key) ?: $key;
+        return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
     }
 
     private function generateCookiePassword(): string

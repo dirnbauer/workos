@@ -131,9 +131,9 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
         return new HtmlResponse('<h1>' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1><p>' . $safeMessage . '</p>', $statusCode);
     }
 
-    private function translate(string $key): string
+    private function translate(string $key, array $arguments = []): string
     {
         $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
-        return $languageService->sL('workos_auth.messages:' . $key) ?: $key;
+        return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
     }
 }

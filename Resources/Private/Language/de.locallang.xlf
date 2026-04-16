@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xliff version="1.0">
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
     <file source-language="en" target-language="de" datatype="plaintext" original="messages" product-name="workos_auth">
         <header/>
         <body>
@@ -55,8 +55,8 @@
                 <target>Angemeldet</target>
             </trans-unit>
             <trans-unit id="frontend.login.signedInAs">
-                <source>as</source>
-                <target>als</target>
+                <source>Signed in as {name}</source>
+                <target>Angemeldet als {name}</target>
             </trans-unit>
             <trans-unit id="frontend.login.signOut">
                 <source>Sign out</source>
@@ -187,8 +187,8 @@
                 <target>Prüfen Sie Ihre E-Mail</target>
             </trans-unit>
             <trans-unit id="frontend.magicauth.codeSent">
-                <source>We sent a six-digit code to</source>
-                <target>Wir haben einen sechsstelligen Code gesendet an</target>
+                <source>We sent a six-digit code to {email}</source>
+                <target>Wir haben einen sechsstelligen Code an {email} gesendet</target>
             </trans-unit>
             <trans-unit id="frontend.magicauth.verifyCode">
                 <source>Verify code</source>
@@ -491,12 +491,12 @@
                 <target>Die WorkOS-Konfiguration wurde in den TYPO3-Systemeinstellungen gespeichert.</target>
             </trans-unit>
             <trans-unit id="flash.configSavedNotReady">
-                <source>The configuration has been saved, but the setup is not ready yet: </source>
-                <target>Die Konfiguration wurde gespeichert, aber die Einrichtung ist noch nicht abgeschlossen: </target>
+                <source>The configuration has been saved, but the setup is not ready yet: {errors}</source>
+                <target>Die Konfiguration wurde gespeichert, aber die Einrichtung ist noch nicht abgeschlossen: {errors}</target>
             </trans-unit>
             <trans-unit id="flash.configSaveError">
-                <source>Could not save configuration: </source>
-                <target>Konfiguration konnte nicht gespeichert werden: </target>
+                <source>Could not save configuration: {error}</source>
+                <target>Konfiguration konnte nicht gespeichert werden: {error}</target>
             </trans-unit>
 
             <!-- Validation (WorkosConfiguration) -->

@@ -312,8 +312,8 @@ final class LoginController extends ActionController implements LoggerAwareInter
         return $message;
     }
 
-    private function translate(string $key): string
+    private function translate(string $key, array $arguments = []): string
     {
-        return LocalizationUtility::translate($key, 'WorkosAuth') ?? $key;
+        return LocalizationUtility::translate($key, 'WorkosAuth', $arguments !== [] ? $arguments : null) ?? $key;
     }
 }

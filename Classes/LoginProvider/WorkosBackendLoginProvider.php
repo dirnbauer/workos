@@ -89,9 +89,9 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         return 'Login/WorkosLoginProvider';
     }
 
-    private function translate(string $key): string
+    private function translate(string $key, array $arguments = []): string
     {
         $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
-        return $languageService->sL('workos_auth.messages:' . $key) ?: $key;
+        return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
     }
 }
