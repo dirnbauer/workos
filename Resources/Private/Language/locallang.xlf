@@ -163,6 +163,18 @@
             <trans-unit id="backend.login.socialHint">
                 <source>Or sign in with</source>
             </trans-unit>
+            <trans-unit id="backend.login.email">
+                <source>Email</source>
+            </trans-unit>
+            <trans-unit id="backend.login.password">
+                <source>Password</source>
+            </trans-unit>
+            <trans-unit id="backend.login.signIn">
+                <source>Sign in</source>
+            </trans-unit>
+            <trans-unit id="backend.login.moreOptions">
+                <source>More sign-in options (SSO, magic link, passkey)</source>
+            </trans-unit>
             <trans-unit id="backend.login.emailPlaceholder">
                 <source>Email address</source>
             </trans-unit>

@@ -212,6 +212,22 @@
                 <source>Or sign in with</source>
                 <target>Oder anmelden mit</target>
             </trans-unit>
+            <trans-unit id="backend.login.email">
+                <source>Email</source>
+                <target>E-Mail</target>
+            </trans-unit>
+            <trans-unit id="backend.login.password">
+                <source>Password</source>
+                <target>Passwort</target>
+            </trans-unit>
+            <trans-unit id="backend.login.signIn">
+                <source>Sign in</source>
+                <target>Anmelden</target>
+            </trans-unit>
+            <trans-unit id="backend.login.moreOptions">
+                <source>More sign-in options (SSO, magic link, passkey)</source>
+                <target>Weitere Anmeldeoptionen (SSO, Magic Link, Passkey)</target>
+            </trans-unit>
             <trans-unit id="backend.login.emailPlaceholder">
                 <source>Email address</source>
                 <target>E-Mail-Adresse</target>

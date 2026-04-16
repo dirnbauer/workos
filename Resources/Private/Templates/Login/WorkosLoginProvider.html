@@ -2,10 +2,31 @@
 
 <f:section name="loginFormFields">
     <style>
-    .workos-login-primary {
+    /* When the WorkOS provider is active, hide TYPO3's default submit button;
+       our own "Sign in" button below handles WorkOS authentication. */
+    #t3-login-submit-section { display: none !important; }
+
+    .workos-field { margin-bottom: 0.75rem; }
+    .workos-field label {
         display: block;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        color: var(--typo3-text-color-base, #1f2937);
+    }
+    .workos-primary-btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    .workos-hint {
         text-align: center;
-        margin-bottom: 0.75rem;
+        margin: 0.25rem 0 0.5rem;
+        font-size: 0.8rem;
+        color: var(--typo3-text-color-base, #6b7280);
+        opacity: 0.7;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
     .workos-social-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
     .workos-social-btn {
@@ -33,18 +54,17 @@
     }
     .workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .workos-social-btn__icon svg { display: block; }
-    .workos-login-hint {
-        margin: 0 0 0.25rem;
-        font-size: 0.8rem;
-        color: var(--typo3-text-color-base, #6b7280);
-        opacity: 0.7;
+    .workos-authkit-link {
+        margin-top: 0.75rem;
         text-align: center;
+        font-size: 0.85rem;
     }
     @media (max-width: 480px) {
         .workos-social-btn { flex: 1 1 0; padding: 0.55rem; }
         .workos-social-btn__label { display: none; }
     }
     </style>
+
     <div class="form-group">
         <f:if condition="{enabled}">
             <f:then>
@@ -54,17 +74,41 @@
                             <div class="alert alert-danger" style="margin-bottom:1rem;">{authError}</div>
                         </f:if>
 
-                        <a href="{loginUrl}" class="btn btn-login btn-block workos-login-primary">
-                            <f:translate key="workos_auth.messages:loginprovider.label" />
-                        </a>
+                        <div class="workos-field">
+                            <label for="workos-email"><f:translate key="workos_auth.messages:backend.login.email" /></label>
+                            <input type="email"
+                                   id="workos-email"
+                                   autocomplete="email"
+                                   spellcheck="false"
+                                   autocapitalize="off"
+                                   class="form-control"
+                                   data-workos-field="email" />
+                        </div>
+                        <div class="workos-field">
+                            <label for="workos-password"><f:translate key="workos_auth.messages:backend.login.password" /></label>
+                            <input type="password"
+                                   id="workos-password"
+                                   autocomplete="current-password"
+                                   class="form-control"
+                                   data-workos-field="password" />
+                        </div>
 
-                        <p class="workos-login-hint">
-                            <f:translate key="workos_auth.messages:backend.login.socialHint" />
-                        </p>
+                        <button type="button"
+                                id="workos-password-submit"
+                                class="btn btn-login workos-primary-btn"
+                                data-workos-password-url="{passwordAuthUrl}">
+                            <f:translate key="workos_auth.messages:backend.login.signIn" />
+                        </button>
+
+                        <div class="workos-hint"><f:translate key="workos_auth.messages:backend.login.socialHint" /></div>
                         <div class="workos-social-row">
                             <f:for each="{socialProviders}" as="provider">
                                 <f:render partial="SocialButton" arguments="{provider: provider}" />
                             </f:for>
+                        </div>
+
+                        <div class="workos-authkit-link">
+                            <a href="{loginUrl}"><f:translate key="workos_auth.messages:backend.login.moreOptions" /></a>
                         </div>
                     </f:then>
                     <f:else>

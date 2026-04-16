@@ -203,7 +203,10 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
     {
         $loginUrl = PathUtility::joinBaseAndPath($backendBasePath, '/login');
         return new RedirectResponse(
-            PathUtility::appendQueryParameters($loginUrl, ['workosAuthError' => $message]),
+            PathUtility::appendQueryParameters($loginUrl, [
+                'loginProvider' => '1744276800',
+                'workosAuthError' => $message,
+            ]),
             303
         );
     }

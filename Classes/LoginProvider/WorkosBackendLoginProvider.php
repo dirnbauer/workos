@@ -6,8 +6,10 @@ namespace WebConsulting\WorkosAuth\LoginProvider;
 
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
-use TYPO3\CMS\Core\View\ViewInterface;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\View\ViewInterface;
 use TYPO3\CMS\Fluid\View\FluidViewAdapter;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Service\PathUtility;
@@ -17,6 +19,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
     public function __construct(
         private readonly WorkosConfiguration $configuration,
         private readonly LanguageServiceFactory $languageServiceFactory,
+        private readonly PageRenderer $pageRenderer,
     ) {}
 
     public function modifyView(ServerRequestInterface $request, ViewInterface $view): string
@@ -43,6 +46,8 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         $queryParams = $request->getQueryParams();
         $authError = (string)($queryParams['workosAuthError'] ?? '');
 
+        $passwordAuthUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/password-auth');
+
         $socialProviders = [
             ['key' => 'GoogleOAuth', 'label' => $this->translate('provider.google'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GoogleOAuth'])],
             ['key' => 'MicrosoftOAuth', 'label' => $this->translate('provider.microsoft'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'MicrosoftOAuth'])],
@@ -50,11 +55,18 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             ['key' => 'AppleOAuth', 'label' => $this->translate('provider.apple'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'AppleOAuth'])],
         ];
 
+        if ($this->configuration->isBackendEnabled() && $this->configuration->isBackendReady()) {
+            $this->pageRenderer->getJavaScriptRenderer()->addJavaScriptModuleInstruction(
+                JavaScriptModuleInstruction::create('@webconsulting/workos-auth/workos-login.js')
+            );
+        }
+
         $view->assignMultiple([
             'enabled' => $this->configuration->isBackendEnabled(),
             'configured' => $this->configuration->isBackendReady(),
             'loginUrl' => $loginUrl,
             'setupUrl' => PathUtility::joinBaseAndPath($backendBasePath, '/module/system/workos-auth'),
+            'passwordAuthUrl' => $passwordAuthUrl,
             'socialProviders' => $socialProviders,
             'authError' => $authError,
         ]);
