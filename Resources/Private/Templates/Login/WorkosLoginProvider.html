@@ -5,15 +5,91 @@
         <f:if condition="{enabled}">
             <f:then>
                 <f:if condition="{configured}">
-                    <a href="{loginUrl}" class="btn btn-login btn-default btn-block">
-                        Continue with WorkOS
-                    </a>
-                </f:if>
-                <f:if condition="!{configured}">
-                    <div class="alert alert-warning">
-                        WorkOS backend login is enabled, but not configured.
-                        <a href="{setupUrl}">Open the setup assistant</a>.
-                    </div>
+                    <f:then>
+                        <f:if condition="{authError}">
+                            <div class="alert alert-danger" style="margin-bottom:1rem;">{authError}</div>
+                        </f:if>
+
+                        <f:if condition="{magicAuthState}">
+                            <f:then>
+                                <div style="text-align:center; margin-bottom:1rem;">
+                                    <p style="font-size:1rem; font-weight:600; margin:0 0 0.25rem;">Check your email</p>
+                                    <p style="font-size:0.85rem; color:#6b7280; margin:0;">
+                                        We sent a six-digit code to <strong>{magicAuthEmail}</strong>
+                                    </p>
+                                </div>
+                                <div style="margin-bottom:0.75rem;">
+                                    <input type="text" name="code" required autofocus autocomplete="one-time-code"
+                                           inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000"
+                                           class="form-control"
+                                           style="text-align:center; letter-spacing:0.5em; font-size:1.5rem; font-family:monospace;" />
+                                </div>
+                                <input type="hidden" name="userId" value="{magicAuthUserId}" />
+                                <button type="submit" formaction="{magicAuthVerifyUrl}" formmethod="post"
+                                        class="btn btn-login btn-block">
+                                    Verify code
+                                </button>
+                                <div style="text-align:center; margin-top:0.75rem;">
+                                    <a href="{f:be.uri(route: 'login')}" style="font-size:0.85rem;">Back to sign in</a>
+                                </div>
+                            </f:then>
+                            <f:else>
+                                <div style="margin-bottom:0.75rem;">
+                                    <label for="workos-be-email" class="hidden">Email</label>
+                                    <input id="workos-be-email" type="email" name="email" required autocomplete="email"
+                                           placeholder="Email address" class="form-control" />
+                                </div>
+                                <div style="margin-bottom:1rem;">
+                                    <label for="workos-be-password" class="hidden">Password</label>
+                                    <input id="workos-be-password" type="password" name="password" autocomplete="current-password"
+                                           placeholder="Password" class="form-control" />
+                                </div>
+                                <button type="submit" formaction="{passwordAuthUrl}" formmethod="post"
+                                        class="btn btn-login btn-block">
+                                    Sign in with email
+                                </button>
+
+                                <div style="display:flex; align-items:center; margin:1rem 0; gap:0.75rem;">
+                                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.2);"></div>
+                                    <span style="font-size:0.8rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.05em;">or</span>
+                                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.2);"></div>
+                                </div>
+
+                                <div style="margin-bottom:0.75rem;">
+                                    <button type="submit" formaction="{magicAuthSendUrl}" formmethod="post"
+                                            class="btn btn-default btn-block" style="width:100%;">
+                                        Email a login code
+                                    </button>
+                                </div>
+
+                                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+                                    <f:for each="{socialProviders}" as="provider">
+                                        <a href="{provider.url}"
+                                           class="btn btn-default"
+                                           style="flex:1; min-width:calc(50% - 0.25rem); text-align:center;">
+                                            {provider.label}
+                                        </a>
+                                    </f:for>
+                                </div>
+
+                                <div style="display:flex; align-items:center; margin:0.75rem 0; gap:0.75rem;">
+                                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.2);"></div>
+                                    <span style="font-size:0.8rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.05em;">or</span>
+                                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.2);"></div>
+                                </div>
+
+                                <a href="{loginUrl}" class="btn btn-default btn-block" style="width:100%;">
+                                    Continue with WorkOS
+                                </a>
+                            </f:else>
+                        </f:if>
+                    </f:then>
+                    <f:else>
+                        <div class="alert alert-warning">
+                            WorkOS backend login is enabled, but not configured.
+                            <a href="{setupUrl}">Open the setup assistant</a>.
+                        </div>
+                    </f:else>
                 </f:if>
             </f:then>
             <f:else>

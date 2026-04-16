@@ -34,11 +34,50 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             $templatePaths->setTemplateRootPaths($templateRootPaths);
         }
 
+        $queryParams = $request->getQueryParams();
+
+        $authError = (string)($queryParams['workosAuthError'] ?? '');
+
+        $magicAuthState = null;
+        $magicAuthEmail = '';
+        $magicAuthUserId = '';
+        $stateParam = (string)($queryParams['magicAuthState'] ?? '');
+        if ($stateParam !== '') {
+            try {
+                $decoded = json_decode(base64_decode($stateParam, true) ?: '', true, 4, JSON_THROW_ON_ERROR);
+                if (is_array($decoded) && !empty($decoded['email']) && !empty($decoded['userId'])) {
+                    $magicAuthState = $stateParam;
+                    $magicAuthEmail = (string)$decoded['email'];
+                    $magicAuthUserId = (string)$decoded['userId'];
+                }
+            } catch (\JsonException) {
+            }
+        }
+
+        $passwordAuthUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/password-auth');
+        $magicAuthSendUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-send');
+        $magicAuthVerifyUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-verify');
+
+        $socialProviders = [
+            ['key' => 'GoogleOAuth', 'label' => 'Google', 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GoogleOAuth'])],
+            ['key' => 'MicrosoftOAuth', 'label' => 'Microsoft', 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'MicrosoftOAuth'])],
+            ['key' => 'GitHubOAuth', 'label' => 'GitHub', 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GitHubOAuth'])],
+            ['key' => 'AppleOAuth', 'label' => 'Apple', 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'AppleOAuth'])],
+        ];
+
         $view->assignMultiple([
             'enabled' => $this->configuration->isBackendEnabled(),
             'configured' => $this->configuration->isBackendReady(),
             'loginUrl' => $loginUrl,
             'setupUrl' => PathUtility::joinBaseAndPath($backendBasePath, '/module/system/workos-auth'),
+            'passwordAuthUrl' => $passwordAuthUrl,
+            'magicAuthSendUrl' => $magicAuthSendUrl,
+            'magicAuthVerifyUrl' => $magicAuthVerifyUrl,
+            'socialProviders' => $socialProviders,
+            'authError' => $authError,
+            'magicAuthState' => $magicAuthState,
+            'magicAuthEmail' => $magicAuthEmail,
+            'magicAuthUserId' => $magicAuthUserId,
         ]);
 
         return 'Login/WorkosLoginProvider';
