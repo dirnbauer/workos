@@ -83,16 +83,32 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             $this->configuration->getBackendLoginPath()
         );
 
+        $queryParams = $request->getQueryParams();
         $fallbackReturnTo = PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendSuccessPath());
         $returnTo = PathUtility::sanitizeReturnTo(
             $request,
-            (string)($request->getQueryParams()['returnTo'] ?? ''),
+            (string)($queryParams['returnTo'] ?? ''),
             $fallbackReturnTo
         );
 
+        $allowedProviders = ['GoogleOAuth', 'MicrosoftOAuth', 'GitHubOAuth', 'AppleOAuth'];
+        $provider = in_array($queryParams['provider'] ?? '', $allowedProviders, true)
+            ? (string)$queryParams['provider']
+            : null;
+
+        $loginHint = isset($queryParams['login_hint']) ? trim((string)$queryParams['login_hint']) : null;
+        $organizationId = isset($queryParams['organization']) ? trim((string)$queryParams['organization']) : null;
+
         try {
             return new RedirectResponse(
-                $this->workosAuthenticationService->buildBackendAuthorizationUrl($request, $backendBasePath, $returnTo),
+                $this->workosAuthenticationService->buildBackendAuthorizationUrl(
+                    $request,
+                    $backendBasePath,
+                    $returnTo,
+                    $loginHint !== '' ? $loginHint : null,
+                    $provider,
+                    $organizationId !== '' ? $organizationId : null,
+                ),
                 302
             );
         } catch (\Throwable $exception) {
@@ -117,9 +133,13 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
                 (string)$authenticationResult['returnTo']
             );
         } catch (\Throwable $exception) {
+            $this->logger?->error('WorkOS backend callback error: ' . $exception->getMessage());
             $fallbackLoginPath = PathUtility::joinBaseAndPath($backendBasePath, '/login');
             $response = new RedirectResponse(
-                PathUtility::appendQueryParameters($fallbackLoginPath, ['workosAuthError' => '1']),
+                PathUtility::appendQueryParameters($fallbackLoginPath, [
+                    'loginProvider' => '1744276800',
+                    'workosAuthError' => $this->sanitizeErrorMessage($exception->getMessage()),
+                ]),
                 303
             );
 

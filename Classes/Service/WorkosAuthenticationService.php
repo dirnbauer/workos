@@ -48,6 +48,8 @@ final class WorkosAuthenticationService
         string $backendBasePath,
         string $returnTo,
         ?string $loginHint = null,
+        ?string $provider = null,
+        ?string $organizationId = null,
     ): string {
         return $this->buildAuthorizationUrl(
             callbackUrl: PathUtility::buildAbsoluteUrlFromRequest(
@@ -56,7 +58,9 @@ final class WorkosAuthenticationService
             ),
             context: 'backend',
             returnTo: $returnTo,
+            provider: $provider,
             loginHint: $loginHint,
+            organizationId: $organizationId,
         );
     }
 
