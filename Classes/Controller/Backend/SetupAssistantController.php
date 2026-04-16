@@ -130,7 +130,7 @@ final class SetupAssistantController
     private function enqueueFlashMessage(string $body, ContextualFeedbackSeverity $severity): void
     {
         $this->flashMessageService
-            ->getMessageQueueByIdentifier()
+            ->getMessageQueueByIdentifier('workos-auth-setup')
             ->addMessage(new FlashMessage($body, 'WorkOS Setup', $severity, true));
     }
 
