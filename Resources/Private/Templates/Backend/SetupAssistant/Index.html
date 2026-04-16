@@ -12,14 +12,11 @@
                 Register these callback URLs in the
                 <a href="https://dashboard.workos.com" target="_blank" rel="noopener">WorkOS Dashboard</a>
                 under <strong>Redirects</strong> so WorkOS can redirect back to your site after authentication.
-                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="
-                    var urls = Array.from(this.closest('.card-body').querySelectorAll('[data-callback-url]')).map(function(el){ return el.textContent; });
-                    navigator.clipboard.writeText(urls.join('\n')).then(function(){ alert('Copied ' + urls.length + ' URLs to clipboard.'); });
-                ">Copy all callback URLs</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" data-action-copy-urls>Copy all callback URLs</button>
             </p>
 
             <details>
-                <summary style="cursor:pointer">Show callback URLs</summary>
+                <summary>Show callback URLs</summary>
                 <div class="mt-3">
                     <h5>Backend</h5>
                     <ul>

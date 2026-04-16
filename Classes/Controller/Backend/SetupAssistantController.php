@@ -14,6 +14,7 @@ use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
@@ -30,6 +31,7 @@ final class SetupAssistantController
         private readonly UriBuilder $uriBuilder,
         private readonly FlashMessageService $flashMessageService,
         private readonly CacheManager $cacheManager,
+        private readonly PageRenderer $pageRenderer,
     ) {}
 
     public function indexAction(ServerRequestInterface $request): ResponseInterface
@@ -75,6 +77,7 @@ final class SetupAssistantController
             'cookiePasswordValid' => mb_strlen(trim((string)$formValues['cookiePassword'])) >= 32,
         ]);
         $moduleTemplate->setTitle('WorkOS Setup Assistant');
+        $this->pageRenderer->loadJavaScriptModule('@webconsulting/workos-auth/copy-urls.js');
 
         return $moduleTemplate->renderResponse('Backend/SetupAssistant/Index');
     }
