@@ -1,96 +1,63 @@
 // Handles WorkOS password login on the TYPO3 backend login page.
-// The TYPO3 backend login form attaches its own submit handler that
-// performs an AJAX username/password login and ignores per-button
-// formaction attributes. To bypass that we never submit TYPO3's form:
-// on click (or Enter in our inputs) we build a detached <form> outside
-// of #typo3-login-form and submit that directly to our middleware.
+//
+// Problem: The TYPO3 backend wraps every login provider's fields inside
+// <form id="typo3-login-form">. Any field/button we inject there can
+// inadvertently participate in TYPO3's own username/password login flow.
+//
+// Solution: On init we take our WorkOS region (div.workos-login-root)
+// out of TYPO3's form and wrap it in a dedicated form that POSTs to our
+// /workos-auth/backend/password-auth middleware. From then on the submit
+// path is a native form POST, no JavaScript interference required.
 
-function init() {
-    const submitButton = document.querySelector('#workos-password-submit');
-    const emailInput = document.querySelector('[data-workos-field="email"]');
-    const passwordInput = document.querySelector('[data-workos-field="password"]');
-    const loginForm = document.querySelector('#typo3-login-form');
-
-    if (!submitButton || !emailInput || !passwordInput) {
+function mountWorkosLogin() {
+    const region = document.querySelector('.workos-login-root');
+    if (!region) {
         return;
     }
 
-    function submitWorkosLogin() {
-        const email = (emailInput.value || '').trim();
-        const password = passwordInput.value || '';
-        const action = submitButton.getAttribute('data-workos-password-url') || '';
-
-        if (!email) {
-            emailInput.focus();
-            return;
-        }
-        if (!password) {
-            passwordInput.focus();
-            return;
-        }
-        if (!action) {
-            return;
-        }
-
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = action;
-        form.style.display = 'none';
-
-        const emailField = document.createElement('input');
-        emailField.type = 'hidden';
-        emailField.name = 'email';
-        emailField.value = email;
-        form.appendChild(emailField);
-
-        const passwordField = document.createElement('input');
-        passwordField.type = 'hidden';
-        passwordField.name = 'password';
-        passwordField.value = password;
-        form.appendChild(passwordField);
-
-        document.body.appendChild(form);
-        form.submit();
+    const submitButton = region.querySelector('#workos-password-submit');
+    if (!submitButton) {
+        return;
+    }
+    const action = submitButton.getAttribute('data-workos-password-url') || '';
+    if (!action) {
+        return;
     }
 
-    submitButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        submitWorkosLogin();
-    });
+    const hostForm = region.closest('#typo3-login-form');
 
-    const handleEnter = (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            submitWorkosLogin();
-        }
-    };
+    const newForm = document.createElement('form');
+    newForm.method = 'POST';
+    newForm.action = action;
+    newForm.setAttribute('novalidate', 'novalidate');
+    newForm.className = 'workos-login-form';
 
-    emailInput.addEventListener('keydown', handleEnter);
-    passwordInput.addEventListener('keydown', handleEnter);
+    // Move region's content into the new form, then place the new form
+    // outside (right after) TYPO3's form so it becomes a first-class
+    // sibling in the DOM.
+    newForm.appendChild(region);
+    if (hostForm && hostForm.parentNode) {
+        hostForm.parentNode.insertBefore(newForm, hostForm.nextSibling);
+    } else {
+        document.body.appendChild(newForm);
+    }
 
-    // Safety net: if the TYPO3 login form is ever submitted while focus
-    // is inside our inputs (e.g. TYPO3's JS fires submit programmatically),
-    // redirect the submission through our password-auth endpoint instead.
-    if (loginForm) {
-        loginForm.addEventListener(
-            'submit',
-            (event) => {
-                const active = document.activeElement;
-                if (active === emailInput || active === passwordInput || active === submitButton) {
-                    event.preventDefault();
-                    event.stopImmediatePropagation();
-                    submitWorkosLogin();
-                }
-            },
-            true,
-        );
+    // Normalize the submit button so native form submission is used.
+    submitButton.type = 'submit';
+
+    // Make sure email/password inputs are part of the submission.
+    const emailInput = region.querySelector('#workos-email');
+    const passwordInput = region.querySelector('#workos-password');
+    if (emailInput) {
+        emailInput.name = 'email';
+    }
+    if (passwordInput) {
+        passwordInput.name = 'password';
     }
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
+    document.addEventListener('DOMContentLoaded', mountWorkosLogin, { once: true });
 } else {
-    init();
+    mountWorkosLogin();
 }

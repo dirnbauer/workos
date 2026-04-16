@@ -6,6 +6,8 @@
        our own "Sign in" button below handles WorkOS authentication. */
     #t3-login-submit-section { display: none !important; }
 
+    .workos-login-root { display: block; }
+    .workos-login-form { margin: 0; }
     .workos-field { margin-bottom: 0.75rem; }
     .workos-field label {
         display: block;
@@ -65,7 +67,7 @@
     }
     </style>
 
-    <div class="form-group">
+    <div class="workos-login-root">
         <f:if condition="{enabled}">
             <f:then>
                 <f:if condition="{configured}">
@@ -82,7 +84,7 @@
                                    spellcheck="false"
                                    autocapitalize="off"
                                    class="form-control"
-                                   data-workos-field="email" />
+                                   required="required" />
                         </div>
                         <div class="workos-field">
                             <label for="workos-password"><f:translate key="workos_auth.messages:backend.login.password" /></label>
@@ -90,7 +92,7 @@
                                    id="workos-password"
                                    autocomplete="current-password"
                                    class="form-control"
-                                   data-workos-field="password" />
+                                   required="required" />
                         </div>
 
                         <button type="button"
