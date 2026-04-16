@@ -236,6 +236,6 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
     private function translate(string $key): string
     {
         $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
-        return $languageService->sL('LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:' . $key) ?: $key;
+        return $languageService->sL('workos_auth.messages:' . $key) ?: $key;
     }
 }

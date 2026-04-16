@@ -22,6 +22,6 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
         'provider' => \WebConsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider::class,
         'sorting' => 60,
         'iconIdentifier' => 'workos-auth-logo',
-        'label' => 'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:loginprovider.label',
+        'label' => 'workos_auth.messages:loginprovider.label',
     ];
 })();

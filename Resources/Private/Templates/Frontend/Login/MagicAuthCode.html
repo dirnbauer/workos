@@ -4,9 +4,9 @@
         <f:then>
             <div class="workos-auth-card" style="border:1px solid #e5e7eb; border-radius:12px; padding:1.5rem; background:#fff; text-align:center;">
                 <div style="margin-bottom:1.25rem;">
-                    <p style="font-size:1.1rem; font-weight:600; margin:0 0 0.5rem;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.magicauth.checkEmail" /></p>
+                    <p style="font-size:1.1rem; font-weight:600; margin:0 0 0.5rem;"><f:translate key="workos_auth.messages:frontend.magicauth.checkEmail" /></p>
                     <p style="font-size:0.9rem; color:#6b7280; margin:0;">
-                        <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.magicauth.codeSent" /> <strong>{magicAuthEmail}</strong>
+                        <f:translate key="workos_auth.messages:frontend.magicauth.codeSent" /> <strong>{magicAuthEmail}</strong>
                     </p>
                 </div>
                 <f:form action="magicAuthVerify" method="post">
@@ -14,16 +14,16 @@
                         <input type="text" name="code" required autofocus autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000"
                                style="width:100%; padding:0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:1.5rem; text-align:center; letter-spacing:0.5em; box-sizing:border-box; font-family:monospace;" />
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width:100%; padding:0.6rem; border-radius:8px; font-weight:600; font-size:0.95rem; border:none; cursor:pointer;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.magicauth.verifyCode" /></button>
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding:0.6rem; border-radius:8px; font-weight:600; font-size:0.95rem; border:none; cursor:pointer;"><f:translate key="workos_auth.messages:frontend.magicauth.verifyCode" /></button>
                 </f:form>
                 <p style="margin-top:1rem; font-size:0.85rem; color:#9ca3af;">
-                    <f:link.action action="show" style="color:#4f46e5; text-decoration:none;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.magicauth.backToSignIn" /></f:link.action>
+                    <f:link.action action="show" style="color:#4f46e5; text-decoration:none;"><f:translate key="workos_auth.messages:frontend.magicauth.backToSignIn" /></f:link.action>
                 </p>
             </div>
         </f:then>
         <f:else>
             <div class="alert alert-warning" style="border-radius:12px; padding:1rem;">
-                <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:common.notConfigured" />
+                <f:translate key="workos_auth.messages:common.notConfigured" />
             </div>
         </f:else>
     </f:if>

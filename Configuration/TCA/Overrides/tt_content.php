@@ -9,6 +9,6 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
 ExtensionUtility::registerPlugin(
     'WorkosAuth',
     'Login',
-    'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:plugin.login.title',
+    'workos_auth.messages:plugin.login.title',
     'workos-auth-logo'
 );
