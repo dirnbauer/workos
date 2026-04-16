@@ -12,6 +12,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
@@ -27,6 +28,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         private WorkosAuthenticationService $workosAuthenticationService,
         private UserProvisioningService $userProvisioningService,
         private Typo3SessionService $typo3SessionService,
+        private LanguageServiceFactory $languageServiceFactory,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -64,7 +66,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
     private function handleLogin(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->configuration->isBackendEnabled()) {
-            return $this->errorResponse('Backend WorkOS login is disabled.', 503);
+            return $this->errorResponse($this->translate('error.backendLoginDisabled'), 503);
         }
 
         $backendBasePath = PathUtility::guessBasePathFromMatchedPath(
@@ -127,7 +129,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         );
 
         if ($email === '' || $password === '') {
-            return $this->redirectToLoginWithError($backendBasePath, 'Please enter both email and password.');
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.enterEmailAndPassword'));
         }
 
         try {
@@ -151,7 +153,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         );
 
         if ($email === '') {
-            return $this->redirectToLoginWithError($backendBasePath, 'Please enter your email address.');
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.enterEmail'));
         }
 
         try {
@@ -183,7 +185,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         );
 
         if ($code === '' || $userId === '') {
-            return $this->redirectToLoginWithError($backendBasePath, 'Invalid magic auth session. Please try again.');
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.invalidMagicAuthSession'));
         }
 
         try {
@@ -210,23 +212,30 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
     {
         $lower = strtolower($message);
         if (str_contains($lower, 'password') || str_contains($lower, 'credentials') || str_contains($lower, 'unauthorized')) {
-            return 'Invalid email or password.';
+            return $this->translate('error.invalidEmailOrPassword');
         }
         if (str_contains($lower, 'magic') && (str_contains($lower, 'not enabled') || str_contains($lower, 'disabled'))) {
-            return 'Magic Auth is not enabled. Enable it in the WorkOS Dashboard under Authentication → Methods.';
+            return $this->translate('error.magicAuthDisabled');
         }
         if (str_contains($lower, 'authentication_method_not_allowed') || str_contains($lower, 'method_not_allowed')) {
-            return 'This authentication method is not enabled. Check your WorkOS Dashboard under Authentication → Methods.';
+            return $this->translate('error.methodNotAllowed');
         }
         if (str_contains($lower, 'user_not_found') || str_contains($lower, 'not found')) {
-            return 'No account found for this email.';
+            return $this->translate('error.userNotFound');
         }
         return $message;
     }
 
     private function errorResponse(string $message, int $statusCode): ResponseInterface
     {
+        $title = $this->translate('error.loginError');
         $safeMessage = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        return new HtmlResponse('<h1>WorkOS login error</h1><p>' . $safeMessage . '</p>', $statusCode);
+        return new HtmlResponse('<h1>' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1><p>' . $safeMessage . '</p>', $statusCode);
+    }
+
+    private function translate(string $key): string
+    {
+        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        return $languageService->sL('LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:' . $key) ?: $key;
     }
 }

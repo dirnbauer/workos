@@ -5,25 +5,23 @@
 
     <div class="card mb-4">
         <div class="card-header">
-            <h3 class="card-title">Redirect URLs for WorkOS</h3>
+            <h3 class="card-title"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.redirectUrls.title" /></h3>
         </div>
         <div class="card-body">
             <p class="mb-3">
-                Register these callback URLs in the
-                <a href="https://dashboard.workos.com" target="_blank" rel="noopener">WorkOS Dashboard</a>
-                under <strong>Redirects</strong> so WorkOS can redirect back to your site after authentication.
+                <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.redirectUrls.description" />
             </p>
-            <button type="button" class="btn btn-sm btn-secondary" data-action-copy-urls>Copy all callback URLs</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-action-copy-urls><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.redirectUrls.copyAll" /></button>
 
             <details class="mt-3">
-                <summary>Show callback URLs</summary>
+                <summary><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.redirectUrls.showUrls" /></summary>
                 <div class="mt-3">
-                    <h5>Backend</h5>
+                    <h5><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.redirectUrls.backend" /></h5>
                     <ul>
                         <li><code data-callback-url>{backendUrls.callback}</code></li>
                     </ul>
 
-                    <h5>Frontend</h5>
+                    <h5><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.redirectUrls.frontend" /></h5>
                     <f:if condition="{frontendSites}">
                         <f:then>
                             <f:for each="{frontendSites}" as="site">
@@ -36,15 +34,14 @@
                             </f:for>
                         </f:then>
                         <f:else>
-                            <p class="text-muted mb-0">No frontend sites configured yet.</p>
+                            <p class="text-muted mb-0"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.redirectUrls.noSites" /></p>
                         </f:else>
                     </f:if>
 
                     <hr class="my-4">
-                    <h5>Where to add them in WorkOS</h5>
+                    <h5><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.redirectUrls.whereToAdd" /></h5>
                     <p class="text-muted">
-                        Open your WorkOS Dashboard, go to <strong>Redirects</strong>, and add each callback URL listed above.
-                        Use the <strong>+ Add</strong> button to add one URL at a time, then click <strong>Save changes</strong>.
+                        <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.redirectUrls.instruction" />
                     </p>
                     <img src="{f:uri.resource(path: 'Images/workos-redirect-uris.png', extensionName: 'WorkosAuth')}"
                          alt="WorkOS Dashboard – Redirect URIs configuration"
@@ -59,11 +56,11 @@
 
         <div class="card mb-4">
             <div class="card-header">
-                <h3 class="card-title">WorkOS credentials</h3>
+                <h3 class="card-title"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.credentials.title" /></h3>
             </div>
             <div class="card-body">
                 <div class="form-group mb-3">
-                    <label for="apiKey"><strong>API key</strong></label>
+                    <label for="apiKey"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.credentials.apiKey" /></strong></label>
                     <input id="apiKey" class="form-control" type="text" name="configuration[apiKey]" value="{formValues.apiKey}">
                     <f:if condition="{errors.apiKey}">
                         <div class="text-danger mt-1">{errors.apiKey}</div>
@@ -71,7 +68,7 @@
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="clientId"><strong>Client ID</strong></label>
+                    <label for="clientId"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.credentials.clientId" /></strong></label>
                     <input id="clientId" class="form-control" type="text" name="configuration[clientId]" value="{formValues.clientId}">
                     <f:if condition="{errors.clientId}">
                         <div class="text-danger mt-1">{errors.clientId}</div>
@@ -79,10 +76,10 @@
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="cookiePassword"><strong>Cookie password</strong></label>
+                    <label for="cookiePassword"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.credentials.cookiePassword" /></strong></label>
                     <input id="cookiePassword" class="form-control" type="text" name="configuration[cookiePassword]" value="{formValues.cookiePassword}">
                     <small class="form-text text-muted">
-                        WorkOS requires a strong cookie password with at least 32 characters.
+                        <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.credentials.cookiePasswordHint" />
                     </small>
                     <f:if condition="{errors.cookiePassword}">
                         <div class="text-danger mt-1">{errors.cookiePassword}</div>
@@ -92,7 +89,7 @@
                 <div class="form-check">
                     <input id="generateCookiePassword" class="form-check-input" type="checkbox" name="generateCookiePassword" value="1">
                     <label class="form-check-label" for="generateCookiePassword">
-                        Generate a fresh cookie password on save
+                        <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.credentials.generateCookiePassword" />
                     </label>
                 </div>
             </div>
@@ -100,29 +97,29 @@
 
         <div class="card mb-4">
             <div class="card-header">
-                <h3 class="card-title">Frontend login</h3>
+                <h3 class="card-title"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.title" /></h3>
             </div>
             <div class="card-body">
                 <div class="form-check mb-2">
                     <input type="hidden" name="configuration[frontendEnabled]" value="0">
                     <input id="frontendEnabled" class="form-check-input" type="checkbox" name="configuration[frontendEnabled]" value="1" <f:if condition="{formValues.frontendEnabled}">checked</f:if>>
-                    <label class="form-check-label" for="frontendEnabled">Enable frontend login</label>
+                    <label class="form-check-label" for="frontendEnabled"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.enable" /></label>
                 </div>
 
                 <div class="form-check mb-2">
                     <input type="hidden" name="configuration[frontendAutoCreateUsers]" value="0">
                     <input id="frontendAutoCreateUsers" class="form-check-input" type="checkbox" name="configuration[frontendAutoCreateUsers]" value="1" <f:if condition="{formValues.frontendAutoCreateUsers}">checked</f:if>>
-                    <label class="form-check-label" for="frontendAutoCreateUsers">Auto-create missing frontend users</label>
+                    <label class="form-check-label" for="frontendAutoCreateUsers"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.autoCreate" /></label>
                 </div>
 
                 <div class="form-check mb-3">
                     <input type="hidden" name="configuration[frontendLinkByEmail]" value="0">
                     <input id="frontendLinkByEmail" class="form-check-input" type="checkbox" name="configuration[frontendLinkByEmail]" value="1" <f:if condition="{formValues.frontendLinkByEmail}">checked</f:if>>
-                    <label class="form-check-label" for="frontendLinkByEmail">Link existing frontend users by email</label>
+                    <label class="form-check-label" for="frontendLinkByEmail"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.linkByEmail" /></label>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="frontendStoragePid"><strong>Frontend storage PID</strong></label>
+                    <label for="frontendStoragePid"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.storagePid" /></strong></label>
                     <input id="frontendStoragePid" class="form-control" type="number" min="0" name="configuration[frontendStoragePid]" value="{formValues.frontendStoragePid}">
                     <f:if condition="{errors.frontendStoragePid}">
                         <div class="text-danger mt-1">{errors.frontendStoragePid}</div>
@@ -130,27 +127,27 @@
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="frontendDefaultGroupUids"><strong>Default frontend group UIDs</strong></label>
+                    <label for="frontendDefaultGroupUids"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.defaultGroupUids" /></strong></label>
                     <input id="frontendDefaultGroupUids" class="form-control" type="text" name="configuration[frontendDefaultGroupUids]" value="{formValues.frontendDefaultGroupUids}">
                 </div>
 
                 <div class="row">
                     <div class="col-md-4 form-group mb-3">
-                        <label for="frontendLoginPath"><strong>Login path</strong></label>
+                        <label for="frontendLoginPath"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.loginPath" /></strong></label>
                         <input id="frontendLoginPath" class="form-control" type="text" name="configuration[frontendLoginPath]" value="{formValues.frontendLoginPath}">
                     </div>
                     <div class="col-md-4 form-group mb-3">
-                        <label for="frontendCallbackPath"><strong>Callback path</strong></label>
+                        <label for="frontendCallbackPath"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.callbackPath" /></strong></label>
                         <input id="frontendCallbackPath" class="form-control" type="text" name="configuration[frontendCallbackPath]" value="{formValues.frontendCallbackPath}">
                     </div>
                     <div class="col-md-4 form-group mb-3">
-                        <label for="frontendLogoutPath"><strong>Logout path</strong></label>
+                        <label for="frontendLogoutPath"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.logoutPath" /></strong></label>
                         <input id="frontendLogoutPath" class="form-control" type="text" name="configuration[frontendLogoutPath]" value="{formValues.frontendLogoutPath}">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="frontendSuccessRedirect"><strong>Success redirect</strong></label>
+                    <label for="frontendSuccessRedirect"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.frontend.successRedirect" /></strong></label>
                     <input id="frontendSuccessRedirect" class="form-control" type="text" name="configuration[frontendSuccessRedirect]" value="{formValues.frontendSuccessRedirect}">
                 </div>
             </div>
@@ -158,29 +155,29 @@
 
         <div class="card mb-4">
             <div class="card-header">
-                <h3 class="card-title">Backend login</h3>
+                <h3 class="card-title"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.title" /></h3>
             </div>
             <div class="card-body">
                 <div class="form-check mb-2">
                     <input type="hidden" name="configuration[backendEnabled]" value="0">
                     <input id="backendEnabled" class="form-check-input" type="checkbox" name="configuration[backendEnabled]" value="1" <f:if condition="{formValues.backendEnabled}">checked</f:if>>
-                    <label class="form-check-label" for="backendEnabled">Enable backend login</label>
+                    <label class="form-check-label" for="backendEnabled"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.enable" /></label>
                 </div>
 
                 <div class="form-check mb-2">
                     <input type="hidden" name="configuration[backendAutoCreateUsers]" value="0">
                     <input id="backendAutoCreateUsers" class="form-check-input" type="checkbox" name="configuration[backendAutoCreateUsers]" value="1" <f:if condition="{formValues.backendAutoCreateUsers}">checked</f:if>>
-                    <label class="form-check-label" for="backendAutoCreateUsers">Auto-create missing backend users</label>
+                    <label class="form-check-label" for="backendAutoCreateUsers"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.autoCreate" /></label>
                 </div>
 
                 <div class="form-check mb-3">
                     <input type="hidden" name="configuration[backendLinkByEmail]" value="0">
                     <input id="backendLinkByEmail" class="form-check-input" type="checkbox" name="configuration[backendLinkByEmail]" value="1" <f:if condition="{formValues.backendLinkByEmail}">checked</f:if>>
-                    <label class="form-check-label" for="backendLinkByEmail">Link existing backend users by email</label>
+                    <label class="form-check-label" for="backendLinkByEmail"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.linkByEmail" /></label>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="backendDefaultGroupUids"><strong>Default backend group UIDs</strong></label>
+                    <label for="backendDefaultGroupUids"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.defaultGroupUids" /></strong></label>
                     <input id="backendDefaultGroupUids" class="form-control" type="text" name="configuration[backendDefaultGroupUids]" value="{formValues.backendDefaultGroupUids}">
                     <f:if condition="{errors.backendDefaultGroupUids}">
                         <div class="text-danger mt-1">{errors.backendDefaultGroupUids}</div>
@@ -188,24 +185,24 @@
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="backendAllowedDomains"><strong>Allowed backend email domains</strong></label>
+                    <label for="backendAllowedDomains"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.allowedDomains" /></strong></label>
                     <input id="backendAllowedDomains" class="form-control" type="text" name="configuration[backendAllowedDomains]" value="{formValues.backendAllowedDomains}">
                     <small class="form-text text-muted">
-                        Leave empty to allow every domain when auto-creation is enabled.
+                        <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.allowedDomainsHint" />
                     </small>
                 </div>
 
                 <div class="row">
                     <div class="col-md-4 form-group mb-3">
-                        <label for="backendLoginPath"><strong>Login path</strong></label>
+                        <label for="backendLoginPath"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.loginPath" /></strong></label>
                         <input id="backendLoginPath" class="form-control" type="text" name="configuration[backendLoginPath]" value="{formValues.backendLoginPath}">
                     </div>
                     <div class="col-md-4 form-group mb-3">
-                        <label for="backendCallbackPath"><strong>Callback path</strong></label>
+                        <label for="backendCallbackPath"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.callbackPath" /></strong></label>
                         <input id="backendCallbackPath" class="form-control" type="text" name="configuration[backendCallbackPath]" value="{formValues.backendCallbackPath}">
                     </div>
                     <div class="col-md-4 form-group mb-3">
-                        <label for="backendSuccessPath"><strong>Success path</strong></label>
+                        <label for="backendSuccessPath"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.backend.successPath" /></strong></label>
                         <input id="backendSuccessPath" class="form-control" type="text" name="configuration[backendSuccessPath]" value="{formValues.backendSuccessPath}">
                     </div>
                 </div>
@@ -214,26 +211,26 @@
 
         <div class="card mb-4">
             <div class="card-header">
-                <h3 class="card-title">Optional AuthKit hints</h3>
+                <h3 class="card-title"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.authkit.title" /></h3>
             </div>
             <div class="card-body">
                 <div class="form-group mb-3">
-                    <label for="authkitOrganizationId"><strong>Organization ID</strong></label>
+                    <label for="authkitOrganizationId"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.authkit.organizationId" /></strong></label>
                     <input id="authkitOrganizationId" class="form-control" type="text" name="configuration[authkitOrganizationId]" value="{formValues.authkitOrganizationId}">
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="authkitConnectionId"><strong>Connection ID</strong></label>
+                    <label for="authkitConnectionId"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.authkit.connectionId" /></strong></label>
                     <input id="authkitConnectionId" class="form-control" type="text" name="configuration[authkitConnectionId]" value="{formValues.authkitConnectionId}">
                 </div>
 
                 <div class="form-group">
-                    <label for="authkitDomainHint"><strong>Domain hint</strong></label>
+                    <label for="authkitDomainHint"><strong><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.authkit.domainHint" /></strong></label>
                     <input id="authkitDomainHint" class="form-control" type="text" name="configuration[authkitDomainHint]" value="{formValues.authkitDomainHint}">
                 </div>
             </div>
         </div>
 
-        <button class="btn btn-primary" type="submit">Save configuration</button>
+        <button class="btn btn-primary" type="submit"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:setup.save" /></button>
     </form>
 </div>

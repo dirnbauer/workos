@@ -5,8 +5,8 @@
         <f:then>
             <div class="workos-auth-card" style="border:1px solid #e5e7eb; border-radius:12px; padding:1.5rem; background:#fff;">
                 <div style="text-align:center; margin-bottom:1.25rem;">
-                    <p style="font-size:1.15rem; font-weight:700; margin:0 0 0.25rem;">Create your account</p>
-                    <p style="font-size:0.85rem; color:#6b7280; margin:0;">Sign up to get started</p>
+                    <p style="font-size:1.15rem; font-weight:700; margin:0 0 0.25rem;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.title" /></p>
+                    <p style="font-size:0.85rem; color:#6b7280; margin:0;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.subtitle" /></p>
                 </div>
 
                 <f:if condition="{authError}">
@@ -18,52 +18,52 @@
 
                     <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
                         <div style="flex:1;">
-                            <label for="workos-first-name" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">First name</label>
-                            <input id="workos-first-name" type="text" name="firstName" value="{savedFirstName}" autocomplete="given-name" placeholder="Jane"
+                            <label for="workos-first-name" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.firstName" /></label>
+                            <input id="workos-first-name" type="text" name="firstName" value="{savedFirstName}" autocomplete="given-name" placeholder="{f:translate(key: 'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.firstNamePlaceholder')}"
                                    style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                         </div>
                         <div style="flex:1;">
-                            <label for="workos-last-name" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Last name</label>
-                            <input id="workos-last-name" type="text" name="lastName" value="{savedLastName}" autocomplete="family-name" placeholder="Doe"
+                            <label for="workos-last-name" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.lastName" /></label>
+                            <input id="workos-last-name" type="text" name="lastName" value="{savedLastName}" autocomplete="family-name" placeholder="{f:translate(key: 'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.lastNamePlaceholder')}"
                                    style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                         </div>
                     </div>
 
                     <div style="margin-bottom:0.75rem;">
-                        <label for="workos-signup-email" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Email</label>
-                        <input id="workos-signup-email" type="email" name="email" value="{savedEmail}" required autocomplete="email" placeholder="you@example.com"
+                        <label for="workos-signup-email" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:common.email" /></label>
+                        <input id="workos-signup-email" type="email" name="email" value="{savedEmail}" required autocomplete="email" placeholder="{f:translate(key: 'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.login.emailPlaceholder')}"
                                style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                     </div>
 
                     <div style="margin-bottom:0.25rem;">
-                        <label for="workos-signup-password" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Password</label>
+                        <label for="workos-signup-password" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:common.password" /></label>
                         <input id="workos-signup-password" type="password" name="password" required autocomplete="new-password" minlength="10"
-                               placeholder="Min. 10 characters"
+                               placeholder="{f:translate(key: 'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.passwordPlaceholder')}"
                                style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                     </div>
                     <p style="font-size:0.75rem; color:#9ca3af; margin:0 0 0.75rem; line-height:1.4;">
-                        At least 10 characters. Use a mix of letters, numbers, and symbols.
+                        <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.passwordHint" />
                     </p>
 
                     <div style="margin-bottom:1rem;">
-                        <label for="workos-signup-password-confirm" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Confirm password</label>
+                        <label for="workos-signup-password-confirm" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.confirmPassword" /></label>
                         <input id="workos-signup-password-confirm" type="password" name="passwordConfirm" required autocomplete="new-password" minlength="10"
-                               placeholder="Repeat your password"
+                               placeholder="{f:translate(key: 'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.passwordConfirmPlaceholder')}"
                                style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="width:100%; padding:0.6rem; border-radius:8px; font-weight:600; font-size:0.95rem; border:none; cursor:pointer;">Create account</button>
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding:0.6rem; border-radius:8px; font-weight:600; font-size:0.95rem; border:none; cursor:pointer;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.submit" /></button>
                 </f:form>
 
                 <div style="text-align:center; margin-top:1.25rem; font-size:0.85rem; color:#6b7280;">
-                    Already have an account?
-                    <f:link.action action="show" style="color:#4f46e5; font-weight:600; text-decoration:none;">Sign in</f:link.action>
+                    <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.hasAccount" />
+                    <f:link.action action="show" style="color:#4f46e5; font-weight:600; text-decoration:none;"><f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:frontend.signup.signIn" /></f:link.action>
                 </div>
             </div>
         </f:then>
         <f:else>
             <div class="alert alert-warning" style="border-radius:12px; padding:1rem;">
-                WorkOS frontend login is not configured yet. Ask an administrator to finish the WorkOS setup assistant in the TYPO3 backend.
+                <f:translate key="LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:common.notConfigured" />
             </div>
         </f:else>
     </f:if>

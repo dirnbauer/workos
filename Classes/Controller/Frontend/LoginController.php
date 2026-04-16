@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
+use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Service\IdentityService;
@@ -70,10 +71,10 @@ final class LoginController extends ActionController implements LoggerAwareInter
             'signUpUrl' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['screen' => 'sign-up'])),
             'logoutUrl' => PathUtility::appendQueryParameters($logoutPath, $returnParam),
             'socialProviders' => [
-                ['key' => 'GoogleOAuth', 'label' => 'Google', 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'GoogleOAuth']))],
-                ['key' => 'MicrosoftOAuth', 'label' => 'Microsoft', 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'MicrosoftOAuth']))],
-                ['key' => 'GitHubOAuth', 'label' => 'GitHub', 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'GitHubOAuth']))],
-                ['key' => 'AppleOAuth', 'label' => 'Apple', 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'AppleOAuth']))],
+                ['key' => 'GoogleOAuth', 'label' => $this->translate('provider.google'), 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'GoogleOAuth']))],
+                ['key' => 'MicrosoftOAuth', 'label' => $this->translate('provider.microsoft'), 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'MicrosoftOAuth']))],
+                ['key' => 'GitHubOAuth', 'label' => $this->translate('provider.github'), 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'GitHubOAuth']))],
+                ['key' => 'AppleOAuth', 'label' => $this->translate('provider.apple'), 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'AppleOAuth']))],
             ],
             'workosProfile' => $workosProfile,
             'authError' => $authError,
@@ -131,15 +132,15 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $formData = ['email' => $email, 'firstName' => $firstName, 'lastName' => $lastName];
 
         if ($email === '' || $password === '') {
-            return $this->redirectToSignUpWithError('Please fill in email and password.', $formData);
+            return $this->redirectToSignUpWithError($this->translate('error.fillEmailAndPassword'), $formData);
         }
 
         if ($password !== $passwordConfirm) {
-            return $this->redirectToSignUpWithError('Passwords do not match.', $formData);
+            return $this->redirectToSignUpWithError($this->translate('error.passwordsDoNotMatch'), $formData);
         }
 
         if (mb_strlen($password) < 10) {
-            return $this->redirectToSignUpWithError('Password must be at least 10 characters.', $formData);
+            return $this->redirectToSignUpWithError($this->translate('error.passwordTooShortClient'), $formData);
         }
 
         try {
@@ -160,7 +161,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $returnTo = (string)($this->request->getParsedBody()['returnTo'] ?? '/');
 
         if ($email === '' || $password === '') {
-            return $this->redirectToShowWithError('Please enter both email and password.');
+            return $this->redirectToShowWithError($this->translate('error.enterEmailAndPassword'));
         }
 
         try {
@@ -178,7 +179,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $returnTo = (string)($this->request->getParsedBody()['returnTo'] ?? '/');
 
         if ($email === '') {
-            return $this->redirectToShowWithError('Please enter your email address.');
+            return $this->redirectToShowWithError($this->translate('error.enterEmail'));
         }
 
         try {
@@ -216,7 +217,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $sessionData = $this->getFrontendUser()->getSessionData('workos_magic_auth');
 
         if (!is_array($sessionData) || empty($sessionData['userId'])) {
-            return $this->redirectToShowWithError('Magic auth session expired. Please try again.');
+            return $this->redirectToShowWithError($this->translate('error.magicAuthSessionExpired'));
         }
 
         if ($code === '') {
@@ -269,19 +270,19 @@ final class LoginController extends ActionController implements LoggerAwareInter
 
         $lower = strtolower($message);
         if (str_contains($lower, 'password_too_short') || str_contains($lower, 'too short')) {
-            return 'Password is too short. Use at least 10 characters.';
+            return $this->translate('error.passwordTooShort');
         }
         if (str_contains($lower, 'password_too_weak') || str_contains($lower, 'too weak') || str_contains($lower, 'unguessable')) {
-            return 'Password is too weak. Use a mix of letters, numbers, and symbols to make it harder to guess.';
+            return $this->translate('error.passwordTooWeak');
         }
         if (str_contains($lower, 'pwned') || str_contains($lower, 'breached') || str_contains($lower, 'compromised')) {
-            return 'This password has appeared in a data breach. Please choose a different password.';
+            return $this->translate('error.passwordBreached');
         }
         if (str_contains($lower, 'already exists') || str_contains($lower, 'duplicate') || str_contains($lower, 'user_exists')) {
-            return 'An account with this email already exists. Please sign in instead.';
+            return $this->translate('error.userAlreadyExists');
         }
         if (str_contains($lower, 'password') && str_contains($lower, 'invalid')) {
-            return 'Password does not meet the requirements. Use at least 10 characters with a mix of letters, numbers, and symbols.';
+            return $this->translate('error.passwordInvalid');
         }
 
         return $message;
@@ -293,21 +294,26 @@ final class LoginController extends ActionController implements LoggerAwareInter
 
         $lower = strtolower($message);
         if (str_contains($lower, 'password') || str_contains($lower, 'credentials') || str_contains($lower, 'unauthorized')) {
-            return 'Invalid email or password.';
+            return $this->translate('error.invalidEmailOrPassword');
         }
         if (str_contains($lower, 'magic') && (str_contains($lower, 'not enabled') || str_contains($lower, 'disabled'))) {
-            return 'Magic Auth is not enabled. Enable it in the WorkOS Dashboard under Authentication → Methods → Magic Auth.';
+            return $this->translate('error.magicAuthDisabled');
         }
         if (str_contains($lower, 'authentication_method_not_allowed') || str_contains($lower, 'method_not_allowed')) {
-            return 'This authentication method is not enabled. Check your WorkOS Dashboard under Authentication → Methods.';
+            return $this->translate('error.methodNotAllowed');
         }
         if (str_contains($lower, 'code') && (str_contains($lower, 'expired') || str_contains($lower, 'invalid'))) {
-            return 'Invalid or expired code. Please try again.';
+            return $this->translate('error.invalidOrExpiredCode');
         }
         if (str_contains($lower, 'user_not_found') || str_contains($lower, 'not found')) {
-            return 'No account found for this email. Please sign up first.';
+            return $this->translate('error.userNotFound');
         }
 
         return $message;
+    }
+
+    private function translate(string $key): string
+    {
+        return LocalizationUtility::translate($key, 'WorkosAuth') ?? $key;
     }
 }

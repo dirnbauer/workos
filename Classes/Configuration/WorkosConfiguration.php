@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebConsulting\WorkosAuth\Configuration;
 
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 
 final class WorkosConfiguration
@@ -41,6 +42,7 @@ final class WorkosConfiguration
 
     public function __construct(
         private readonly ExtensionConfiguration $extensionConfiguration,
+        private readonly LanguageServiceFactory $languageServiceFactory,
     ) {}
 
     public function all(): array
@@ -95,32 +97,38 @@ final class WorkosConfiguration
         $authEnabled = (bool)($configuration['frontendEnabled'] ?? false) || (bool)($configuration['backendEnabled'] ?? false);
 
         if ($authEnabled && trim((string)($configuration['apiKey'] ?? '')) === '') {
-            $errors['apiKey'] = 'A WorkOS API key is required when frontend or backend login is enabled.';
+            $errors['apiKey'] = $this->translate('validation.apiKeyRequired');
         }
 
         if ($authEnabled && trim((string)($configuration['clientId'] ?? '')) === '') {
-            $errors['clientId'] = 'A WorkOS client ID is required when frontend or backend login is enabled.';
+            $errors['clientId'] = $this->translate('validation.clientIdRequired');
         }
 
         if ($authEnabled && mb_strlen(trim((string)($configuration['cookiePassword'] ?? ''))) < 32) {
-            $errors['cookiePassword'] = 'The WorkOS cookie password must be at least 32 characters long.';
+            $errors['cookiePassword'] = $this->translate('validation.cookiePasswordTooShort');
         }
 
         if ((bool)($configuration['frontendEnabled'] ?? false)
             && (bool)($configuration['frontendAutoCreateUsers'] ?? false)
             && (int)($configuration['frontendStoragePid'] ?? 0) <= 0
         ) {
-            $errors['frontendStoragePid'] = 'Automatic frontend user creation needs a storage PID greater than 0.';
+            $errors['frontendStoragePid'] = $this->translate('validation.frontendStoragePidRequired');
         }
 
         if ((bool)($configuration['backendEnabled'] ?? false)
             && (bool)($configuration['backendAutoCreateUsers'] ?? false)
             && trim((string)($configuration['backendDefaultGroupUids'] ?? '')) === ''
         ) {
-            $errors['backendDefaultGroupUids'] = 'Automatic backend user creation needs at least one backend group UID.';
+            $errors['backendDefaultGroupUids'] = $this->translate('validation.backendGroupUidsRequired');
         }
 
         return $errors;
+    }
+
+    private function translate(string $key): string
+    {
+        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        return $languageService->sL('LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:' . $key) ?: $key;
     }
 
     public function getApiKey(): string

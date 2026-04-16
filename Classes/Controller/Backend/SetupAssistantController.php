@@ -14,6 +14,7 @@ use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
@@ -32,6 +33,7 @@ final class SetupAssistantController
         private readonly FlashMessageService $flashMessageService,
         private readonly CacheManager $cacheManager,
         private readonly PageRenderer $pageRenderer,
+        private readonly LanguageServiceFactory $languageServiceFactory,
     ) {}
 
     public function indexAction(ServerRequestInterface $request): ResponseInterface
@@ -76,7 +78,7 @@ final class SetupAssistantController
             'hasCredentials' => trim((string)$formValues['apiKey']) !== '' && trim((string)$formValues['clientId']) !== '',
             'cookiePasswordValid' => mb_strlen(trim((string)$formValues['cookiePassword'])) >= 32,
         ]);
-        $moduleTemplate->setTitle('WorkOS Setup Assistant');
+        $moduleTemplate->setTitle($this->translate('setup.title'));
         $this->pageRenderer->loadJavaScriptModule('@webconsulting/workos-auth/copy-urls.js');
 
         return $moduleTemplate->renderResponse('Backend/SetupAssistant/Index');
@@ -96,7 +98,7 @@ final class SetupAssistantController
 
         if (!$this->isValidToken((string)($payload['csrfToken'] ?? ''))) {
             $this->enqueueFlashMessage(
-                'The form token is invalid. Reload the module and try again.',
+                $this->translate('error.csrfTokenInvalid'),
                 ContextualFeedbackSeverity::ERROR,
             );
             return new RedirectResponse($this->uriBuilder->buildUriFromRoute('system_workosauth'));
@@ -109,7 +111,7 @@ final class SetupAssistantController
             $this->cacheManager->flushCachesInGroup('system');
         } catch (\Throwable $e) {
             $this->enqueueFlashMessage(
-                'Could not save configuration: ' . $e->getMessage(),
+                $this->translate('flash.configSaveError') . $e->getMessage(),
                 ContextualFeedbackSeverity::ERROR,
             );
             return new RedirectResponse($this->uriBuilder->buildUriFromRoute('system_workosauth'));
@@ -117,12 +119,12 @@ final class SetupAssistantController
 
         if ($errors !== []) {
             $this->enqueueFlashMessage(
-                'The configuration has been saved, but the setup is not ready yet: ' . implode(' ', $errors),
+                $this->translate('flash.configSavedNotReady') . implode(' ', $errors),
                 ContextualFeedbackSeverity::WARNING,
             );
         } else {
             $this->enqueueFlashMessage(
-                'The WorkOS configuration has been saved to TYPO3 system settings.',
+                $this->translate('flash.configSaved'),
                 ContextualFeedbackSeverity::OK,
             );
         }
@@ -134,7 +136,13 @@ final class SetupAssistantController
     {
         $this->flashMessageService
             ->getMessageQueueByIdentifier('workos-auth-setup')
-            ->addMessage(new FlashMessage($body, 'WorkOS Setup', $severity, true));
+            ->addMessage(new FlashMessage($body, $this->translate('setup.flashTitle'), $severity, true));
+    }
+
+    private function translate(string $key): string
+    {
+        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        return $languageService->sL('LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:' . $key) ?: $key;
     }
 
     private function generateCookiePassword(): string

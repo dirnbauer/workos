@@ -10,6 +10,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Service\PathUtility;
@@ -24,6 +25,7 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
         private WorkosAuthenticationService $workosAuthenticationService,
         private UserProvisioningService $userProvisioningService,
         private Typo3SessionService $typo3SessionService,
+        private LanguageServiceFactory $languageServiceFactory,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -56,7 +58,7 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
     private function handleLogin(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->configuration->isFrontendEnabled()) {
-            return $this->errorResponse('Frontend WorkOS login is disabled.', 503);
+            return $this->errorResponse($this->translate('error.frontendLoginDisabled'), 503);
         }
 
         try {
@@ -124,7 +126,14 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
 
     private function errorResponse(string $message, int $statusCode): ResponseInterface
     {
+        $title = $this->translate('error.loginError');
         $safeMessage = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        return new HtmlResponse('<h1>WorkOS login error</h1><p>' . $safeMessage . '</p>', $statusCode);
+        return new HtmlResponse('<h1>' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1><p>' . $safeMessage . '</p>', $statusCode);
+    }
+
+    private function translate(string $key): string
+    {
+        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        return $languageService->sL('LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:' . $key) ?: $key;
     }
 }
