@@ -193,6 +193,9 @@
             <trans-unit id="backend.login.magic.send">
                 <source>Email me a sign-in code</source>
             </trans-unit>
+            <trans-unit id="backend.login.magic.emailLabel">
+                <source>E-Mail for sign-in code</source>
+            </trans-unit>
             <trans-unit id="backend.login.magic.codeSent">
                 <source>We sent a six-digit code to %s. Enter it below to sign in.</source>
             </trans-unit>

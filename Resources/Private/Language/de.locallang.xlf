@@ -252,6 +252,10 @@
                 <source>Email me a sign-in code</source>
                 <target>Anmeldecode per E-Mail senden</target>
             </trans-unit>
+            <trans-unit id="backend.login.magic.emailLabel">
+                <source>E-Mail for sign-in code</source>
+                <target>E-Mail-Adresse für Anmeldecode</target>
+            </trans-unit>
             <trans-unit id="backend.login.magic.codeSent">
                 <source>We sent a six-digit code to %s. Enter it below to sign in.</source>
                 <target>Wir haben einen sechsstelligen Code an %s gesendet. Bitte gib ihn unten ein, um dich anzumelden.</target>

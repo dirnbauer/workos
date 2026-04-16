@@ -38,11 +38,15 @@ function mountWorkosLogin() {
 
     const emailInput = region.querySelector('#workos-email');
     const passwordInput = region.querySelector('#workos-password');
+    const magicEmailInput = region.querySelector('#workos-magic-email');
     if (emailInput) {
         emailInput.name = 'email';
     }
     if (passwordInput) {
         passwordInput.name = 'password';
+    }
+    if (magicEmailInput) {
+        magicEmailInput.name = 'magic_email';
     }
 
     const passwordBtn = region.querySelector('#workos-password-submit');
@@ -50,11 +54,40 @@ function mountWorkosLogin() {
     const magicVerifyBtn = region.querySelector('#workos-magic-verify-submit');
     const emailVerifyBtn = region.querySelector('#workos-email-verify-submit');
 
+    // Only one field should be submitted under name="email" per request.
+    // Swap the role based on which button the user clicks.
+    const usePasswordEmailField = () => {
+        if (emailInput) {
+            emailInput.disabled = false;
+            emailInput.name = 'email';
+        }
+        if (magicEmailInput) {
+            magicEmailInput.disabled = true;
+            magicEmailInput.removeAttribute('required');
+        }
+    };
+    const useMagicEmailField = () => {
+        if (magicEmailInput) {
+            magicEmailInput.disabled = false;
+            magicEmailInput.name = 'email';
+            magicEmailInput.setAttribute('required', 'required');
+        }
+        if (emailInput) {
+            emailInput.disabled = true;
+            emailInput.removeAttribute('required');
+        }
+        if (passwordInput) {
+            passwordInput.disabled = true;
+            passwordInput.removeAttribute('required');
+        }
+    };
+
     const submitWith = (action, { requirePassword = false, requireCode = false } = {}) => {
         if (!action) {
             return;
         }
         if (requirePassword) {
+            usePasswordEmailField();
             if (emailInput) emailInput.setAttribute('required', 'required');
             if (passwordInput) passwordInput.setAttribute('required', 'required');
         } else if (!requireCode) {
@@ -71,12 +104,14 @@ function mountWorkosLogin() {
     if (passwordBtn) {
         passwordBtn.addEventListener('click', (event) => {
             event.preventDefault();
+            usePasswordEmailField();
             submitWith(passwordUrl, { requirePassword: true });
         });
     }
     if (magicSendBtn) {
         magicSendBtn.addEventListener('click', (event) => {
             event.preventDefault();
+            useMagicEmailField();
             submitWith(magicSendUrl);
         });
     }
