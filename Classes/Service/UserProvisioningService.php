@@ -75,7 +75,11 @@ final class UserProvisioningService
     private function createFrontendUser(User $workosUser): array
     {
         if (!$this->configuration->shouldAutoCreateFrontendUsers()) {
-            throw new \RuntimeException('No frontend user matched the WorkOS account and automatic frontend provisioning is disabled.', 1744277602);
+            throw new \RuntimeException(sprintf(
+                'No frontend user matched the WorkOS account (email "%s", id "%s") and automatic frontend provisioning is disabled.',
+                (string)$workosUser->email,
+                (string)$workosUser->id
+            ), 1744277602);
         }
 
         $storagePid = $this->configuration->getFrontendStoragePid();
@@ -106,7 +110,11 @@ final class UserProvisioningService
     private function createBackendUser(User $workosUser): array
     {
         if (!$this->configuration->shouldAutoCreateBackendUsers()) {
-            throw new \RuntimeException('No backend user matched the WorkOS account and automatic backend provisioning is disabled.', 1744277605);
+            throw new \RuntimeException(sprintf(
+                'No backend user matched the WorkOS account (email "%s", id "%s") and automatic backend provisioning is disabled.',
+                (string)$workosUser->email,
+                (string)$workosUser->id
+            ), 1744277605);
         }
 
         $this->assertBackendDomainAllowed((string)$workosUser->email);
