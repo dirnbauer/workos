@@ -34,6 +34,10 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             $templateRootPaths = $templatePaths->getTemplateRootPaths();
             $templateRootPaths[] = 'EXT:workos_auth/Resources/Private/Templates';
             $templatePaths->setTemplateRootPaths($templateRootPaths);
+
+            $partialRootPaths = $templatePaths->getPartialRootPaths();
+            $partialRootPaths[] = 'EXT:workos_auth/Resources/Private/Partials';
+            $templatePaths->setPartialRootPaths($partialRootPaths);
         }
 
         $queryParams = $request->getQueryParams();

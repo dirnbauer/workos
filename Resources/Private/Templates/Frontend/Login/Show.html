@@ -1,5 +1,34 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
 
+<style>
+.workos-social-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.workos-social-btn {
+    flex: 1;
+    min-width: calc(50% - 0.25rem);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+    background: #fff;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+}
+.workos-social-btn:hover, .workos-social-btn:focus { background: #f9fafb; border-color: #9ca3af; text-decoration: none; color: #111827; }
+.workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.workos-social-btn__icon svg { display: block; }
+@media (max-width: 480px) {
+    .workos-social-row { gap: 0.4rem; }
+    .workos-social-btn { flex: 1; min-width: 0; padding: 0.55rem; }
+    .workos-social-btn__label { display: none; }
+}
+</style>
+
 <div class="workos-auth-plugin" style="max-width:400px;">
     <f:if condition="{configured}">
         <f:then>
@@ -101,9 +130,9 @@
                         </div>
                     </f:form>
 
-                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <div class="workos-social-row">
                         <f:for each="{socialProviders}" as="provider">
-                            <a href="{provider.url}" style="flex:1; min-width:calc(50% - 0.25rem); display:block; text-align:center; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.85rem; color:#374151; text-decoration:none; background:#fff;">{provider.label}</a>
+                            <f:render partial="SocialButton" arguments="{provider: provider}" />
                         </f:for>
                     </div>
 
