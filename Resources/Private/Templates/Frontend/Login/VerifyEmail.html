@@ -1,0 +1,57 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<div class="workos-auth-plugin" style="max-width:400px;">
+    <f:if condition="{configured}">
+        <f:then>
+            <div class="workos-auth-card" style="border:1px solid #e5e7eb; border-radius:12px; padding:1.5rem; background:#fff; text-align:center;">
+                <div style="margin-bottom:1.25rem;">
+                    <p style="font-size:1.1rem; font-weight:600; margin:0 0 0.5rem;"><f:translate key="workos_auth.messages:frontend.verifyEmail.title" /></p>
+                    <p style="font-size:0.9rem; color:#6b7280; margin:0;">
+                        <f:translate key="workos_auth.messages:frontend.verifyEmail.subtitle" arguments="{0: verifyEmail}" />
+                    </p>
+                </div>
+
+                <f:if condition="{authError}">
+                    <div class="alert alert-danger" style="margin-bottom:1rem; border-radius:8px; padding:0.75rem; font-size:0.85rem;">
+                        {authError}
+                    </div>
+                </f:if>
+                <f:if condition="{notice}">
+                    <div class="alert alert-success" style="margin-bottom:1rem; border-radius:8px; padding:0.75rem; font-size:0.85rem;">
+                        {notice}
+                    </div>
+                </f:if>
+
+                <f:form action="verifyEmailSubmit" method="post">
+                    <div style="margin-bottom:1rem;">
+                        <input type="text" name="code" required autofocus autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000"
+                               style="width:100%; padding:0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:1.5rem; text-align:center; letter-spacing:0.5em; box-sizing:border-box; font-family:monospace;" />
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding:0.6rem; border-radius:8px; font-weight:600; font-size:0.95rem; border:none; cursor:pointer;">
+                        <f:translate key="workos_auth.messages:frontend.verifyEmail.submit" />
+                    </button>
+                </f:form>
+
+                <f:if condition="{canResend}">
+                    <p style="margin-top:1rem; font-size:0.85rem; color:#6b7280;">
+                        <f:translate key="workos_auth.messages:frontend.verifyEmail.noCode" />
+                        <f:link.action action="verifyEmailResend" style="color:#4f46e5; text-decoration:none;">
+                            <f:translate key="workos_auth.messages:frontend.verifyEmail.resend" />
+                        </f:link.action>
+                    </p>
+                </f:if>
+
+                <p style="margin-top:0.75rem; font-size:0.85rem; color:#9ca3af;">
+                    <f:link.action action="show" style="color:#4f46e5; text-decoration:none;">
+                        <f:translate key="workos_auth.messages:frontend.magicauth.backToSignIn" />
+                    </f:link.action>
+                </p>
+            </div>
+        </f:then>
+        <f:else>
+            <div class="alert alert-warning" style="border-radius:12px; padding:1rem;">
+                <f:translate key="workos_auth.messages:common.notConfigured" />
+            </div>
+        </f:else>
+    </f:if>
+</div>
+</html>

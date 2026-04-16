@@ -113,7 +113,8 @@
     <div class="workos-login-root"
          data-workos-password-url="{passwordAuthUrl}"
          data-workos-magic-send-url="{magicSendUrl}"
-         data-workos-magic-verify-url="{magicVerifyUrl}">
+         data-workos-magic-verify-url="{magicVerifyUrl}"
+         data-workos-email-verify-url="{emailVerifyUrl}">
         <f:if condition="{enabled}">
             <f:then>
                 <f:if condition="{configured}">
@@ -121,7 +122,51 @@
                         <f:if condition="{authError}">
                             <div class="alert alert-danger" style="margin-bottom:1rem;">{authError}</div>
                         </f:if>
+                        <f:if condition="{authNotice}">
+                            <div class="alert alert-success" style="margin-bottom:1rem;">{authNotice}</div>
+                        </f:if>
 
+                        <f:if condition="{emailVerificationState}">
+                            <f:then>
+                                <div class="workos-magic-note">
+                                    <f:translate key="workos_auth.messages:backend.login.verifyEmail.subtitle"
+                                                 arguments="{0: emailVerificationEmail}" />
+                                </div>
+                                <div class="workos-field">
+                                    <label for="workos-email-code"><f:translate key="workos_auth.messages:backend.login.verifyEmail.codeLabel" /></label>
+                                    <input type="text"
+                                           id="workos-email-code"
+                                           name="code"
+                                           inputmode="numeric"
+                                           autocomplete="one-time-code"
+                                           pattern="[0-9]*"
+                                           spellcheck="false"
+                                           class="form-control"
+                                           required="required" />
+                                </div>
+                                <input type="hidden" id="workos-email-pending-token" name="pendingToken" value="{emailVerificationPendingToken}" />
+                                <input type="hidden" id="workos-email-verify-email" name="email" value="{emailVerificationEmail}" />
+                                <input type="hidden" id="workos-email-verify-userid" name="userId" value="{emailVerificationUserId}" />
+                                <button type="button"
+                                        id="workos-email-verify-submit"
+                                        class="btn btn-login workos-primary-btn">
+                                    <f:translate key="workos_auth.messages:backend.login.verifyEmail.submit" />
+                                </button>
+                                <f:if condition="{emailVerificationUserId}">
+                                    <form action="{emailVerifyResendUrl}" method="post" style="margin:0 0 0.5rem;">
+                                        <input type="hidden" name="pendingToken" value="{emailVerificationPendingToken}" />
+                                        <input type="hidden" name="email" value="{emailVerificationEmail}" />
+                                        <input type="hidden" name="userId" value="{emailVerificationUserId}" />
+                                        <button type="submit" class="btn workos-secondary-btn">
+                                            <f:translate key="workos_auth.messages:backend.login.verifyEmail.resend" />
+                                        </button>
+                                    </form>
+                                </f:if>
+                                <div class="workos-authkit-link">
+                                    <a href="{loginUrl}?loginProvider=1744276800"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a>
+                                </div>
+                            </f:then>
+                            <f:else>
                         <f:if condition="{magicAuthState}">
                             <f:then>
                                 <div class="workos-magic-note">
@@ -193,6 +238,8 @@
                                 <div class="workos-authkit-link">
                                     <a href="{loginUrl}"><f:translate key="workos_auth.messages:backend.login.moreOptions" /></a>
                                 </div>
+                            </f:else>
+                        </f:if>
                             </f:else>
                         </f:if>
                     </f:then>

@@ -152,6 +152,21 @@
             <trans-unit id="frontend.magicauth.backToSignIn">
                 <source>Back to sign in</source>
             </trans-unit>
+            <trans-unit id="frontend.verifyEmail.title">
+                <source>Verify your email</source>
+            </trans-unit>
+            <trans-unit id="frontend.verifyEmail.subtitle">
+                <source>We sent a verification code to %s. Enter it below to finish signing in.</source>
+            </trans-unit>
+            <trans-unit id="frontend.verifyEmail.submit">
+                <source>Verify email and sign in</source>
+            </trans-unit>
+            <trans-unit id="frontend.verifyEmail.noCode">
+                <source>Did not get the email?</source>
+            </trans-unit>
+            <trans-unit id="frontend.verifyEmail.resend">
+                <source>Resend code</source>
+            </trans-unit>
 
             <!-- Backend login provider -->
             <trans-unit id="backend.login.signInWithEmail">
@@ -189,6 +204,21 @@
             </trans-unit>
             <trans-unit id="backend.login.magic.back">
                 <source>Back to sign in</source>
+            </trans-unit>
+            <trans-unit id="backend.login.verifyEmail.title">
+                <source>Verify your email</source>
+            </trans-unit>
+            <trans-unit id="backend.login.verifyEmail.subtitle">
+                <source>We sent a verification code to %s. Enter it below to finish signing in.</source>
+            </trans-unit>
+            <trans-unit id="backend.login.verifyEmail.codeLabel">
+                <source>Verification code</source>
+            </trans-unit>
+            <trans-unit id="backend.login.verifyEmail.submit">
+                <source>Verify email and sign in</source>
+            </trans-unit>
+            <trans-unit id="backend.login.verifyEmail.resend">
+                <source>Resend verification code</source>
             </trans-unit>
             <trans-unit id="backend.login.emailPlaceholder">
                 <source>Email address</source>
@@ -352,6 +382,12 @@
             </trans-unit>
             <trans-unit id="error.magicAuthSessionExpired">
                 <source>Magic auth session expired. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="error.verificationSessionExpired">
+                <source>Your verification session has expired. Please sign in again to receive a new code.</source>
+            </trans-unit>
+            <trans-unit id="message.verificationCodeResent">
+                <source>We sent you a new verification code. Please check your inbox.</source>
             </trans-unit>
             <trans-unit id="error.enterEmailAndPassword">
                 <source>Please enter both email and password.</source>

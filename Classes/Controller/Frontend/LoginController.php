@@ -11,6 +11,7 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
@@ -143,12 +144,14 @@ final class LoginController extends ActionController implements LoggerAwareInter
             return $this->redirectToSignUpWithError($this->translate('error.passwordTooShortClient'), $formData);
         }
 
+        $returnTo = (string)($body['returnTo'] ?? '/');
         try {
-            $workosUser = $this->workosAuthenticationService->createUser($email, $password, $firstName, $lastName);
+            $this->workosAuthenticationService->createUser($email, $password, $firstName, $lastName);
             $result = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
             $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
-            $returnTo = (string)($body['returnTo'] ?? '/');
             return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo);
+        } catch (EmailVerificationRequiredException $e) {
+            return $this->startEmailVerificationFlow($e, $returnTo);
         } catch (\Throwable $e) {
             return $this->redirectToSignUpWithError($this->sanitizeSignUpError($e->getMessage()), $formData);
         }
@@ -168,6 +171,8 @@ final class LoginController extends ActionController implements LoggerAwareInter
             $result = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
             $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
             return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo);
+        } catch (EmailVerificationRequiredException $e) {
+            return $this->startEmailVerificationFlow($e, $returnTo);
         } catch (\Throwable $e) {
             return $this->redirectToShowWithError($this->sanitizeErrorMessage($e->getMessage()));
         }
@@ -237,6 +242,104 @@ final class LoginController extends ActionController implements LoggerAwareInter
         } catch (\Throwable $e) {
             return $this->redirectToShowWithError($this->sanitizeErrorMessage($e->getMessage()));
         }
+    }
+
+    public function verifyEmailAction(): ResponseInterface
+    {
+        $sessionData = $this->getFrontendUser()->getSessionData('workos_email_verification');
+        if (!is_array($sessionData) || empty($sessionData['pendingToken'])) {
+            return $this->redirect('show');
+        }
+
+        $authError = $this->getFrontendUser()->getSessionData('workos_auth_error');
+        if (is_string($authError) && $authError !== '') {
+            $this->getFrontendUser()->setAndSaveSessionData('workos_auth_error', null);
+        } else {
+            $authError = null;
+        }
+
+        $resendNotice = $this->getFrontendUser()->getSessionData('workos_auth_notice');
+        if (is_string($resendNotice) && $resendNotice !== '') {
+            $this->getFrontendUser()->setAndSaveSessionData('workos_auth_notice', null);
+        } else {
+            $resendNotice = null;
+        }
+
+        $this->view->assignMultiple([
+            'configured' => $this->configuration->isFrontendReady(),
+            'verifyEmail' => (string)$sessionData['email'],
+            'canResend' => (string)($sessionData['userId'] ?? '') !== '',
+            'authError' => $authError,
+            'notice' => $resendNotice,
+        ]);
+
+        return $this->htmlResponse();
+    }
+
+    public function verifyEmailSubmitAction(): ResponseInterface
+    {
+        $code = trim((string)($this->request->getParsedBody()['code'] ?? ''));
+        $sessionData = $this->getFrontendUser()->getSessionData('workos_email_verification');
+
+        if (!is_array($sessionData) || empty($sessionData['pendingToken'])) {
+            return $this->redirectToShowWithError($this->translate('error.verificationSessionExpired'));
+        }
+
+        if ($code === '') {
+            return $this->redirect('verifyEmail');
+        }
+
+        try {
+            $result = $this->workosAuthenticationService->authenticateWithEmailVerification(
+                $this->request,
+                $code,
+                (string)$sessionData['pendingToken']
+            );
+            $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
+            $returnTo = (string)($sessionData['returnTo'] ?? '/');
+            $this->getFrontendUser()->setAndSaveSessionData('workos_email_verification', null);
+            return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo);
+        } catch (\Throwable $e) {
+            $this->getFrontendUser()->setAndSaveSessionData(
+                'workos_auth_error',
+                $this->sanitizeErrorMessage($e->getMessage())
+            );
+            return $this->redirect('verifyEmail');
+        }
+    }
+
+    public function verifyEmailResendAction(): ResponseInterface
+    {
+        $sessionData = $this->getFrontendUser()->getSessionData('workos_email_verification');
+        if (!is_array($sessionData) || empty($sessionData['userId'])) {
+            return $this->redirectToShowWithError($this->translate('error.verificationSessionExpired'));
+        }
+
+        try {
+            $this->workosAuthenticationService->resendEmailVerification((string)$sessionData['userId']);
+            $this->getFrontendUser()->setAndSaveSessionData(
+                'workos_auth_notice',
+                $this->translate('message.verificationCodeResent')
+            );
+        } catch (\Throwable $e) {
+            $this->getFrontendUser()->setAndSaveSessionData(
+                'workos_auth_error',
+                $this->sanitizeErrorMessage($e->getMessage())
+            );
+        }
+
+        return $this->redirect('verifyEmail');
+    }
+
+    private function startEmailVerificationFlow(EmailVerificationRequiredException $exception, string $returnTo): ResponseInterface
+    {
+        $this->getFrontendUser()->setAndSaveSessionData('workos_email_verification', [
+            'pendingToken' => $exception->pendingAuthenticationToken,
+            'email' => $exception->email,
+            'userId' => $exception->userId,
+            'returnTo' => $returnTo !== '' ? $returnTo : '/',
+        ]);
+        return $this->redirect('verifyEmail');
     }
 
     private function redirectToShowWithError(string $message): ResponseInterface

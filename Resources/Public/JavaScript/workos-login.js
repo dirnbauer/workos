@@ -19,6 +19,7 @@ function mountWorkosLogin() {
     const passwordUrl = region.getAttribute('data-workos-password-url') || '';
     const magicSendUrl = region.getAttribute('data-workos-magic-send-url') || '';
     const magicVerifyUrl = region.getAttribute('data-workos-magic-verify-url') || '';
+    const emailVerifyUrl = region.getAttribute('data-workos-email-verify-url') || '';
 
     const hostForm = region.closest('#typo3-login-form');
 
@@ -47,6 +48,7 @@ function mountWorkosLogin() {
     const passwordBtn = region.querySelector('#workos-password-submit');
     const magicSendBtn = region.querySelector('#workos-magic-send-submit');
     const magicVerifyBtn = region.querySelector('#workos-magic-verify-submit');
+    const emailVerifyBtn = region.querySelector('#workos-email-verify-submit');
 
     const submitWith = (action, { requirePassword = false, requireCode = false } = {}) => {
         if (!action) {
@@ -84,6 +86,12 @@ function mountWorkosLogin() {
             submitWith(magicVerifyUrl, { requireCode: true });
         });
     }
+    if (emailVerifyBtn) {
+        emailVerifyBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            submitWith(emailVerifyUrl, { requireCode: true });
+        });
+    }
 
     const verifyCodeInput = region.querySelector('#workos-magic-code');
     if (verifyCodeInput && magicVerifyBtn) {
@@ -91,6 +99,15 @@ function mountWorkosLogin() {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 magicVerifyBtn.click();
+            }
+        });
+    }
+    const emailVerifyCodeInput = region.querySelector('#workos-email-code');
+    if (emailVerifyCodeInput && emailVerifyBtn) {
+        emailVerifyCodeInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                emailVerifyBtn.click();
             }
         });
     }

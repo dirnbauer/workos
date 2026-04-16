@@ -45,10 +45,13 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
 
         $queryParams = $request->getQueryParams();
         $authError = (string)($queryParams['workosAuthError'] ?? '');
+        $authNotice = (string)($queryParams['workosAuthNotice'] ?? '');
 
         $passwordAuthUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/password-auth');
         $magicSendUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-send');
         $magicVerifyUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-verify');
+        $emailVerifyUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/email-verify');
+        $emailVerifyResendUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/email-verify-resend');
 
         $magicAuthState = trim((string)($queryParams['magicAuthState'] ?? ''));
         $magicAuthEmail = '';
@@ -68,6 +71,31 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             } else {
                 $magicAuthState = '';
             }
+        }
+
+        $emailVerificationState = trim((string)($queryParams['emailVerificationState'] ?? ''));
+        $emailVerificationEmail = '';
+        $emailVerificationUserId = '';
+        $emailVerificationPendingToken = '';
+        if ($emailVerificationState !== '') {
+            $decoded = base64_decode($emailVerificationState, true);
+            if ($decoded !== false) {
+                try {
+                    $payload = json_decode($decoded, true, 8, JSON_THROW_ON_ERROR);
+                    if (is_array($payload)) {
+                        $emailVerificationEmail = (string)($payload['email'] ?? '');
+                        $emailVerificationUserId = (string)($payload['userId'] ?? '');
+                        $emailVerificationPendingToken = (string)($payload['pendingToken'] ?? '');
+                    }
+                } catch (\JsonException) {
+                    $emailVerificationState = '';
+                }
+            } else {
+                $emailVerificationState = '';
+            }
+        }
+        if ($emailVerificationPendingToken === '') {
+            $emailVerificationState = '';
         }
 
         $socialProviders = [
@@ -94,8 +122,15 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             'magicAuthState' => $magicAuthState,
             'magicAuthEmail' => $magicAuthEmail,
             'magicAuthUserId' => $magicAuthUserId,
+            'emailVerifyUrl' => $emailVerifyUrl,
+            'emailVerifyResendUrl' => $emailVerifyResendUrl,
+            'emailVerificationState' => $emailVerificationState,
+            'emailVerificationEmail' => $emailVerificationEmail,
+            'emailVerificationUserId' => $emailVerificationUserId,
+            'emailVerificationPendingToken' => $emailVerificationPendingToken,
             'socialProviders' => $socialProviders,
             'authError' => $authError,
+            'authNotice' => $authNotice,
         ]);
 
         return 'Login/WorkosLoginProvider';

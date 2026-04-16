@@ -6,6 +6,7 @@ namespace WebConsulting\WorkosAuth\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
 use WebConsulting\WorkosAuth\Security\StateService;
 use WorkOS\Resource\User;
 use WorkOS\UserManagement;
@@ -127,19 +128,115 @@ final class WorkosAuthenticationService
     {
         $this->assertBaseConfiguration();
         $userManagement = $this->workosClientFactory->createUserManagement();
-        $response = $userManagement->authenticateWithPassword(
-            $this->configuration->getClientId(),
-            $email,
-            $password,
-            $this->getRemoteAddress($request),
-            trim($request->getHeaderLine('User-Agent')) ?: null,
-        );
+
+        try {
+            $response = $userManagement->authenticateWithPassword(
+                $this->configuration->getClientId(),
+                $email,
+                $password,
+                $this->getRemoteAddress($request),
+                trim($request->getHeaderLine('User-Agent')) ?: null,
+            );
+        } catch (\Throwable $exception) {
+            $this->rethrowEmailVerificationException($exception, $email);
+            throw $exception;
+        }
 
         if (!$response->user instanceof User) {
             throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277810);
         }
 
         return ['workosUser' => $this->enrichUser($userManagement, $response->user)];
+    }
+
+    /**
+     * Complete an authentication that previously failed with
+     * `email_verification_required` by submitting the code the user
+     * received via email.
+     */
+    public function authenticateWithEmailVerification(ServerRequestInterface $request, string $code, string $pendingAuthenticationToken): array
+    {
+        $this->assertBaseConfiguration();
+        $userManagement = $this->workosClientFactory->createUserManagement();
+        $response = $userManagement->authenticateWithEmailVerification(
+            $this->configuration->getClientId(),
+            $code,
+            $pendingAuthenticationToken,
+            $this->getRemoteAddress($request),
+            trim($request->getHeaderLine('User-Agent')) ?: null,
+        );
+
+        if (!$response->user instanceof User) {
+            throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277812);
+        }
+
+        return ['workosUser' => $this->enrichUser($userManagement, $response->user)];
+    }
+
+    /**
+     * Resend the verification email for a pending WorkOS user.
+     */
+    public function resendEmailVerification(string $userId): void
+    {
+        $this->assertBaseConfiguration();
+        if ($userId === '') {
+            throw new \RuntimeException('A WorkOS user id is required to resend the verification email.', 1744277813);
+        }
+        $userManagement = $this->workosClientFactory->createUserManagement();
+        $userManagement->sendVerificationEmail($userId);
+    }
+
+    /**
+     * Inspect a WorkOS exception and, if it is a
+     * `email_verification_required` error, re-throw a typed
+     * EmailVerificationRequiredException carrying the handshake data.
+     */
+    private function rethrowEmailVerificationException(\Throwable $exception, string $email): void
+    {
+        $message = $exception->getMessage();
+        if (!str_contains($message, 'email_verification_required')
+            && !str_contains($message, 'Email ownership must be verified')
+        ) {
+            return;
+        }
+
+        $pendingToken = '';
+        $verificationId = '';
+        $workosEmail = $email;
+        $userId = '';
+
+        $decoded = json_decode($message, true);
+        if (is_array($decoded)) {
+            $pendingToken = (string)($decoded['pending_authentication_token'] ?? '');
+            $verificationId = (string)($decoded['email_verification_id'] ?? '');
+            $workosEmail = (string)($decoded['email'] ?? $email);
+            $userId = (string)($decoded['user_id'] ?? $decoded['userId'] ?? '');
+        }
+
+        if ($pendingToken === '' && property_exists($exception, 'response') && $exception->response !== null) {
+            try {
+                $body = @json_decode((string)($exception->response->body ?? ''), true);
+                if (is_array($body)) {
+                    $pendingToken = (string)($body['pending_authentication_token'] ?? $pendingToken);
+                    $verificationId = (string)($body['email_verification_id'] ?? $verificationId);
+                    $workosEmail = (string)($body['email'] ?? $workosEmail);
+                    $userId = (string)($body['user_id'] ?? $body['userId'] ?? $userId);
+                }
+            } catch (\Throwable) {
+                // swallow: fall through with whatever we already parsed.
+            }
+        }
+
+        if ($pendingToken === '') {
+            return;
+        }
+
+        throw new EmailVerificationRequiredException(
+            pendingAuthenticationToken: $pendingToken,
+            email: $workosEmail,
+            emailVerificationId: $verificationId,
+            userId: $userId,
+        );
     }
 
     public function sendMagicAuthCode(string $email): array
@@ -159,13 +256,18 @@ final class WorkosAuthenticationService
     {
         $this->assertBaseConfiguration();
         $userManagement = $this->workosClientFactory->createUserManagement();
-        $response = $userManagement->authenticateWithMagicAuth(
-            $this->configuration->getClientId(),
-            $code,
-            $userId,
-            $this->getRemoteAddress($request),
-            trim($request->getHeaderLine('User-Agent')) ?: null,
-        );
+        try {
+            $response = $userManagement->authenticateWithMagicAuth(
+                $this->configuration->getClientId(),
+                $code,
+                $userId,
+                $this->getRemoteAddress($request),
+                trim($request->getHeaderLine('User-Agent')) ?: null,
+            );
+        } catch (\Throwable $exception) {
+            $this->rethrowEmailVerificationException($exception, '');
+            throw $exception;
+        }
 
         if (!$response->user instanceof User) {
             throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277811);
