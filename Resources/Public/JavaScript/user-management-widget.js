@@ -1,29 +1,31 @@
-// Mounts the WorkOS User Management Widget inside the TYPO3 backend
-// module (workos_users). The widget bundle is loaded from WorkOS's CDN
-// and exposes the <wos-widget> web component. We fetch a short-lived
-// widget token from our own TYPO3 route and hand it to the component.
+// Mounts the WorkOS User Management widget inside the TYPO3 backend
+// module (workos_users). The upstream package @workos-inc/widgets is a
+// React 19 library, so we load React, ReactDOM and the widgets bundle
+// from esm.sh (pinned versions, with `deps` so every module shares the
+// same React instance). Our PHP controller hands us a token endpoint
+// from which we fetch a short-lived widget token.
 //
 // Docs: https://workos.com/docs/widgets/user-management
 
-const WIDGET_SRC = 'https://unpkg.com/@workos-inc/widgets@latest/dist/index.js';
+const WIDGETS_VERSION = '1.10.1';
+const REACT_VERSION = '19';
+const REACT_DEPS = `react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
 
-function ensureWidgetBundle() {
-    if (window.__workosWidgetsLoader) {
-        return window.__workosWidgetsLoader;
+const REACT_URL = `https://esm.sh/react@${REACT_VERSION}`;
+const REACT_DOM_CLIENT_URL = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=${REACT_DEPS}`;
+const WIDGETS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}?deps=${REACT_DEPS}`;
+const WIDGETS_CSS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}/styles.css`;
+const RADIX_THEME_CSS_URL = 'https://esm.sh/@radix-ui/themes@3/styles.css';
+
+function ensureStylesheet(href, id) {
+    if (document.getElementById(id)) {
+        return;
     }
-    window.__workosWidgetsLoader = new Promise((resolve, reject) => {
-        if (customElements.get('wos-widget')) {
-            resolve();
-            return;
-        }
-        const script = document.createElement('script');
-        script.type = 'module';
-        script.src = WIDGET_SRC;
-        script.addEventListener('load', () => resolve());
-        script.addEventListener('error', () => reject(new Error('Failed to load WorkOS widgets bundle')));
-        document.head.appendChild(script);
-    });
-    return window.__workosWidgetsLoader;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
 }
 
 async function fetchWidgetToken(tokenUri) {
@@ -61,22 +63,40 @@ async function mount() {
     }
 
     try {
-        const [token] = await Promise.all([
+        ensureStylesheet(RADIX_THEME_CSS_URL, 'workos-radix-theme-css');
+        ensureStylesheet(WIDGETS_CSS_URL, 'workos-widgets-css');
+
+        const [token, React, ReactDOM, WidgetsModule] = await Promise.all([
             fetchWidgetToken(tokenUri),
-            ensureWidgetBundle(),
+            import(REACT_URL),
+            import(REACT_DOM_CLIENT_URL),
+            import(WIDGETS_URL),
         ]);
 
-        const widget = document.createElement('wos-widget');
-        widget.setAttribute('authToken', token);
-        widget.setAttribute('widget', 'users-table-manage');
-        widget.style.display = 'block';
-        widget.style.width = '100%';
-        widget.style.minHeight = '600px';
+        const { WorkOsWidgets, UsersManagement } = WidgetsModule;
+        if (!WorkOsWidgets || !UsersManagement) {
+            throw new Error('Unexpected WorkOS widgets bundle.');
+        }
 
+        const container = document.createElement('div');
+        container.style.display = 'block';
+        container.style.width = '100%';
+        container.style.minHeight = '600px';
         mountEl.innerHTML = '';
-        mountEl.appendChild(widget);
+        mountEl.appendChild(container);
+
+        const { createElement } = React;
+        const root = ReactDOM.createRoot(container);
+        root.render(
+            createElement(
+                WorkOsWidgets,
+                null,
+                createElement(UsersManagement, { authToken: token })
+            )
+        );
     } catch (error) {
-        renderError(mountEl, error && error.message ? error.message : 'Unable to load the WorkOS widget.');
+        const message = error && error.message ? error.message : 'Unable to load the WorkOS widget.';
+        renderError(mountEl, message);
     }
 }
 
