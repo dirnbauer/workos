@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebConsulting\WorkosAuth\Controller\Frontend;
 
 use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
@@ -14,8 +16,9 @@ use WebConsulting\WorkosAuth\Service\Typo3SessionService;
 use WebConsulting\WorkosAuth\Service\UserProvisioningService;
 use WebConsulting\WorkosAuth\Service\WorkosAuthenticationService;
 
-final class LoginController extends ActionController
+final class LoginController extends ActionController implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
     public function __construct(
         private readonly WorkosConfiguration $configuration,
         private readonly IdentityService $identityService,
@@ -181,12 +184,22 @@ final class LoginController extends ActionController
 
     private function sanitizeErrorMessage(string $message): string
     {
-        if (str_contains($message, 'password') || str_contains($message, 'credentials') || str_contains($message, 'unauthorized')) {
+        $this->logger?->error('WorkOS auth error: ' . $message);
+
+        $lower = strtolower($message);
+        if (str_contains($lower, 'password') || str_contains($lower, 'credentials') || str_contains($lower, 'unauthorized')) {
             return 'Invalid email or password.';
         }
-        if (str_contains($message, 'code')) {
+        if (str_contains($lower, 'magic') && str_contains($lower, 'not enabled')) {
+            return 'Magic Auth is not enabled. Enable it in the WorkOS Dashboard under Authentication > Magic Auth.';
+        }
+        if (str_contains($lower, 'code') && (str_contains($lower, 'expired') || str_contains($lower, 'invalid'))) {
             return 'Invalid or expired code. Please try again.';
         }
-        return 'Authentication failed. Please try again.';
+        if (str_contains($lower, 'user_not_found') || str_contains($lower, 'not found')) {
+            return 'No account found for this email. Please sign up first.';
+        }
+
+        return $message;
     }
 }
