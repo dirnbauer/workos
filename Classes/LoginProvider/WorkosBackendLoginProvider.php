@@ -115,7 +115,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             'enabled' => $this->configuration->isBackendEnabled(),
             'configured' => $this->configuration->isBackendReady(),
             'loginUrl' => $loginUrl,
-            'setupUrl' => PathUtility::joinBaseAndPath($backendBasePath, '/module/system/workos-auth'),
+            'setupUrl' => PathUtility::joinBaseAndPath($backendBasePath, '/module/workos/setup'),
             'passwordAuthUrl' => $passwordAuthUrl,
             'magicSendUrl' => $magicSendUrl,
             'magicVerifyUrl' => $magicVerifyUrl,

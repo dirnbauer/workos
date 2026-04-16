@@ -1,0 +1,42 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<div class="module-body">
+    <h1 class="mb-3"><f:translate key="workos_auth.messages:module.users.title" /></h1>
+    <p class="text-muted">
+        <f:translate key="workos_auth.messages:module.users.description" />
+    </p>
+
+    <f:if condition="{status.canLoadWidget}">
+        <f:then>
+            <div class="card">
+                <div class="card-body p-0">
+                    <div data-workos-user-management-mount
+                         data-token-uri="{tokenUri}"
+                         style="min-height:600px;">
+                        <div class="p-4 text-muted">
+                            <f:translate key="workos_auth.messages:module.users.loading" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="text-muted mt-3 small">
+                <f:translate key="workos_auth.messages:module.users.footerNote" />
+            </p>
+        </f:then>
+        <f:else>
+            <div class="callout callout-warning">
+                <div class="callout-body">
+                    <p class="mb-2"><strong>{status.message}</strong></p>
+                    <f:if condition="{configured}">
+                        <f:else>
+                            <a href="{setupUri}" class="btn btn-primary btn-sm">
+                                <f:translate key="workos_auth.messages:module.users.cta.openSetup" />
+                            </a>
+                        </f:else>
+                    </f:if>
+                </div>
+            </div>
+        </f:else>
+    </f:if>
+</div>
+</html>

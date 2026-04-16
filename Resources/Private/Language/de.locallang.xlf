@@ -309,6 +309,52 @@
                 <target>Die WorkOS-Backend-Anmeldung ist derzeit deaktiviert. Konfigurieren Sie sie im Einrichtungsassistenten, wenn Sie sie hier verwenden möchten.</target>
             </trans-unit>
 
+            <!-- Backend module: User Management Widget -->
+            <trans-unit id="module.users.title">
+                <source>WorkOS User Management</source>
+                <target>WorkOS-Benutzerverwaltung</target>
+            </trans-unit>
+            <trans-unit id="module.users.description">
+                <source>Invite teammates, manage roles and remove users of your WorkOS organization. This view embeds the official WorkOS User Management Widget.</source>
+                <target>Laden Sie Teammitglieder ein, verwalten Sie Rollen und entfernen Sie Benutzer Ihrer WorkOS-Organisation. Diese Ansicht bindet das offizielle WorkOS User Management Widget ein.</target>
+            </trans-unit>
+            <trans-unit id="module.users.loading">
+                <source>Loading the WorkOS User Management Widget…</source>
+                <target>WorkOS User Management Widget wird geladen …</target>
+            </trans-unit>
+            <trans-unit id="module.users.footerNote">
+                <source>Changes made here are applied immediately in WorkOS and propagate to all connected applications.</source>
+                <target>Änderungen werden sofort in WorkOS übernommen und an alle verbundenen Anwendungen weitergegeben.</target>
+            </trans-unit>
+            <trans-unit id="module.users.cta.openSetup">
+                <source>Open Setup Assistant</source>
+                <target>Setup-Assistent öffnen</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.notConfigured">
+                <source>WorkOS is not configured yet. Enter your API credentials in the Setup Assistant first.</source>
+                <target>WorkOS ist noch nicht konfiguriert. Hinterlegen Sie zuerst Ihre API-Zugangsdaten im Setup-Assistenten.</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.noSession">
+                <source>No backend user session could be detected. Please log in again.</source>
+                <target>Es konnte keine Backend-Benutzersitzung ermittelt werden. Bitte melden Sie sich erneut an.</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.noWorkosIdentity">
+                <source>Your backend user is not linked to a WorkOS account. Sign in once via the WorkOS login tab to link it, then return to this module.</source>
+                <target>Ihr Backend-Benutzer ist nicht mit einem WorkOS-Konto verknüpft. Melden Sie sich einmal über den WorkOS-Anmeldetab an und kehren Sie dann zu diesem Modul zurück.</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.noOrganization">
+                <source>Your WorkOS user is not a member of any organization. Assign yourself to an organization in the WorkOS dashboard or set a default organization in the Setup Assistant.</source>
+                <target>Ihr WorkOS-Benutzer gehört keiner Organisation an. Ordnen Sie sich im WorkOS-Dashboard einer Organisation zu oder hinterlegen Sie eine Standard-Organisation im Setup-Assistenten.</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.tokenFailed">
+                <source>WorkOS could not issue a widget token. Verify your API key has the "widgets:users-table:manage" scope.</source>
+                <target>WorkOS konnte kein Widget-Token ausstellen. Prüfen Sie, ob Ihr API-Schlüssel über den Scope „widgets:users-table:manage“ verfügt.</target>
+            </trans-unit>
+            <trans-unit id="module.users.error.generic">
+                <source>The WorkOS widget is currently unavailable.</source>
+                <target>Das WorkOS-Widget ist derzeit nicht verfügbar.</target>
+            </trans-unit>
+
             <!-- Backend setup assistant -->
             <trans-unit id="setup.title">
                 <source>WorkOS Setup Assistant</source>

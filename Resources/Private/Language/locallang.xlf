@@ -236,6 +236,41 @@
                 <source>WorkOS backend login is currently disabled. Configure it in the setup assistant if you want to use it here.</source>
             </trans-unit>
 
+            <!-- Backend module: User Management Widget -->
+            <trans-unit id="module.users.title">
+                <source>WorkOS User Management</source>
+            </trans-unit>
+            <trans-unit id="module.users.description">
+                <source>Invite teammates, manage roles and remove users of your WorkOS organization. This view embeds the official WorkOS User Management Widget.</source>
+            </trans-unit>
+            <trans-unit id="module.users.loading">
+                <source>Loading the WorkOS User Management Widget…</source>
+            </trans-unit>
+            <trans-unit id="module.users.footerNote">
+                <source>Changes made here are applied immediately in WorkOS and propagate to all connected applications.</source>
+            </trans-unit>
+            <trans-unit id="module.users.cta.openSetup">
+                <source>Open Setup Assistant</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.notConfigured">
+                <source>WorkOS is not configured yet. Enter your API credentials in the Setup Assistant first.</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.noSession">
+                <source>No backend user session could be detected. Please log in again.</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.noWorkosIdentity">
+                <source>Your backend user is not linked to a WorkOS account. Sign in once via the WorkOS login tab to link it, then return to this module.</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.noOrganization">
+                <source>Your WorkOS user is not a member of any organization. Assign yourself to an organization in the WorkOS dashboard or set a default organization in the Setup Assistant.</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.tokenFailed">
+                <source>WorkOS could not issue a widget token. Verify your API key has the "widgets:users-table:manage" scope.</source>
+            </trans-unit>
+            <trans-unit id="module.users.error.generic">
+                <source>The WorkOS widget is currently unavailable.</source>
+            </trans-unit>
+
             <!-- Backend setup assistant -->
             <trans-unit id="setup.title">
                 <source>WorkOS Setup Assistant</source>

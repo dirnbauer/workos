@@ -69,6 +69,26 @@ final class IdentityService
         );
     }
 
+    public function findIdentityByLocalUser(string $context, string $userTable, int $userUid): ?array
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $row = $queryBuilder
+            ->select('*')
+            ->from(self::TABLE)
+            ->where(
+                $queryBuilder->expr()->eq('login_context', $queryBuilder->createNamedParameter($context)),
+                $queryBuilder->expr()->eq('user_table', $queryBuilder->createNamedParameter($userTable)),
+                $queryBuilder->expr()->eq('user_uid', $queryBuilder->createNamedParameter($userUid, Connection::PARAM_INT))
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        return is_array($row) ? $row : null;
+    }
+
     public function findProfileByLocalUser(string $context, string $userTable, int $userUid): ?array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);

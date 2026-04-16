@@ -4,13 +4,13 @@
         <header/>
         <body>
             <trans-unit id="mlang_tabs_tab">
-                <source>WorkOS</source>
+                <source>Setup Assistant</source>
             </trans-unit>
             <trans-unit id="mlang_labels_tablabel">
-                <source>WorkOS</source>
+                <source>Setup Assistant</source>
             </trans-unit>
             <trans-unit id="mlang_labels_tabdescr">
-                <source>Manage WorkOS user management, setup and identity tools.</source>
+                <source>Configure WorkOS credentials, redirect URLs and feature toggles.</source>
             </trans-unit>
         </body>
     </file>

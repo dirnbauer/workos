@@ -3,15 +3,40 @@
 declare(strict_types=1);
 
 use WebConsulting\WorkosAuth\Controller\Backend\SetupAssistantController;
+use WebConsulting\WorkosAuth\Controller\Backend\UserManagementController;
 
 return [
-    'system_workosauth' => [
-        'parent' => 'system',
-        'position' => ['after' => 'tools_ExtensionmanagerExtensionmanager'],
-        'access' => 'admin',
-        'path' => '/module/system/workos-auth',
-        'iconIdentifier' => 'workos-auth-logo',
+    'workos' => [
         'labels' => 'LLL:EXT:workos_auth/Resources/Private/Language/locallang_mod.xlf',
+        'iconIdentifier' => 'workos-auth-logo',
+        'position' => ['after' => 'system'],
+        'access' => 'admin',
+    ],
+    'workos_users' => [
+        'parent' => 'workos',
+        'position' => ['top'],
+        'access' => 'admin',
+        'path' => '/module/workos/users',
+        'iconIdentifier' => 'workos-auth-users',
+        'labels' => 'LLL:EXT:workos_auth/Resources/Private/Language/locallang_mod_users.xlf',
+        'routes' => [
+            '_default' => [
+                'target' => UserManagementController::class . '::indexAction',
+            ],
+            'token' => [
+                'target' => UserManagementController::class . '::tokenAction',
+                'methods' => ['POST'],
+            ],
+        ],
+    ],
+    'workos_setup' => [
+        'parent' => 'workos',
+        'position' => ['after' => 'workos_users'],
+        'access' => 'admin',
+        'path' => '/module/workos/setup',
+        'iconIdentifier' => 'workos-auth-setup',
+        'labels' => 'LLL:EXT:workos_auth/Resources/Private/Language/locallang_mod_setup.xlf',
+        'aliases' => ['system_workosauth'],
         'routes' => [
             '_default' => [
                 'target' => SetupAssistantController::class . '::indexAction',

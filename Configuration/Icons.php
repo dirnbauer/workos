@@ -9,4 +9,12 @@ return [
         'provider' => SvgIconProvider::class,
         'source' => 'EXT:workos_auth/Resources/Public/Icons/module-workos-auth.svg',
     ],
+    'workos-auth-users' => [
+        'provider' => SvgIconProvider::class,
+        'source' => 'EXT:workos_auth/Resources/Public/Icons/module-workos-users.svg',
+    ],
+    'workos-auth-setup' => [
+        'provider' => SvgIconProvider::class,
+        'source' => 'EXT:workos_auth/Resources/Public/Icons/module-workos-setup.svg',
+    ],
 ];

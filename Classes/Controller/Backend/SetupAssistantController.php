@@ -72,7 +72,7 @@ final class SetupAssistantController
         $moduleTemplate->assignMultiple([
             'formValues' => $formValues,
             'csrfToken' => $this->generateToken(),
-            'saveUri' => (string)$this->uriBuilder->buildUriFromRoute('system_workosauth.save'),
+            'saveUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_setup.save'),
             'backendUrls' => $backendUrls,
             'frontendSites' => $frontendSites,
             'hasCredentials' => trim((string)$formValues['apiKey']) !== '' && trim((string)$formValues['clientId']) !== '',
@@ -101,7 +101,7 @@ final class SetupAssistantController
                 $this->translate('error.csrfTokenInvalid'),
                 ContextualFeedbackSeverity::ERROR,
             );
-            return new RedirectResponse($this->uriBuilder->buildUriFromRoute('system_workosauth'));
+            return new RedirectResponse($this->uriBuilder->buildUriFromRoute('workos_setup'));
         }
 
         $errors = $this->configuration->validate($formValues);
@@ -114,7 +114,7 @@ final class SetupAssistantController
                 $this->translate('flash.configSaveError', ['error' => $e->getMessage()]),
                 ContextualFeedbackSeverity::ERROR,
             );
-            return new RedirectResponse($this->uriBuilder->buildUriFromRoute('system_workosauth'));
+            return new RedirectResponse($this->uriBuilder->buildUriFromRoute('workos_setup'));
         }
 
         if ($errors !== []) {
@@ -129,7 +129,7 @@ final class SetupAssistantController
             );
         }
 
-        return new RedirectResponse($this->uriBuilder->buildUriFromRoute('system_workosauth'));
+        return new RedirectResponse($this->uriBuilder->buildUriFromRoute('workos_setup'));
     }
 
     private function enqueueFlashMessage(string $body, ContextualFeedbackSeverity $severity): void
