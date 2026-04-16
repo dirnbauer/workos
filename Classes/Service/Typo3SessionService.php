@@ -6,6 +6,7 @@ namespace WebConsulting\WorkosAuth\Service;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Http\NormalizedParams;
@@ -17,9 +18,14 @@ use WebConsulting\WorkosAuth\Authentication\WorkosFrontendUserAuthentication;
 
 final class Typo3SessionService
 {
+    public function __construct(
+        private readonly LoggerInterface $logger,
+    ) {}
+
     public function createFrontendLoginResponse(ServerRequestInterface $request, array $userRow, string $redirectUrl): ResponseInterface
     {
         $frontendUser = new WorkosFrontendUserAuthentication();
+        $frontendUser->setLogger($this->logger);
         $frontendUser->signIn($userRow, $request);
 
         $cookie = SetCookieService::create(FrontendUserAuthentication::getCookieName(), 'FE')
@@ -31,6 +37,7 @@ final class Typo3SessionService
     public function createFrontendLogoutResponse(ServerRequestInterface $request, string $redirectUrl): ResponseInterface
     {
         $frontendUser = new WorkosFrontendUserAuthentication();
+        $frontendUser->setLogger($this->logger);
         $frontendUser->signOut($request);
 
         $cookie = SetCookieService::create(FrontendUserAuthentication::getCookieName(), 'FE')
@@ -42,6 +49,7 @@ final class Typo3SessionService
     public function createBackendLoginResponse(ServerRequestInterface $request, array $userRow, string $redirectUrl): ResponseInterface
     {
         $backendUser = new WorkosBackendUserAuthentication();
+        $backendUser->setLogger($this->logger);
         $backendUser->signIn($userRow, $request);
 
         $cookie = SetCookieService::create(BackendUserAuthentication::getCookieName(), 'BE')
