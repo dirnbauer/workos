@@ -91,6 +91,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         }
 
         $authError = null;
+        $savedForm = [];
         if ($frontendUser instanceof FrontendUserAuthentication) {
             $authError = $frontendUser->getSessionData('workos_auth_error');
             if (is_string($authError) && $authError !== '') {
@@ -98,11 +99,21 @@ final class LoginController extends ActionController implements LoggerAwareInter
             } else {
                 $authError = null;
             }
+
+            $savedForm = $frontendUser->getSessionData('workos_signup_form');
+            if (is_array($savedForm)) {
+                $frontendUser->setAndSaveSessionData('workos_signup_form', null);
+            } else {
+                $savedForm = [];
+            }
         }
 
         $this->view->assignMultiple([
             'configured' => $this->configuration->isFrontendReady(),
             'authError' => $authError,
+            'savedEmail' => (string)($savedForm['email'] ?? ''),
+            'savedFirstName' => (string)($savedForm['firstName'] ?? ''),
+            'savedLastName' => (string)($savedForm['lastName'] ?? ''),
         ]);
 
         return $this->htmlResponse();
@@ -117,16 +128,18 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $firstName = trim((string)($body['firstName'] ?? ''));
         $lastName = trim((string)($body['lastName'] ?? ''));
 
+        $formData = ['email' => $email, 'firstName' => $firstName, 'lastName' => $lastName];
+
         if ($email === '' || $password === '') {
-            return $this->redirectToSignUpWithError('Please fill in email and password.');
+            return $this->redirectToSignUpWithError('Please fill in email and password.', $formData);
         }
 
         if ($password !== $passwordConfirm) {
-            return $this->redirectToSignUpWithError('Passwords do not match.');
+            return $this->redirectToSignUpWithError('Passwords do not match.', $formData);
         }
 
-        if (mb_strlen($password) < 8) {
-            return $this->redirectToSignUpWithError('Password must be at least 8 characters.');
+        if (mb_strlen($password) < 10) {
+            return $this->redirectToSignUpWithError('Password must be at least 10 characters.', $formData);
         }
 
         try {
@@ -136,7 +149,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
             $returnTo = (string)($body['returnTo'] ?? '/');
             return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo);
         } catch (\Throwable $e) {
-            return $this->redirectToSignUpWithError($this->sanitizeErrorMessage($e->getMessage()));
+            return $this->redirectToSignUpWithError($this->sanitizeSignUpError($e->getMessage()), $formData);
         }
     }
 
@@ -231,9 +244,13 @@ final class LoginController extends ActionController implements LoggerAwareInter
         return $this->redirect('show');
     }
 
-    private function redirectToSignUpWithError(string $message): ResponseInterface
+    private function redirectToSignUpWithError(string $message, array $formData = []): ResponseInterface
     {
-        $this->getFrontendUser()->setAndSaveSessionData('workos_auth_error', $message);
+        $fe = $this->getFrontendUser();
+        $fe->setAndSaveSessionData('workos_auth_error', $message);
+        if ($formData !== []) {
+            $fe->setAndSaveSessionData('workos_signup_form', $formData);
+        }
         return $this->redirect('signUp');
     }
 
@@ -244,6 +261,30 @@ final class LoginController extends ActionController implements LoggerAwareInter
             throw new \RuntimeException('No frontend user session available.', 1744277820);
         }
         return $frontendUser;
+    }
+
+    private function sanitizeSignUpError(string $message): string
+    {
+        $this->logger?->error('WorkOS sign-up error: ' . $message);
+
+        $lower = strtolower($message);
+        if (str_contains($lower, 'password_too_short') || str_contains($lower, 'too short')) {
+            return 'Password is too short. Use at least 10 characters.';
+        }
+        if (str_contains($lower, 'password_too_weak') || str_contains($lower, 'too weak') || str_contains($lower, 'unguessable')) {
+            return 'Password is too weak. Use a mix of letters, numbers, and symbols to make it harder to guess.';
+        }
+        if (str_contains($lower, 'pwned') || str_contains($lower, 'breached') || str_contains($lower, 'compromised')) {
+            return 'This password has appeared in a data breach. Please choose a different password.';
+        }
+        if (str_contains($lower, 'already exists') || str_contains($lower, 'duplicate') || str_contains($lower, 'user_exists')) {
+            return 'An account with this email already exists. Please sign in instead.';
+        }
+        if (str_contains($lower, 'password') && str_contains($lower, 'invalid')) {
+            return 'Password does not meet the requirements. Use at least 10 characters with a mix of letters, numbers, and symbols.';
+        }
+
+        return $message;
     }
 
     private function sanitizeErrorMessage(string $message): string

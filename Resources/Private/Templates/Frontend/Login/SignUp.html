@@ -19,31 +19,36 @@
                     <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
                         <div style="flex:1;">
                             <label for="workos-first-name" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">First name</label>
-                            <input id="workos-first-name" type="text" name="firstName" autocomplete="given-name" placeholder="Jane"
+                            <input id="workos-first-name" type="text" name="firstName" value="{savedFirstName}" autocomplete="given-name" placeholder="Jane"
                                    style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                         </div>
                         <div style="flex:1;">
                             <label for="workos-last-name" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Last name</label>
-                            <input id="workos-last-name" type="text" name="lastName" autocomplete="family-name" placeholder="Doe"
+                            <input id="workos-last-name" type="text" name="lastName" value="{savedLastName}" autocomplete="family-name" placeholder="Doe"
                                    style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                         </div>
                     </div>
 
                     <div style="margin-bottom:0.75rem;">
                         <label for="workos-signup-email" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Email</label>
-                        <input id="workos-signup-email" type="email" name="email" required autocomplete="email" placeholder="you@example.com"
+                        <input id="workos-signup-email" type="email" name="email" value="{savedEmail}" required autocomplete="email" placeholder="you@example.com"
                                style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                     </div>
 
-                    <div style="margin-bottom:0.75rem;">
+                    <div style="margin-bottom:0.25rem;">
                         <label for="workos-signup-password" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Password</label>
-                        <input id="workos-signup-password" type="password" name="password" required autocomplete="new-password" placeholder="At least 8 characters"
+                        <input id="workos-signup-password" type="password" name="password" required autocomplete="new-password" minlength="10"
+                               placeholder="Min. 10 characters"
                                style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                     </div>
+                    <p style="font-size:0.75rem; color:#9ca3af; margin:0 0 0.75rem; line-height:1.4;">
+                        At least 10 characters. Use a mix of letters, numbers, and symbols.
+                    </p>
 
                     <div style="margin-bottom:1rem;">
                         <label for="workos-signup-password-confirm" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Confirm password</label>
-                        <input id="workos-signup-password-confirm" type="password" name="passwordConfirm" required autocomplete="new-password" placeholder="Repeat your password"
+                        <input id="workos-signup-password-confirm" type="password" name="passwordConfirm" required autocomplete="new-password" minlength="10"
+                               placeholder="Repeat your password"
                                style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                     </div>
 
