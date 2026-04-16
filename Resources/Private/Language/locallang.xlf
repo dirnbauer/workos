@@ -173,7 +173,22 @@
                 <source>Sign in</source>
             </trans-unit>
             <trans-unit id="backend.login.moreOptions">
-                <source>More sign-in options (SSO, magic link, passkey)</source>
+                <source>More sign-in options (SSO, passkey)</source>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.send">
+                <source>Email me a sign-in code</source>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.codeSent">
+                <source>We sent a six-digit code to %s. Enter it below to sign in.</source>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.codeLabel">
+                <source>Sign-in code</source>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.verify">
+                <source>Verify and sign in</source>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.back">
+                <source>Back to sign in</source>
             </trans-unit>
             <trans-unit id="backend.login.emailPlaceholder">
                 <source>Email address</source>

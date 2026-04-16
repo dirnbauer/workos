@@ -47,6 +47,28 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         $authError = (string)($queryParams['workosAuthError'] ?? '');
 
         $passwordAuthUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/password-auth');
+        $magicSendUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-send');
+        $magicVerifyUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-verify');
+
+        $magicAuthState = trim((string)($queryParams['magicAuthState'] ?? ''));
+        $magicAuthEmail = '';
+        $magicAuthUserId = '';
+        if ($magicAuthState !== '') {
+            $decoded = base64_decode($magicAuthState, true);
+            if ($decoded !== false) {
+                try {
+                    $payload = json_decode($decoded, true, 8, JSON_THROW_ON_ERROR);
+                    if (is_array($payload)) {
+                        $magicAuthEmail = (string)($payload['email'] ?? '');
+                        $magicAuthUserId = (string)($payload['userId'] ?? '');
+                    }
+                } catch (\JsonException) {
+                    $magicAuthState = '';
+                }
+            } else {
+                $magicAuthState = '';
+            }
+        }
 
         $socialProviders = [
             ['key' => 'GoogleOAuth', 'label' => $this->translate('provider.google'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GoogleOAuth'])],
@@ -67,6 +89,11 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             'loginUrl' => $loginUrl,
             'setupUrl' => PathUtility::joinBaseAndPath($backendBasePath, '/module/system/workos-auth'),
             'passwordAuthUrl' => $passwordAuthUrl,
+            'magicSendUrl' => $magicSendUrl,
+            'magicVerifyUrl' => $magicVerifyUrl,
+            'magicAuthState' => $magicAuthState,
+            'magicAuthEmail' => $magicAuthEmail,
+            'magicAuthUserId' => $magicAuthUserId,
             'socialProviders' => $socialProviders,
             'authError' => $authError,
         ]);

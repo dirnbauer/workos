@@ -165,7 +165,10 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
             $loginUrl = PathUtility::joinBaseAndPath($backendBasePath, '/login');
             return new RedirectResponse(
-                PathUtility::appendQueryParameters($loginUrl, ['magicAuthState' => $state]),
+                PathUtility::appendQueryParameters($loginUrl, [
+                    'loginProvider' => '1744276800',
+                    'magicAuthState' => $state,
+                ]),
                 303
             );
         } catch (\Throwable $e) {

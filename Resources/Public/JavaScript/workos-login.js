@@ -1,13 +1,14 @@
-// Handles WorkOS password login on the TYPO3 backend login page.
+// Handles WorkOS login actions on the TYPO3 backend login page.
 //
 // Problem: The TYPO3 backend wraps every login provider's fields inside
 // <form id="typo3-login-form">. Any field/button we inject there can
 // inadvertently participate in TYPO3's own username/password login flow.
 //
 // Solution: On init we take our WorkOS region (div.workos-login-root)
-// out of TYPO3's form and wrap it in a dedicated form that POSTs to our
-// /workos-auth/backend/password-auth middleware. From then on the submit
-// path is a native form POST, no JavaScript interference required.
+// out of TYPO3's form and wrap it in a dedicated form. Clicking one of
+// our buttons sets the form action to the matching WorkOS endpoint
+// (password auth, magic-auth send or magic-auth verify) and submits it
+// natively. No AJAX, no interference with TYPO3's own JS.
 
 function mountWorkosLogin() {
     const region = document.querySelector('.workos-login-root');
@@ -15,20 +16,15 @@ function mountWorkosLogin() {
         return;
     }
 
-    const submitButton = region.querySelector('#workos-password-submit');
-    if (!submitButton) {
-        return;
-    }
-    const action = submitButton.getAttribute('data-workos-password-url') || '';
-    if (!action) {
-        return;
-    }
+    const passwordUrl = region.getAttribute('data-workos-password-url') || '';
+    const magicSendUrl = region.getAttribute('data-workos-magic-send-url') || '';
+    const magicVerifyUrl = region.getAttribute('data-workos-magic-verify-url') || '';
 
     const hostForm = region.closest('#typo3-login-form');
 
     const newForm = document.createElement('form');
     newForm.method = 'POST';
-    newForm.action = action;
+    newForm.action = passwordUrl || magicVerifyUrl || magicSendUrl || '';
     newForm.setAttribute('novalidate', 'novalidate');
     newForm.className = 'workos-login-form';
 
@@ -39,8 +35,6 @@ function mountWorkosLogin() {
         document.body.appendChild(newForm);
     }
 
-    submitButton.type = 'submit';
-
     const emailInput = region.querySelector('#workos-email');
     const passwordInput = region.querySelector('#workos-password');
     if (emailInput) {
@@ -48,6 +42,57 @@ function mountWorkosLogin() {
     }
     if (passwordInput) {
         passwordInput.name = 'password';
+    }
+
+    const passwordBtn = region.querySelector('#workos-password-submit');
+    const magicSendBtn = region.querySelector('#workos-magic-send-submit');
+    const magicVerifyBtn = region.querySelector('#workos-magic-verify-submit');
+
+    const submitWith = (action, { requirePassword = false, requireCode = false } = {}) => {
+        if (!action) {
+            return;
+        }
+        if (requirePassword) {
+            if (emailInput) emailInput.setAttribute('required', 'required');
+            if (passwordInput) passwordInput.setAttribute('required', 'required');
+        } else if (!requireCode) {
+            if (emailInput) emailInput.setAttribute('required', 'required');
+            if (passwordInput) passwordInput.removeAttribute('required');
+        }
+        if (!newForm.reportValidity()) {
+            return;
+        }
+        newForm.action = action;
+        newForm.submit();
+    };
+
+    if (passwordBtn) {
+        passwordBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            submitWith(passwordUrl, { requirePassword: true });
+        });
+    }
+    if (magicSendBtn) {
+        magicSendBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            submitWith(magicSendUrl);
+        });
+    }
+    if (magicVerifyBtn) {
+        magicVerifyBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            submitWith(magicVerifyUrl, { requireCode: true });
+        });
+    }
+
+    const verifyCodeInput = region.querySelector('#workos-magic-code');
+    if (verifyCodeInput && magicVerifyBtn) {
+        verifyCodeInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                magicVerifyBtn.click();
+            }
+        });
     }
 }
 

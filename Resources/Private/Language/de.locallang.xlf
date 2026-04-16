@@ -225,8 +225,28 @@
                 <target>Anmelden</target>
             </trans-unit>
             <trans-unit id="backend.login.moreOptions">
-                <source>More sign-in options (SSO, magic link, passkey)</source>
-                <target>Weitere Anmeldeoptionen (SSO, Magic Link, Passkey)</target>
+                <source>More sign-in options (SSO, passkey)</source>
+                <target>Weitere Anmeldeoptionen (SSO, Passkey)</target>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.send">
+                <source>Email me a sign-in code</source>
+                <target>Anmeldecode per E-Mail senden</target>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.codeSent">
+                <source>We sent a six-digit code to %s. Enter it below to sign in.</source>
+                <target>Wir haben einen sechsstelligen Code an %s gesendet. Bitte gib ihn unten ein, um dich anzumelden.</target>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.codeLabel">
+                <source>Sign-in code</source>
+                <target>Anmeldecode</target>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.verify">
+                <source>Verify and sign in</source>
+                <target>Bestätigen und anmelden</target>
+            </trans-unit>
+            <trans-unit id="backend.login.magic.back">
+                <source>Back to sign in</source>
+                <target>Zurück zur Anmeldung</target>
             </trans-unit>
             <trans-unit id="backend.login.emailPlaceholder">
                 <source>Email address</source>
