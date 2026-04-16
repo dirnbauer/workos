@@ -9,13 +9,27 @@
 
 const WIDGETS_VERSION = '1.10.1';
 const REACT_VERSION = '19';
-const REACT_DEPS = `react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
+const RADIX_THEMES_VERSION = '3';
+const REACT_QUERY_VERSION = '5';
+
+// `@workos-inc/widgets` declares these as peer dependencies. We must pin
+// them in the `deps=` param of every esm.sh URL so the widget and all of
+// its internal submodules share the *same* instance of React, Radix
+// Themes and React Query. Otherwise Radix context providers from inside
+// `<WorkOsWidgets>` cannot be seen by the inner components and the
+// widget fails with "useThemeContext must be used within a Theme".
+const SHARED_DEPS = [
+    `react@${REACT_VERSION}`,
+    `react-dom@${REACT_VERSION}`,
+    `@radix-ui/themes@${RADIX_THEMES_VERSION}`,
+    `@tanstack/react-query@${REACT_QUERY_VERSION}`,
+].join(',');
 
 const REACT_URL = `https://esm.sh/react@${REACT_VERSION}`;
-const REACT_DOM_CLIENT_URL = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=${REACT_DEPS}`;
-const WIDGETS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}?deps=${REACT_DEPS}`;
+const REACT_DOM_CLIENT_URL = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=${SHARED_DEPS}`;
+const WIDGETS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}?deps=${SHARED_DEPS}`;
 const WIDGETS_CSS_URL = `https://esm.sh/@workos-inc/widgets@${WIDGETS_VERSION}/styles.css`;
-const RADIX_THEME_CSS_URL = 'https://esm.sh/@radix-ui/themes@3/styles.css';
+const RADIX_THEME_CSS_URL = `https://esm.sh/@radix-ui/themes@${RADIX_THEMES_VERSION}/styles.css`;
 
 function ensureStylesheet(href, id) {
     if (document.getElementById(id)) {
