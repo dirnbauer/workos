@@ -41,28 +41,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         }
 
         $queryParams = $request->getQueryParams();
-
         $authError = (string)($queryParams['workosAuthError'] ?? '');
-
-        $magicAuthState = null;
-        $magicAuthEmail = '';
-        $magicAuthUserId = '';
-        $stateParam = (string)($queryParams['magicAuthState'] ?? '');
-        if ($stateParam !== '') {
-            try {
-                $decoded = json_decode(base64_decode($stateParam, true) ?: '', true, 4, JSON_THROW_ON_ERROR);
-                if (is_array($decoded) && !empty($decoded['email']) && !empty($decoded['userId'])) {
-                    $magicAuthState = $stateParam;
-                    $magicAuthEmail = (string)$decoded['email'];
-                    $magicAuthUserId = (string)$decoded['userId'];
-                }
-            } catch (\JsonException) {
-            }
-        }
-
-        $passwordAuthUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/password-auth');
-        $magicAuthSendUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-send');
-        $magicAuthVerifyUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-verify');
 
         $socialProviders = [
             ['key' => 'GoogleOAuth', 'label' => $this->translate('provider.google'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GoogleOAuth'])],
@@ -76,14 +55,8 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             'configured' => $this->configuration->isBackendReady(),
             'loginUrl' => $loginUrl,
             'setupUrl' => PathUtility::joinBaseAndPath($backendBasePath, '/module/system/workos-auth'),
-            'passwordAuthUrl' => $passwordAuthUrl,
-            'magicAuthSendUrl' => $magicAuthSendUrl,
-            'magicAuthVerifyUrl' => $magicAuthVerifyUrl,
             'socialProviders' => $socialProviders,
             'authError' => $authError,
-            'magicAuthState' => $magicAuthState,
-            'magicAuthEmail' => $magicAuthEmail,
-            'magicAuthUserId' => $magicAuthUserId,
         ]);
 
         return 'Login/WorkosLoginProvider';

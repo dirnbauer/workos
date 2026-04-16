@@ -208,6 +208,10 @@
                 <source>Email a login code</source>
                 <target>Anmeldecode per E-Mail senden</target>
             </trans-unit>
+            <trans-unit id="backend.login.socialHint">
+                <source>Or sign in with</source>
+                <target>Oder anmelden mit</target>
+            </trans-unit>
             <trans-unit id="backend.login.emailPlaceholder">
                 <source>Email address</source>
                 <target>E-Mail-Adresse</target>

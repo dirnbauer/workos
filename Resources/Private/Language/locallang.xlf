@@ -160,6 +160,9 @@
             <trans-unit id="backend.login.emailLoginCode">
                 <source>Email a login code</source>
             </trans-unit>
+            <trans-unit id="backend.login.socialHint">
+                <source>Or sign in with</source>
+            </trans-unit>
             <trans-unit id="backend.login.emailPlaceholder">
                 <source>Email address</source>
             </trans-unit>
