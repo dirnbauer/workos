@@ -174,6 +174,19 @@ final class WorkosAuthenticationService
         return ['workosUser' => $this->enrichUser($userManagement, $response->user)];
     }
 
+    public function createUser(string $email, string $password, string $firstName = '', string $lastName = ''): User
+    {
+        $this->assertBaseConfiguration();
+        $userManagement = $this->workosClientFactory->createUserManagement();
+
+        return $userManagement->createUser(
+            email: $email,
+            password: $password !== '' ? $password : null,
+            firstName: $firstName !== '' ? $firstName : null,
+            lastName: $lastName !== '' ? $lastName : null,
+        );
+    }
+
     private function enrichUser(UserManagement $userManagement, User $user): User
     {
         try {

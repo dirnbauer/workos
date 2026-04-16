@@ -1,0 +1,66 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<div class="workos-auth-plugin" style="max-width:400px;">
+    <f:if condition="{configured}">
+        <f:then>
+            <div class="workos-auth-card" style="border:1px solid #e5e7eb; border-radius:12px; padding:1.5rem; background:#fff;">
+                <div style="text-align:center; margin-bottom:1.25rem;">
+                    <p style="font-size:1.15rem; font-weight:700; margin:0 0 0.25rem;">Create your account</p>
+                    <p style="font-size:0.85rem; color:#6b7280; margin:0;">Sign up to get started</p>
+                </div>
+
+                <f:if condition="{authError}">
+                    <div class="alert alert-danger" style="font-size:0.9rem; margin-bottom:1rem; padding:0.75rem 1rem; border-radius:8px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b;">{authError}</div>
+                </f:if>
+
+                <f:form action="signUpSubmit" method="post" style="margin-bottom:0;">
+                    <f:form.hidden name="returnTo" value="/" />
+
+                    <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+                        <div style="flex:1;">
+                            <label for="workos-first-name" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">First name</label>
+                            <input id="workos-first-name" type="text" name="firstName" autocomplete="given-name" placeholder="Jane"
+                                   style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
+                        </div>
+                        <div style="flex:1;">
+                            <label for="workos-last-name" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Last name</label>
+                            <input id="workos-last-name" type="text" name="lastName" autocomplete="family-name" placeholder="Doe"
+                                   style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:0.75rem;">
+                        <label for="workos-signup-email" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Email</label>
+                        <input id="workos-signup-email" type="email" name="email" required autocomplete="email" placeholder="you@example.com"
+                               style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
+                    </div>
+
+                    <div style="margin-bottom:0.75rem;">
+                        <label for="workos-signup-password" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Password</label>
+                        <input id="workos-signup-password" type="password" name="password" required autocomplete="new-password" placeholder="At least 8 characters"
+                               style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
+                    </div>
+
+                    <div style="margin-bottom:1rem;">
+                        <label for="workos-signup-password-confirm" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Confirm password</label>
+                        <input id="workos-signup-password-confirm" type="password" name="passwordConfirm" required autocomplete="new-password" placeholder="Repeat your password"
+                               style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding:0.6rem; border-radius:8px; font-weight:600; font-size:0.95rem; border:none; cursor:pointer;">Create account</button>
+                </f:form>
+
+                <div style="text-align:center; margin-top:1.25rem; font-size:0.85rem; color:#6b7280;">
+                    Already have an account?
+                    <f:link.action action="show" style="color:#4f46e5; font-weight:600; text-decoration:none;">Sign in</f:link.action>
+                </div>
+            </div>
+        </f:then>
+        <f:else>
+            <div class="alert alert-warning" style="border-radius:12px; padding:1rem;">
+                WorkOS frontend login is not configured yet. Ask an administrator to finish the WorkOS setup assistant in the TYPO3 backend.
+            </div>
+        </f:else>
+    </f:if>
+</div>
+</html>

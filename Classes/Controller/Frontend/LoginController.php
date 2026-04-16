@@ -82,6 +82,64 @@ final class LoginController extends ActionController implements LoggerAwareInter
         return $this->htmlResponse();
     }
 
+    public function signUpAction(): ResponseInterface
+    {
+        $frontendUser = $this->request->getAttribute('frontend.user');
+        $isLoggedIn = $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user ?? null);
+        if ($isLoggedIn) {
+            return $this->redirect('show');
+        }
+
+        $authError = null;
+        if ($frontendUser instanceof FrontendUserAuthentication) {
+            $authError = $frontendUser->getSessionData('workos_auth_error');
+            if (is_string($authError) && $authError !== '') {
+                $frontendUser->setAndSaveSessionData('workos_auth_error', null);
+            } else {
+                $authError = null;
+            }
+        }
+
+        $this->view->assignMultiple([
+            'configured' => $this->configuration->isFrontendReady(),
+            'authError' => $authError,
+        ]);
+
+        return $this->htmlResponse();
+    }
+
+    public function signUpSubmitAction(): ResponseInterface
+    {
+        $body = $this->request->getParsedBody();
+        $email = trim((string)($body['email'] ?? ''));
+        $password = (string)($body['password'] ?? '');
+        $passwordConfirm = (string)($body['passwordConfirm'] ?? '');
+        $firstName = trim((string)($body['firstName'] ?? ''));
+        $lastName = trim((string)($body['lastName'] ?? ''));
+
+        if ($email === '' || $password === '') {
+            return $this->redirectToSignUpWithError('Please fill in email and password.');
+        }
+
+        if ($password !== $passwordConfirm) {
+            return $this->redirectToSignUpWithError('Passwords do not match.');
+        }
+
+        if (mb_strlen($password) < 8) {
+            return $this->redirectToSignUpWithError('Password must be at least 8 characters.');
+        }
+
+        try {
+            $workosUser = $this->workosAuthenticationService->createUser($email, $password, $firstName, $lastName);
+            $result = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
+            $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
+            $returnTo = (string)($body['returnTo'] ?? '/');
+            return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo);
+        } catch (\Throwable $e) {
+            return $this->redirectToSignUpWithError($this->sanitizeErrorMessage($e->getMessage()));
+        }
+    }
+
     public function passwordAuthAction(): ResponseInterface
     {
         $email = trim((string)($this->request->getParsedBody()['email'] ?? ''));
@@ -171,6 +229,12 @@ final class LoginController extends ActionController implements LoggerAwareInter
     {
         $this->getFrontendUser()->setAndSaveSessionData('workos_auth_error', $message);
         return $this->redirect('show');
+    }
+
+    private function redirectToSignUpWithError(string $message): ResponseInterface
+    {
+        $this->getFrontendUser()->setAndSaveSessionData('workos_auth_error', $message);
+        return $this->redirect('signUp');
     }
 
     private function getFrontendUser(): FrontendUserAuthentication

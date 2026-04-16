@@ -11,10 +11,10 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
         'WorkosAuth',
         'Login',
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify',
+            \WebConsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,signUp,signUpSubmit,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify',
         ],
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify',
+            \WebConsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,signUp,signUpSubmit,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify',
         ]
     );
 
