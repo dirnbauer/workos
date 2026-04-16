@@ -123,6 +123,57 @@ final class WorkosAuthenticationService
         );
     }
 
+    public function authenticateWithPassword(ServerRequestInterface $request, string $email, string $password): array
+    {
+        $this->assertBaseConfiguration();
+        $userManagement = $this->workosClientFactory->createUserManagement();
+        $response = $userManagement->authenticateWithPassword(
+            $this->configuration->getClientId(),
+            $email,
+            $password,
+            $this->getRemoteAddress($request),
+            trim($request->getHeaderLine('User-Agent')) ?: null,
+        );
+
+        if (!$response->user instanceof User) {
+            throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277810);
+        }
+
+        return ['workosUser' => $response->user];
+    }
+
+    public function sendMagicAuthCode(string $email): array
+    {
+        $this->assertBaseConfiguration();
+        $userManagement = $this->workosClientFactory->createUserManagement();
+        $magicAuth = $userManagement->createMagicAuth($email);
+
+        return [
+            'magicAuthId' => $magicAuth->id ?? '',
+            'userId' => $magicAuth->userId ?? '',
+            'email' => $email,
+        ];
+    }
+
+    public function authenticateWithMagicAuth(ServerRequestInterface $request, string $code, string $userId): array
+    {
+        $this->assertBaseConfiguration();
+        $userManagement = $this->workosClientFactory->createUserManagement();
+        $response = $userManagement->authenticateWithMagicAuth(
+            $this->configuration->getClientId(),
+            $code,
+            $userId,
+            $this->getRemoteAddress($request),
+            trim($request->getHeaderLine('User-Agent')) ?: null,
+        );
+
+        if (!$response->user instanceof User) {
+            throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277811);
+        }
+
+        return ['workosUser' => $response->user];
+    }
+
     private function assertBaseConfiguration(): void
     {
         if ($this->configuration->getApiKey() === '' || $this->configuration->getClientId() === '') {

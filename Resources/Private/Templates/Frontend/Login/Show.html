@@ -1,65 +1,60 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
 
-<div class="workos-auth-plugin">
+<div class="workos-auth-plugin" style="max-width:400px;">
     <f:if condition="{configured}">
         <f:then>
             <f:if condition="{isLoggedIn}">
-                <div class="alert alert-success">
-                    Signed in with WorkOS
-                    <f:if condition="{displayName}">
-                        as <strong>{displayName}</strong>
-                    </f:if>.
+                <div class="workos-auth-card" style="border:1px solid #e5e7eb; border-radius:12px; padding:1.5rem; background:#fff;">
+                    <div style="text-align:center; margin-bottom:1rem;">
+                        <f:if condition="{workosProfile.profilePictureUrl}">
+                            <img src="{workosProfile.profilePictureUrl}" alt="" style="width:56px; height:56px; border-radius:50%; margin-bottom:0.75rem;" />
+                        </f:if>
+                        <p style="margin:0; font-size:1.05rem;">
+                            Signed in
+                            <f:if condition="{displayName}">
+                                as <strong>{displayName}</strong>
+                            </f:if>
+                        </p>
+                    </div>
+                    <a href="{logoutUrl}" class="btn btn-secondary" style="display:block; width:100%; text-align:center;">Sign out</a>
                 </div>
-                <p>
-                    <a href="{logoutUrl}" class="btn btn-secondary">Sign out</a>
-                </p>
 
                 <f:if condition="{workosProfile}">
-                    <details class="workos-profile-debug" style="margin-top:1.5rem;">
-                        <summary style="cursor:pointer; font-weight:600; margin-bottom:0.75rem;">WorkOS profile data</summary>
-
-                        <table class="workos-profile-table" style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <details class="workos-profile-debug" style="margin-top:1.5rem; border:1px solid #e5e7eb; border-radius:12px; padding:1rem; background:#fafafa;">
+                        <summary style="cursor:pointer; font-weight:600;">WorkOS profile data</summary>
+                        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.75rem;">
                             <f:if condition="{workosProfile.id}">
-                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">ID</td><td style="padding:0.35rem 0.75rem;">{workosProfile.id}</td></tr>
+                                <tr><td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">ID</td><td style="padding:0.3rem 0.5rem; word-break:break-all;">{workosProfile.id}</td></tr>
                             </f:if>
                             <f:if condition="{workosProfile.email}">
-                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Email</td><td style="padding:0.35rem 0.75rem;">{workosProfile.email}</td></tr>
+                                <tr><td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">Email</td><td style="padding:0.3rem 0.5rem;">{workosProfile.email}</td></tr>
                             </f:if>
                             <f:if condition="{workosProfile.firstName}">
-                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">First name</td><td style="padding:0.35rem 0.75rem;">{workosProfile.firstName}</td></tr>
+                                <tr><td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">First name</td><td style="padding:0.3rem 0.5rem;">{workosProfile.firstName}</td></tr>
                             </f:if>
                             <f:if condition="{workosProfile.lastName}">
-                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Last name</td><td style="padding:0.35rem 0.75rem;">{workosProfile.lastName}</td></tr>
+                                <tr><td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">Last name</td><td style="padding:0.3rem 0.5rem;">{workosProfile.lastName}</td></tr>
                             </f:if>
                             <f:if condition="{workosProfile.emailVerified}">
-                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Email verified</td><td style="padding:0.35rem 0.75rem;">{workosProfile.emailVerified}</td></tr>
-                            </f:if>
-                            <f:if condition="{workosProfile.profilePictureUrl}">
-                                <tr>
-                                    <td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Profile picture</td>
-                                    <td style="padding:0.35rem 0.75rem;">
-                                        <img src="{workosProfile.profilePictureUrl}" alt="Profile picture" style="max-width:64px; border-radius:50%;" />
-                                    </td>
-                                </tr>
+                                <tr><td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">Email verified</td><td style="padding:0.3rem 0.5rem;">{workosProfile.emailVerified}</td></tr>
                             </f:if>
                             <f:if condition="{workosProfile.lastSignInAt}">
-                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Last sign-in</td><td style="padding:0.35rem 0.75rem;">{workosProfile.lastSignInAt}</td></tr>
+                                <tr><td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">Last sign-in</td><td style="padding:0.3rem 0.5rem;">{workosProfile.lastSignInAt}</td></tr>
                             </f:if>
                             <f:if condition="{workosProfile.createdAt}">
-                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Created</td><td style="padding:0.35rem 0.75rem;">{workosProfile.createdAt}</td></tr>
+                                <tr><td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">Created</td><td style="padding:0.3rem 0.5rem;">{workosProfile.createdAt}</td></tr>
                             </f:if>
                             <f:if condition="{workosProfile.updatedAt}">
-                                <tr><td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">Updated</td><td style="padding:0.35rem 0.75rem;">{workosProfile.updatedAt}</td></tr>
+                                <tr><td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">Updated</td><td style="padding:0.3rem 0.5rem;">{workosProfile.updatedAt}</td></tr>
                             </f:if>
                         </table>
-
                         <f:if condition="{workosProfile.metadata}">
-                            <h4 style="margin-top:1rem; font-size:0.95rem;">Custom metadata</h4>
-                            <table class="workos-profile-table" style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                            <p style="margin:0.75rem 0 0.25rem; font-weight:600; font-size:0.85rem; color:#666;">Custom metadata</p>
+                            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
                                 <f:for each="{workosProfile.metadata}" as="value" key="key">
                                     <tr>
-                                        <td style="padding:0.35rem 0.75rem; font-weight:600; vertical-align:top; white-space:nowrap;">{key}</td>
-                                        <td style="padding:0.35rem 0.75rem;">{value}</td>
+                                        <td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">{key}</td>
+                                        <td style="padding:0.3rem 0.5rem;">{value}</td>
                                     </tr>
                                 </f:for>
                             </table>
@@ -67,26 +62,58 @@
                     </details>
                 </f:if>
             </f:if>
-            <f:if condition="!{isLoggedIn}">
-                <div class="workos-auth-actions">
-                    <p>
-                        <a href="{loginUrl}" class="btn btn-primary">Sign in</a>
-                        <a href="{signUpUrl}" class="btn btn-outline-primary" style="margin-left:0.5rem;">Create account</a>
-                    </p>
 
-                    <div class="workos-social-providers" style="margin-top:1rem;">
-                        <p style="margin-bottom:0.5rem; font-size:0.9rem; color:#666;">Or continue with:</p>
-                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                            <f:for each="{socialProviders}" as="provider">
-                                <a href="{provider.url}" class="btn btn-outline-secondary btn-sm">{provider.label}</a>
-                            </f:for>
+            <f:if condition="!{isLoggedIn}">
+                <div class="workos-auth-card" style="border:1px solid #e5e7eb; border-radius:12px; padding:1.5rem; background:#fff;">
+                    <f:if condition="{authError}">
+                        <div class="alert alert-danger" style="font-size:0.9rem; margin-bottom:1rem; padding:0.75rem 1rem; border-radius:8px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b;">{authError}</div>
+                    </f:if>
+
+                    <f:form action="passwordAuth" method="post" style="margin-bottom:0;">
+                        <f:form.hidden name="returnTo" value="{loginUrl}" />
+                        <div style="margin-bottom:0.75rem;">
+                            <label for="workos-email" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Email</label>
+                            <input id="workos-email" type="email" name="email" required autocomplete="email" placeholder="you@example.com"
+                                   style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
                         </div>
+                        <div style="margin-bottom:1rem;">
+                            <label for="workos-password" style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.25rem; color:#374151;">Password</label>
+                            <input id="workos-password" type="password" name="password" required autocomplete="current-password" placeholder="Enter your password"
+                                   style="width:100%; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%; padding:0.6rem; border-radius:8px; font-weight:600; font-size:0.95rem; border:none; cursor:pointer;">Sign in</button>
+                    </f:form>
+
+                    <div style="display:flex; align-items:center; margin:1.25rem 0; gap:0.75rem;">
+                        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
+                        <span style="font-size:0.8rem; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em;">or</span>
+                        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
+                    </div>
+
+                    <f:form action="magicAuthSend" method="post" style="margin-bottom:1rem;">
+                        <f:form.hidden name="returnTo" value="{loginUrl}" />
+                        <div style="display:flex; gap:0.5rem;">
+                            <input type="email" name="email" required placeholder="you@example.com"
+                                   style="flex:1; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; box-sizing:border-box;" />
+                            <button type="submit" class="btn btn-outline-primary" style="white-space:nowrap; padding:0.55rem 1rem; border-radius:8px; font-size:0.9rem; cursor:pointer;">Email code</button>
+                        </div>
+                    </f:form>
+
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <f:for each="{socialProviders}" as="provider">
+                            <a href="{provider.url}" style="flex:1; min-width:calc(50% - 0.25rem); display:block; text-align:center; padding:0.55rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.85rem; color:#374151; text-decoration:none; background:#fff;">{provider.label}</a>
+                        </f:for>
+                    </div>
+
+                    <div style="text-align:center; margin-top:1.25rem; font-size:0.85rem; color:#6b7280;">
+                        Don't have an account?
+                        <a href="{signUpUrl}" style="color:#4f46e5; font-weight:600; text-decoration:none;">Sign up</a>
                     </div>
                 </div>
             </f:if>
         </f:then>
         <f:else>
-            <div class="alert alert-warning">
+            <div class="alert alert-warning" style="border-radius:12px; padding:1rem;">
                 WorkOS frontend login is not configured yet. Ask an administrator to finish the WorkOS setup assistant in the TYPO3 backend.
             </div>
         </f:else>

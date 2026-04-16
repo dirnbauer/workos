@@ -10,12 +10,18 @@ use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\PathUtility;
+use WebConsulting\WorkosAuth\Service\Typo3SessionService;
+use WebConsulting\WorkosAuth\Service\UserProvisioningService;
+use WebConsulting\WorkosAuth\Service\WorkosAuthenticationService;
 
 final class LoginController extends ActionController
 {
     public function __construct(
         private readonly WorkosConfiguration $configuration,
         private readonly IdentityService $identityService,
+        private readonly WorkosAuthenticationService $workosAuthenticationService,
+        private readonly UserProvisioningService $userProvisioningService,
+        private readonly Typo3SessionService $typo3SessionService,
     ) {}
 
     public function showAction(): ResponseInterface
@@ -29,6 +35,16 @@ final class LoginController extends ActionController
         $displayName = $isLoggedIn
             ? (string)($frontendUser->user['name'] ?? $frontendUser->user['username'] ?? $frontendUser->user['email'] ?? '')
             : '';
+
+        $authError = null;
+        if (!$isLoggedIn) {
+            $authError = $GLOBALS['TSFE']->fe_user->getSessionData('workos_auth_error');
+            if (is_string($authError) && $authError !== '') {
+                $GLOBALS['TSFE']->fe_user->setAndSaveSessionData('workos_auth_error', null);
+            } else {
+                $authError = null;
+            }
+        }
 
         $workosProfile = null;
         if ($isLoggedIn) {
@@ -57,8 +73,111 @@ final class LoginController extends ActionController
                 ['key' => 'AppleOAuth', 'label' => 'Apple', 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'AppleOAuth']))],
             ],
             'workosProfile' => $workosProfile,
+            'authError' => $authError,
         ]);
 
         return $this->htmlResponse();
+    }
+
+    public function passwordAuthAction(): ResponseInterface
+    {
+        $email = trim((string)($this->request->getParsedBody()['email'] ?? ''));
+        $password = (string)($this->request->getParsedBody()['password'] ?? '');
+        $returnTo = (string)($this->request->getParsedBody()['returnTo'] ?? '/');
+
+        if ($email === '' || $password === '') {
+            return $this->redirectToShowWithError('Please enter both email and password.');
+        }
+
+        try {
+            $result = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
+            $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
+            return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo);
+        } catch (\Throwable $e) {
+            return $this->redirectToShowWithError($this->sanitizeErrorMessage($e->getMessage()));
+        }
+    }
+
+    public function magicAuthSendAction(): ResponseInterface
+    {
+        $email = trim((string)($this->request->getParsedBody()['email'] ?? ''));
+        $returnTo = (string)($this->request->getParsedBody()['returnTo'] ?? '/');
+
+        if ($email === '') {
+            return $this->redirectToShowWithError('Please enter your email address.');
+        }
+
+        try {
+            $magicAuth = $this->workosAuthenticationService->sendMagicAuthCode($email);
+            $GLOBALS['TSFE']->fe_user->setAndSaveSessionData('workos_magic_auth', [
+                'userId' => $magicAuth['userId'],
+                'email' => $email,
+                'returnTo' => $returnTo,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->redirectToShowWithError($this->sanitizeErrorMessage($e->getMessage()));
+        }
+
+        return $this->redirect('magicAuthCode');
+    }
+
+    public function magicAuthCodeAction(): ResponseInterface
+    {
+        $sessionData = $GLOBALS['TSFE']->fe_user->getSessionData('workos_magic_auth');
+        if (!is_array($sessionData) || empty($sessionData['email'])) {
+            return $this->redirect('show');
+        }
+
+        $this->view->assignMultiple([
+            'configured' => $this->configuration->isFrontendReady(),
+            'magicAuthEmail' => $sessionData['email'],
+        ]);
+
+        return $this->htmlResponse();
+    }
+
+    public function magicAuthVerifyAction(): ResponseInterface
+    {
+        $code = trim((string)($this->request->getParsedBody()['code'] ?? ''));
+        $sessionData = $GLOBALS['TSFE']->fe_user->getSessionData('workos_magic_auth');
+
+        if (!is_array($sessionData) || empty($sessionData['userId'])) {
+            return $this->redirectToShowWithError('Magic auth session expired. Please try again.');
+        }
+
+        if ($code === '') {
+            return $this->redirect('magicAuthCode');
+        }
+
+        try {
+            $result = $this->workosAuthenticationService->authenticateWithMagicAuth(
+                $this->request,
+                $code,
+                $sessionData['userId']
+            );
+            $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
+            $returnTo = $sessionData['returnTo'] ?? '/';
+            $GLOBALS['TSFE']->fe_user->setAndSaveSessionData('workos_magic_auth', null);
+            return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo);
+        } catch (\Throwable $e) {
+            return $this->redirectToShowWithError($this->sanitizeErrorMessage($e->getMessage()));
+        }
+    }
+
+    private function redirectToShowWithError(string $message): ResponseInterface
+    {
+        $GLOBALS['TSFE']->fe_user->setAndSaveSessionData('workos_auth_error', $message);
+        return $this->redirect('show');
+    }
+
+    private function sanitizeErrorMessage(string $message): string
+    {
+        if (str_contains($message, 'password') || str_contains($message, 'credentials') || str_contains($message, 'unauthorized')) {
+            return 'Invalid email or password.';
+        }
+        if (str_contains($message, 'code')) {
+            return 'Invalid or expired code. Please try again.';
+        }
+        return 'Authentication failed. Please try again.';
     }
 }
