@@ -51,14 +51,26 @@ final readonly class InjectLoginHeadingsListener
             'workos-classic-login-heading',
             <<<CSS
             .workos-login-heading {
-                margin: 0 0 1rem;
-                font-size: 1.05rem;
+                margin: 0 calc(var(--bs-card-spacer-x, 1rem) * -1) 1.25rem;
+                padding: 0.85rem 1rem;
+                background: var(--typo3-surface-container-color, #f3f4f6);
+                border-top: 1px solid var(--typo3-component-border-color, rgba(0, 0, 0, 0.08));
+                border-bottom: 1px solid var(--typo3-component-border-color, rgba(0, 0, 0, 0.08));
+                font-size: 1rem;
                 font-weight: 600;
                 text-align: center;
                 line-height: 1.35;
+                letter-spacing: 0.01em;
                 color: var(--typo3-text-color-base, #1f2937);
             }
             .workos-login-heading strong { font-weight: 700; }
+            @media (prefers-color-scheme: dark) {
+                .workos-login-heading {
+                    background: var(--typo3-surface-container-color, #2a2f36);
+                    border-color: var(--typo3-component-border-color, rgba(255, 255, 255, 0.08));
+                    color: var(--typo3-text-color-base, #e5e7eb);
+                }
+            }
             CSS
         );
 
