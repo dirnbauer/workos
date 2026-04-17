@@ -51,8 +51,8 @@ final readonly class InjectLoginHeadingsListener
             'workos-classic-login-heading',
             <<<CSS
             .workos-login-heading {
-                margin: 0 calc(var(--bs-card-spacer-x, 1rem) * -1) 1.25rem;
-                padding: 0.85rem 1rem;
+                margin: 0 -1.875rem 1.25rem;
+                padding: 0.85rem 1.875rem;
                 background: var(--typo3-surface-container-color, #f3f4f6);
                 border-top: 1px solid var(--typo3-component-border-color, rgba(0, 0, 0, 0.08));
                 border-bottom: 1px solid var(--typo3-component-border-color, rgba(0, 0, 0, 0.08));
