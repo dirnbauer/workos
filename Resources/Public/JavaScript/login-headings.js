@@ -50,11 +50,14 @@ function relocateProviderButtons() {
 
     // 1) TYPO3 default provider switcher (e.g. "Login with username and password"
     //    when the WorkOS provider is active, or "Continue with WorkOS" when the
-    //    classic provider is active).
+    //    classic provider is active). The TYPO3 markup wraps the label in a
+    //    second <span> after an icon span, so prefer the explicit label span and
+    //    fall back to the anchor's full text content (the SVG icon contributes
+    //    no text on its own).
     document.querySelectorAll('.typo3-login-links a[href]').forEach((anchor) => {
         const href = anchor.getAttribute('href');
-        const span = anchor.querySelector('span');
-        const label = (span ? span.textContent : anchor.textContent || '').trim();
+        const labelSpan = anchor.querySelector('span:not(.t3js-icon):not(.icon-markup)');
+        const label = ((labelSpan ? labelSpan.textContent : anchor.textContent) || '').trim();
         if (href && label) {
             items.push({ href, label, kind: 'switch' });
         }
