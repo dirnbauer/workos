@@ -1,13 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <g fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
     <g stroke="currentColor">
-      <circle cx="22" cy="22" r="7"/>
-      <circle cx="42" cy="22" r="7"/>
-      <path d="M10 50c0-7 5.4-12 12-12s12 5 12 12"/>
-      <path d="M30 50c0-7 5.4-12 12-12s12 5 12 12"/>
+      <circle cx="32" cy="20" r="8"/>
+      <path d="M18 50c0-7.732 6.268-14 14-14s14 6.268 14 14"/>
+      <circle cx="14" cy="28" r="6"/>
+      <path d="M4 48c0-5.5 4.5-10 10-10"/>
     </g>
     <g stroke="var(--icon-color-accent, #ff8700)">
-      <path d="M50 10l3 3 6-6"/>
+      <circle cx="50" cy="28" r="6"/>
+      <path d="M60 48c0-5.5-4.5-10-10-10"/>
     </g>
   </g>
 </svg>
