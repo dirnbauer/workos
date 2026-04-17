@@ -169,6 +169,12 @@
             </trans-unit>
 
             <!-- Backend login provider -->
+            <trans-unit id="backend.login.heading.workos">
+                <source>Sign in with &lt;strong&gt;WorkOS&lt;/strong&gt;</source>
+            </trans-unit>
+            <trans-unit id="backend.login.heading.classic">
+                <source>Classic sign-in</source>
+            </trans-unit>
             <trans-unit id="backend.login.signInWithEmail">
                 <source>Sign in with email</source>
             </trans-unit>
