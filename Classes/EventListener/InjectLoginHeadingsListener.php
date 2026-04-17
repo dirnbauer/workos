@@ -42,23 +42,45 @@ final readonly class InjectLoginHeadingsListener
             'workos-login-heading',
             <<<'CSS'
             .workos-login-heading {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.25rem;
                 margin: 0 -1.875rem 1.25rem;
                 padding: 0.85rem 1.875rem;
                 background: var(--typo3-surface-container-color, #f3f4f6);
                 border-top: 1px solid var(--typo3-component-border-color, rgba(0, 0, 0, 0.08));
                 border-bottom: 1px solid var(--typo3-component-border-color, rgba(0, 0, 0, 0.08));
-                font-size: 1rem;
-                font-weight: 600;
                 text-align: center;
-                line-height: 1.35;
-                letter-spacing: 0.01em;
                 color: var(--typo3-text-color-base, #1f2937);
             }
-            .workos-login-heading strong { font-weight: 700; }
+            .workos-login-heading__title {
+                font-size: 1rem;
+                font-weight: 600;
+                line-height: 1.35;
+                letter-spacing: 0.01em;
+            }
+            .workos-login-heading__title strong { font-weight: 700; }
+            .workos-login-heading__link {
+                font-size: 0.8rem;
+                font-weight: 400;
+                line-height: 1.3;
+                color: inherit;
+                text-decoration: underline;
+                text-underline-offset: 0.15em;
+                opacity: 0.85;
+            }
+            .workos-login-heading__link:hover,
+            .workos-login-heading__link:focus {
+                color: inherit;
+                text-decoration: underline;
+                opacity: 1;
+            }
 
-            /* The provider switcher links and "More sign-in options" link are
-               relocated into a button row right under the heading by JS.
-               Hide the originals immediately to avoid a layout flash. */
+            /* The provider switcher link is moved INSIDE the heading box as a
+               small text link, and the "More sign-in options" link is moved
+               into a button row below the heading. Hide the originals
+               immediately to avoid a layout flash. */
             .typo3-login-links { display: none !important; }
             .workos-authkit-link[data-workos-relocate] { display: none; }
 
@@ -91,9 +113,6 @@ final readonly class InjectLoginHeadingsListener
                 border-color: color-mix(in srgb, currentColor 40%, transparent);
                 color: var(--typo3-text-color-base, #111827);
                 text-decoration: none;
-            }
-            .workos-login-buttons__btn--switch {
-                background: color-mix(in srgb, currentColor 4%, transparent);
             }
 
             @media (prefers-color-scheme: dark) {
