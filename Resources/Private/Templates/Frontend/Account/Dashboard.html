@@ -1,0 +1,427 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<style>
+.workos-account { max-width: 880px; margin: 0 auto; }
+.workos-account * { box-sizing: border-box; }
+.workos-account__header {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;
+    border: 1px solid #e5e7eb; border-radius: 16px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+}
+.workos-account__avatar {
+    width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(255,255,255,0.2); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 700; overflow: hidden;
+}
+.workos-account__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.workos-account__greet { margin: 0; font-size: 0.85rem; opacity: 0.85; }
+.workos-account__name  { margin: 0.15rem 0 0; font-size: 1.25rem; font-weight: 700; line-height: 1.2; }
+.workos-account__email { margin: 0.25rem 0 0; font-size: 0.85rem; opacity: 0.9; }
+
+.workos-account__card {
+    border: 1px solid #e5e7eb; border-radius: 16px;
+    padding: 1.5rem; background: #fff; margin-bottom: 1.25rem;
+}
+.workos-account__card-title {
+    margin: 0 0 0.25rem; font-size: 1.05rem; font-weight: 700; color: #111827;
+    display: flex; align-items: center; gap: 0.5rem;
+}
+.workos-account__card-sub {
+    margin: 0 0 1rem; font-size: 0.85rem; color: #6b7280;
+}
+.workos-account__row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.workos-account__row > div { flex: 1; min-width: 160px; }
+.workos-account label {
+    display: block; font-size: 0.8rem; font-weight: 600;
+    margin-bottom: 0.25rem; color: #374151;
+    text-transform: uppercase; letter-spacing: 0.04em;
+}
+.workos-account input[type="text"],
+.workos-account input[type="email"],
+.workos-account input[type="password"],
+.workos-account input[type="tel"] {
+    width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #d1d5db;
+    border-radius: 8px; font-size: 0.95rem; box-sizing: border-box;
+    background: #fff; color: #111827;
+}
+.workos-account input:focus { outline: 2px solid #6366f1; outline-offset: 1px; border-color: #6366f1; }
+.workos-account__actions { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.workos-account__btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 8px;
+    font-weight: 600; font-size: 0.9rem; cursor: pointer;
+    border: 1px solid transparent; text-decoration: none;
+}
+.workos-account__btn--primary { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+.workos-account__btn--primary:hover { background: #4338ca; color: #fff; }
+.workos-account__btn--ghost { background: #fff; color: #4f46e5; border-color: #c7d2fe; }
+.workos-account__btn--ghost:hover { background: #eef2ff; color: #4338ca; }
+.workos-account__btn--danger { background: #fff; color: #b91c1c; border-color: #fecaca; }
+.workos-account__btn--danger:hover { background: #fef2f2; }
+
+.workos-account__alert {
+    padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.9rem; margin-bottom: 1rem;
+    border: 1px solid; display: flex; align-items: flex-start; gap: 0.5rem;
+}
+.workos-account__alert--success { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+.workos-account__alert--danger  { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.workos-account__alert--info    { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.workos-account__alert--warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+
+.workos-account__list { display: flex; flex-direction: column; gap: 0.5rem; }
+.workos-account__item {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;
+    border: 1px solid #e5e7eb; border-radius: 10px; background: #fafafa;
+}
+.workos-account__item-meta { flex: 1; min-width: 0; }
+.workos-account__item-title { font-weight: 600; color: #111827; font-size: 0.95rem; }
+.workos-account__item-sub   { font-size: 0.8rem; color: #6b7280; margin-top: 0.15rem; word-break: break-all; }
+
+.workos-account__badge {
+    display: inline-flex; align-items: center; padding: 0.15rem 0.5rem;
+    border-radius: 999px; font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em;
+}
+.workos-account__badge--green  { background: #ecfdf5; color: #065f46; }
+.workos-account__badge--gray   { background: #f3f4f6; color: #374151; }
+.workos-account__badge--orange { background: #fff7ed; color: #9a3412; }
+.workos-account__badge--blue   { background: #eff6ff; color: #1e40af; }
+
+.workos-account__qr {
+    display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap;
+    padding: 1rem; border: 1px dashed #c7d2fe; border-radius: 12px;
+    background: #f5f3ff; margin-bottom: 1rem;
+}
+.workos-account__qr img {
+    width: 168px; height: 168px; border-radius: 8px; background: #fff; padding: 4px;
+    border: 1px solid #e0e7ff;
+}
+.workos-account__qr code {
+    display: inline-block; padding: 0.4rem 0.6rem; background: #fff;
+    border: 1px solid #e0e7ff; border-radius: 6px; font-size: 0.85rem;
+    word-break: break-all;
+}
+
+@media (max-width: 600px) {
+    .workos-account__header { flex-direction: column; text-align: center; }
+    .workos-account__qr img { width: 144px; height: 144px; }
+}
+</style>
+
+<div class="workos-account">
+
+    <f:if condition="{configured}">
+        <f:then>
+            <f:if condition="{isLoggedIn}">
+                <f:then>
+
+                    <f:if condition="{noWorkosLink}">
+                        <f:then>
+                            <div class="workos-account__alert workos-account__alert--warning">
+                                <f:translate key="workos_auth.messages:account.notLinked" />
+                            </div>
+                        </f:then>
+                        <f:else>
+
+                            <div class="workos-account__header">
+                                <div class="workos-account__avatar">
+                                    <f:if condition="{workosUser.profilePictureUrl}">
+                                        <f:then><img src="{workosUser.profilePictureUrl}" alt="" /></f:then>
+                                        <f:else>{displayName -> f:format.case(mode: 'upper') -> f:format.crop(maxCharacters: 1, append: '')}</f:else>
+                                    </f:if>
+                                </div>
+                                <div>
+                                    <p class="workos-account__greet"><f:translate key="workos_auth.messages:account.greeting" /></p>
+                                    <p class="workos-account__name">
+                                        <f:if condition="{workosUser.firstName}">
+                                            <f:then>{workosUser.firstName} {workosUser.lastName}</f:then>
+                                            <f:else>{displayName}</f:else>
+                                        </f:if>
+                                    </p>
+                                    <p class="workos-account__email">{workosUser.email}</p>
+                                </div>
+                            </div>
+
+                            <f:if condition="{flash}">
+                                <div class="workos-account__alert workos-account__alert--{flash.type}">{flash.message}</div>
+                            </f:if>
+
+                            <!-- Profile -->
+                            <div class="workos-account__card">
+                                <p class="workos-account__card-title">
+                                    <f:translate key="workos_auth.messages:account.profile.title" />
+                                </p>
+                                <p class="workos-account__card-sub">
+                                    <f:translate key="workos_auth.messages:account.profile.subtitle" />
+                                </p>
+                                <f:if condition="{sectionErrors.profile}">
+                                    <div class="workos-account__alert workos-account__alert--danger">{sectionErrors.profile}</div>
+                                </f:if>
+                                <f:form action="updateProfile" method="post">
+                                    <div class="workos-account__row">
+                                        <div>
+                                            <label for="wa-firstname"><f:translate key="workos_auth.messages:account.profile.firstName" /></label>
+                                            <input id="wa-firstname" type="text" name="firstName" value="{workosUser.firstName}" autocomplete="given-name" />
+                                        </div>
+                                        <div>
+                                            <label for="wa-lastname"><f:translate key="workos_auth.messages:account.profile.lastName" /></label>
+                                            <input id="wa-lastname" type="text" name="lastName" value="{workosUser.lastName}" autocomplete="family-name" />
+                                        </div>
+                                    </div>
+                                    <div class="workos-account__actions">
+                                        <button type="submit" class="workos-account__btn workos-account__btn--primary">
+                                            <f:translate key="workos_auth.messages:account.profile.save" />
+                                        </button>
+                                    </div>
+                                </f:form>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="workos-account__card">
+                                <p class="workos-account__card-title">
+                                    <f:translate key="workos_auth.messages:account.password.title" />
+                                </p>
+                                <p class="workos-account__card-sub">
+                                    <f:translate key="workos_auth.messages:account.password.subtitle" />
+                                </p>
+                                <f:form action="changePassword" method="post" autocomplete="off">
+                                    <div class="workos-account__row">
+                                        <div>
+                                            <label for="wa-pass1"><f:translate key="workos_auth.messages:account.password.new" /></label>
+                                            <input id="wa-pass1" type="password" name="password" autocomplete="new-password" required />
+                                        </div>
+                                        <div>
+                                            <label for="wa-pass2"><f:translate key="workos_auth.messages:account.password.confirm" /></label>
+                                            <input id="wa-pass2" type="password" name="passwordConfirm" autocomplete="new-password" required />
+                                        </div>
+                                    </div>
+                                    <div class="workos-account__actions">
+                                        <button type="submit" class="workos-account__btn workos-account__btn--primary">
+                                            <f:translate key="workos_auth.messages:account.password.save" />
+                                        </button>
+                                    </div>
+                                </f:form>
+                            </div>
+
+                            <!-- MFA / TOTP -->
+                            <div class="workos-account__card">
+                                <p class="workos-account__card-title">
+                                    <f:translate key="workos_auth.messages:account.mfa.title" />
+                                    <f:if condition="{factors -> f:count()}">
+                                        <span class="workos-account__badge workos-account__badge--green">
+                                            <f:translate key="workos_auth.messages:account.mfa.activeBadge" />
+                                        </span>
+                                    </f:if>
+                                </p>
+                                <p class="workos-account__card-sub">
+                                    <f:translate key="workos_auth.messages:account.mfa.subtitle" />
+                                </p>
+
+                                <f:if condition="{sectionErrors.mfa}">
+                                    <div class="workos-account__alert workos-account__alert--danger">{sectionErrors.mfa}</div>
+                                </f:if>
+
+                                <f:if condition="{pendingEnrollment}">
+                                    <div class="workos-account__qr">
+                                        <f:if condition="{pendingEnrollment.qrCode}">
+                                            <img src="{pendingEnrollment.qrCode}" alt="QR" />
+                                        </f:if>
+                                        <div style="flex:1; min-width: 220px;">
+                                            <p style="margin:0 0 0.5rem; font-weight:600; color:#312e81;">
+                                                <f:translate key="workos_auth.messages:account.mfa.scanInstruction" />
+                                            </p>
+                                            <p style="margin:0 0 0.5rem; font-size:0.82rem; color:#4b5563;">
+                                                <f:translate key="workos_auth.messages:account.mfa.cantScan" />
+                                            </p>
+                                            <code>{pendingEnrollment.secret}</code>
+                                            <f:form action="verifyMfaEnrollment" method="post" style="margin-top:0.85rem;">
+                                                <label for="wa-mfa-code"><f:translate key="workos_auth.messages:account.mfa.codeLabel" /></label>
+                                                <input id="wa-mfa-code" type="text" name="code" inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456" required />
+                                                <div class="workos-account__actions">
+                                                    <button type="submit" class="workos-account__btn workos-account__btn--primary">
+                                                        <f:translate key="workos_auth.messages:account.mfa.verify" />
+                                                    </button>
+                                                    <f:form action="cancelMfaEnrollment" method="post" style="margin:0;">
+                                                        <button type="submit" class="workos-account__btn workos-account__btn--ghost">
+                                                            <f:translate key="workos_auth.messages:account.mfa.cancel" />
+                                                        </button>
+                                                    </f:form>
+                                                </div>
+                                            </f:form>
+                                        </div>
+                                    </div>
+                                </f:if>
+
+                                <f:if condition="{factors -> f:count()}">
+                                    <f:then>
+                                        <div class="workos-account__list">
+                                            <f:for each="{factors}" as="factor">
+                                                <div class="workos-account__item">
+                                                    <div class="workos-account__item-meta">
+                                                        <div class="workos-account__item-title">
+                                                            <f:translate key="workos_auth.messages:account.mfa.factorTotp" />
+                                                            <f:if condition="{factor.totp.issuer}">· {factor.totp.issuer}</f:if>
+                                                        </div>
+                                                        <div class="workos-account__item-sub">
+                                                            <f:translate key="workos_auth.messages:account.mfa.factorAdded" /> {factor.createdAt}
+                                                        </div>
+                                                    </div>
+                                                    <f:form action="deleteFactor" method="post" style="margin:0;">
+                                                        <input type="hidden" name="factorId" value="{factor.id}" />
+                                                        <button type="submit" class="workos-account__btn workos-account__btn--danger" onclick="return confirm('{f:translate(key: \'workos_auth.messages:account.mfa.confirmDelete\')}');">
+                                                            <f:translate key="workos_auth.messages:account.mfa.remove" />
+                                                        </button>
+                                                    </f:form>
+                                                </div>
+                                            </f:for>
+                                        </div>
+                                    </f:then>
+                                    <f:else>
+                                        <f:if condition="!{pendingEnrollment}">
+                                            <p style="margin:0 0 0.75rem; color:#6b7280; font-size:0.9rem;">
+                                                <f:translate key="workos_auth.messages:account.mfa.noFactors" />
+                                            </p>
+                                        </f:if>
+                                    </f:else>
+                                </f:if>
+
+                                <f:if condition="!{pendingEnrollment}">
+                                    <div class="workos-account__actions">
+                                        <f:form action="startMfaEnrollment" method="post" style="margin:0;">
+                                            <button type="submit" class="workos-account__btn workos-account__btn--primary">
+                                                <f:translate key="workos_auth.messages:account.mfa.enroll" />
+                                            </button>
+                                        </f:form>
+                                    </div>
+                                </f:if>
+                            </div>
+
+                            <!-- Sessions -->
+                            <div class="workos-account__card">
+                                <p class="workos-account__card-title">
+                                    <f:translate key="workos_auth.messages:account.sessions.title" />
+                                </p>
+                                <p class="workos-account__card-sub">
+                                    <f:translate key="workos_auth.messages:account.sessions.subtitle" />
+                                </p>
+                                <f:if condition="{sectionErrors.sessions}">
+                                    <div class="workos-account__alert workos-account__alert--danger">{sectionErrors.sessions}</div>
+                                </f:if>
+                                <f:if condition="{sessions -> f:count()}">
+                                    <f:then>
+                                        <div class="workos-account__list">
+                                            <f:for each="{sessions}" as="session">
+                                                <div class="workos-account__item">
+                                                    <div class="workos-account__item-meta">
+                                                        <div class="workos-account__item-title">
+                                                            <f:if condition="{session.deviceLabel}">
+                                                                <f:then>{session.deviceLabel}</f:then>
+                                                                <f:else><f:translate key="workos_auth.messages:account.sessions.unknownDevice" /></f:else>
+                                                            </f:if>
+                                                            <f:if condition="{session.isActive}">
+                                                                <f:then><span class="workos-account__badge workos-account__badge--green"><f:translate key="workos_auth.messages:account.sessions.statusActive" /></span></f:then>
+                                                                <f:else><span class="workos-account__badge workos-account__badge--gray">{session.status}</span></f:else>
+                                                            </f:if>
+                                                        </div>
+                                                        <div class="workos-account__item-sub">
+                                                            <f:if condition="{session.ipAddress}">{session.ipAddress} · </f:if>
+                                                            {session.authenticationMethod} · <f:translate key="workos_auth.messages:account.sessions.expires" /> {session.expiresAt}
+                                                        </div>
+                                                    </div>
+                                                    <f:if condition="{session.isActive}">
+                                                        <f:form action="revokeSession" method="post" style="margin:0;">
+                                                            <input type="hidden" name="sessionId" value="{session.id}" />
+                                                            <button type="submit" class="workos-account__btn workos-account__btn--danger">
+                                                                <f:translate key="workos_auth.messages:account.sessions.revoke" />
+                                                            </button>
+                                                        </f:form>
+                                                    </f:if>
+                                                </div>
+                                            </f:for>
+                                        </div>
+                                    </f:then>
+                                    <f:else>
+                                        <p style="margin:0; color:#6b7280; font-size:0.9rem;">
+                                            <f:translate key="workos_auth.messages:account.sessions.empty" />
+                                        </p>
+                                    </f:else>
+                                </f:if>
+                            </div>
+
+                            <!-- Organizations -->
+                            <div class="workos-account__card">
+                                <p class="workos-account__card-title">
+                                    <f:translate key="workos_auth.messages:account.orgs.title" />
+                                </p>
+                                <p class="workos-account__card-sub">
+                                    <f:translate key="workos_auth.messages:account.orgs.subtitle" />
+                                </p>
+                                <f:if condition="{sectionErrors.organizations}">
+                                    <div class="workos-account__alert workos-account__alert--danger">{sectionErrors.organizations}</div>
+                                </f:if>
+                                <f:if condition="{memberships -> f:count()}">
+                                    <f:then>
+                                        <div class="workos-account__list">
+                                            <f:for each="{memberships}" as="m">
+                                                <div class="workos-account__item">
+                                                    <div class="workos-account__item-meta">
+                                                        <div class="workos-account__item-title">
+                                                            <f:if condition="{m.organizationName}">
+                                                                <f:then>{m.organizationName}</f:then>
+                                                                <f:else>{m.organizationId}</f:else>
+                                                            </f:if>
+                                                            <f:if condition="{m.directoryManaged}">
+                                                                <span class="workos-account__badge workos-account__badge--blue">
+                                                                    <f:translate key="workos_auth.messages:account.orgs.directorySync" />
+                                                                </span>
+                                                            </f:if>
+                                                            <f:if condition="{m.status} == 'active'">
+                                                                <f:then><span class="workos-account__badge workos-account__badge--green">{m.status}</span></f:then>
+                                                                <f:else><span class="workos-account__badge workos-account__badge--orange">{m.status}</span></f:else>
+                                                            </f:if>
+                                                        </div>
+                                                        <div class="workos-account__item-sub">
+                                                            <f:if condition="{m.roleSlugs -> f:count()}">
+                                                                <f:then>
+                                                                    <f:translate key="workos_auth.messages:account.orgs.role" />:
+                                                                    <f:for each="{m.roleSlugs}" as="role" iteration="i">{role}<f:if condition="{i.isLast} == 0">, </f:if></f:for>
+                                                                </f:then>
+                                                                <f:else><f:translate key="workos_auth.messages:account.orgs.noRole" /></f:else>
+                                                            </f:if>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </f:for>
+                                        </div>
+                                    </f:then>
+                                    <f:else>
+                                        <p style="margin:0; color:#6b7280; font-size:0.9rem;">
+                                            <f:translate key="workos_auth.messages:account.orgs.empty" />
+                                        </p>
+                                    </f:else>
+                                </f:if>
+                            </div>
+
+                        </f:else>
+                    </f:if>
+
+                </f:then>
+                <f:else>
+                    <div class="workos-account__alert workos-account__alert--info">
+                        <f:translate key="workos_auth.messages:account.signInRequired" />
+                    </div>
+                </f:else>
+            </f:if>
+        </f:then>
+        <f:else>
+            <div class="workos-account__alert workos-account__alert--warning">
+                <f:translate key="workos_auth.messages:common.notConfigured" />
+            </div>
+        </f:else>
+    </f:if>
+
+</div>
+</html>

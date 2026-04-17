@@ -632,6 +632,342 @@
             <trans-unit id="validation.backendGroupUidsRequired">
                 <source>Automatic backend user creation needs at least one backend group UID.</source>
             </trans-unit>
+
+            <!-- Account Center plugin -->
+            <trans-unit id="plugin.account.title">
+                <source>WorkOS Account Center</source>
+            </trans-unit>
+            <trans-unit id="account.greeting">
+                <source>Signed in as</source>
+            </trans-unit>
+            <trans-unit id="account.signInRequired">
+                <source>Please sign in to manage your WorkOS account.</source>
+            </trans-unit>
+            <trans-unit id="account.notLinked">
+                <source>This frontend user is not linked to a WorkOS account, so the Account Center cannot show profile data.</source>
+            </trans-unit>
+
+            <trans-unit id="account.profile.title">
+                <source>Profile</source>
+            </trans-unit>
+            <trans-unit id="account.profile.subtitle">
+                <source>Update the name your team and customers see.</source>
+            </trans-unit>
+            <trans-unit id="account.profile.firstName">
+                <source>First name</source>
+            </trans-unit>
+            <trans-unit id="account.profile.lastName">
+                <source>Last name</source>
+            </trans-unit>
+            <trans-unit id="account.profile.save">
+                <source>Save profile</source>
+            </trans-unit>
+
+            <trans-unit id="account.password.title">
+                <source>Password</source>
+            </trans-unit>
+            <trans-unit id="account.password.subtitle">
+                <source>Choose a strong password (at least 10 characters).</source>
+            </trans-unit>
+            <trans-unit id="account.password.new">
+                <source>New password</source>
+            </trans-unit>
+            <trans-unit id="account.password.confirm">
+                <source>Confirm password</source>
+            </trans-unit>
+            <trans-unit id="account.password.save">
+                <source>Update password</source>
+            </trans-unit>
+
+            <trans-unit id="account.mfa.title">
+                <source>Two-factor authentication</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.activeBadge">
+                <source>Enabled</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.subtitle">
+                <source>Add an authenticator app for an extra layer of security on your account.</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.scanInstruction">
+                <source>Scan this QR code with your authenticator app.</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.cantScan">
+                <source>Can't scan? Enter this secret manually:</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.codeLabel">
+                <source>6-digit code</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.verify">
+                <source>Verify code</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.cancel">
+                <source>Cancel</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.factorTotp">
+                <source>Authenticator app</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.factorAdded">
+                <source>Added</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.confirmDelete">
+                <source>Remove this authenticator factor?</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.remove">
+                <source>Remove</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.noFactors">
+                <source>No authenticator app set up yet.</source>
+            </trans-unit>
+            <trans-unit id="account.mfa.enroll">
+                <source>Set up authenticator app</source>
+            </trans-unit>
+
+            <trans-unit id="account.sessions.title">
+                <source>Active sessions</source>
+            </trans-unit>
+            <trans-unit id="account.sessions.subtitle">
+                <source>Devices currently signed in to your WorkOS account.</source>
+            </trans-unit>
+            <trans-unit id="account.sessions.unknownDevice">
+                <source>Unknown device</source>
+            </trans-unit>
+            <trans-unit id="account.sessions.statusActive">
+                <source>Active</source>
+            </trans-unit>
+            <trans-unit id="account.sessions.expires">
+                <source>expires</source>
+            </trans-unit>
+            <trans-unit id="account.sessions.revoke">
+                <source>Sign out</source>
+            </trans-unit>
+            <trans-unit id="account.sessions.empty">
+                <source>No active sessions.</source>
+            </trans-unit>
+
+            <trans-unit id="account.orgs.title">
+                <source>Organizations</source>
+            </trans-unit>
+            <trans-unit id="account.orgs.subtitle">
+                <source>Workspaces and teams your account belongs to.</source>
+            </trans-unit>
+            <trans-unit id="account.orgs.directorySync">
+                <source>Directory sync</source>
+            </trans-unit>
+            <trans-unit id="account.orgs.role">
+                <source>Role</source>
+            </trans-unit>
+            <trans-unit id="account.orgs.noRole">
+                <source>No role assigned</source>
+            </trans-unit>
+            <trans-unit id="account.orgs.empty">
+                <source>You are not a member of any organization yet.</source>
+            </trans-unit>
+
+            <trans-unit id="account.flash.profileUpdated">
+                <source>Profile updated.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.profileFailed">
+                <source>Could not update your profile. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordUpdated">
+                <source>Password updated.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordRequired">
+                <source>Please enter and confirm a new password.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordMismatch">
+                <source>Passwords do not match.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordTooShort">
+                <source>Password must be at least 10 characters long.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordTooWeak">
+                <source>That password is too easy to guess. Please pick a stronger one.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordBreached">
+                <source>That password has appeared in a known data breach. Please pick a different one.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordFailed">
+                <source>Could not update your password. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaEnrollFailed">
+                <source>Could not start authenticator setup. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaPendingMissing">
+                <source>The authenticator setup expired. Please start again.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaActivated">
+                <source>Authenticator app activated.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaCodeInvalid">
+                <source>That code is not valid. Please try the latest code from your authenticator app.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaCancelled">
+                <source>Authenticator setup cancelled.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaRemoved">
+                <source>Authenticator removed.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaRemoveFailed">
+                <source>Could not remove the authenticator. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.sessionRevoked">
+                <source>Session signed out.</source>
+            </trans-unit>
+            <trans-unit id="account.flash.sessionRevokeFailed">
+                <source>Could not sign that session out. Please try again.</source>
+            </trans-unit>
+
+            <trans-unit id="account.error.loadProfile">
+                <source>Your WorkOS profile could not be loaded.</source>
+            </trans-unit>
+            <trans-unit id="account.error.loadFactors">
+                <source>Your authentication factors could not be loaded.</source>
+            </trans-unit>
+            <trans-unit id="account.error.loadSessions">
+                <source>Your active sessions could not be loaded.</source>
+            </trans-unit>
+            <trans-unit id="account.error.loadOrganizations">
+                <source>Your organization memberships could not be loaded.</source>
+            </trans-unit>
+
+            <!-- Team plugin -->
+            <trans-unit id="plugin.team.title">
+                <source>WorkOS Team</source>
+            </trans-unit>
+            <trans-unit id="team.eyebrow">
+                <source>Workspace administration</source>
+            </trans-unit>
+            <trans-unit id="team.title">
+                <source>Run your organization on WorkOS</source>
+            </trans-unit>
+            <trans-unit id="team.subtitle">
+                <source>Invite teammates, manage pending invitations and launch one-time WorkOS Admin Portal sessions for SSO, Directory Sync and audit logging.</source>
+            </trans-unit>
+            <trans-unit id="team.signInRequired">
+                <source>Please sign in to access the team workspace.</source>
+            </trans-unit>
+            <trans-unit id="team.noOrganizations">
+                <source>You're not a member of any active WorkOS organization yet.</source>
+            </trans-unit>
+            <trans-unit id="team.organization">
+                <source>Organization</source>
+            </trans-unit>
+
+            <trans-unit id="team.portal.title">
+                <source>Admin Portal</source>
+            </trans-unit>
+            <trans-unit id="team.portal.signedLink">
+                <source>Signed link</source>
+            </trans-unit>
+            <trans-unit id="team.portal.subtitle">
+                <source>Open a one-time hosted setup session in the WorkOS Admin Portal. Each link is signed and scoped to this organization.</source>
+            </trans-unit>
+            <trans-unit id="team.portal.launch">
+                <source>Open Admin Portal</source>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.sso">
+                <source>Single Sign-On (SSO)</source>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.dsync">
+                <source>Directory Sync (SCIM)</source>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.auditLogs">
+                <source>Audit Logs</source>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.logStreams">
+                <source>Log Streams</source>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.domain">
+                <source>Domain Verification</source>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.certs">
+                <source>Certificate Renewal</source>
+            </trans-unit>
+
+            <trans-unit id="team.invite.title">
+                <source>Invite a teammate</source>
+            </trans-unit>
+            <trans-unit id="team.invite.subtitle">
+                <source>WorkOS will email a one-time accept link. Optionally provide a role slug.</source>
+            </trans-unit>
+            <trans-unit id="team.invite.role">
+                <source>Role slug (optional)</source>
+            </trans-unit>
+            <trans-unit id="team.invite.send">
+                <source>Send invitation</source>
+            </trans-unit>
+
+            <trans-unit id="team.invitations.title">
+                <source>Invitations</source>
+            </trans-unit>
+            <trans-unit id="team.invitations.subtitle">
+                <source>Recent invitations issued for this organization.</source>
+            </trans-unit>
+            <trans-unit id="team.invitations.empty">
+                <source>No invitations issued yet.</source>
+            </trans-unit>
+            <trans-unit id="team.invitations.expires">
+                <source>expires</source>
+            </trans-unit>
+            <trans-unit id="team.invitations.resend">
+                <source>Resend</source>
+            </trans-unit>
+            <trans-unit id="team.invitations.revoke">
+                <source>Revoke</source>
+            </trans-unit>
+            <trans-unit id="team.invitations.statePending">
+                <source>Pending</source>
+            </trans-unit>
+            <trans-unit id="team.invitations.stateAccepted">
+                <source>Accepted</source>
+            </trans-unit>
+            <trans-unit id="team.invitations.stateExpired">
+                <source>Expired</source>
+            </trans-unit>
+            <trans-unit id="team.invitations.stateRevoked">
+                <source>Revoked</source>
+            </trans-unit>
+
+            <trans-unit id="team.flash.inviteSent">
+                <source>Invitation sent to {email}.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteFieldsRequired">
+                <source>Please enter an email address and pick an organization.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteInvalidEmail">
+                <source>That email address is not valid.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteAlreadyExists">
+                <source>That person already has a pending invitation or account.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteFailed">
+                <source>Could not send the invitation. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteResent">
+                <source>Invitation resent.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteResendFailed">
+                <source>Could not resend the invitation. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteRevoked">
+                <source>Invitation revoked.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteRevokeFailed">
+                <source>Could not revoke the invitation. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.portalMissingArgs">
+                <source>Please pick an organization and a portal intent.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.portalFailed">
+                <source>Could not open the WorkOS Admin Portal. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="team.error.loadOrganizations">
+                <source>Your active organizations could not be loaded.</source>
+            </trans-unit>
+            <trans-unit id="team.error.loadInvitations">
+                <source>Invitations for this organization could not be loaded.</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

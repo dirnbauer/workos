@@ -16,6 +16,12 @@ services:
   WebConsulting\WorkosAuth\Controller\Frontend\LoginController:
     public: true
 
+  WebConsulting\WorkosAuth\Controller\Frontend\AccountController:
+    public: true
+
+  WebConsulting\WorkosAuth\Controller\Frontend\TeamController:
+    public: true
+
   WebConsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider:
     public: true
 

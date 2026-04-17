@@ -6,6 +6,7 @@ namespace WebConsulting\WorkosAuth\Service;
 
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WorkOS\Organizations;
+use WorkOS\Portal;
 use WorkOS\UserManagement;
 use WorkOS\Widgets;
 use WorkOS\WorkOS;
@@ -32,6 +33,12 @@ final class WorkosClientFactory
     {
         $this->primeClient();
         return new Organizations();
+    }
+
+    public function createPortal(): Portal
+    {
+        $this->primeClient();
+        return new Portal();
     }
 
     private function primeClient(): void
