@@ -18,6 +18,9 @@ final readonly class InjectLoginHeadingsListener
      * Identifier of the WorkOS backend login provider (registered in ext_localconf.php).
      * The WorkOS provider renders its own heading inside the Fluid template, so we only
      * need to inject one for foreign providers (the standard "Username/Password" form).
+     * Shared assets (CSS for the heading + button row, the JS that relocates the
+     * provider switcher) are loaded for both providers so the visual treatment is
+     * consistent regardless of which login screen is active.
      */
     private const WORKOS_PROVIDER_IDENTIFIER = '1744276800';
 
@@ -35,21 +38,9 @@ final readonly class InjectLoginHeadingsListener
             'be_lastLoginProvider'
         );
 
-        if ($providerIdentifier === self::WORKOS_PROVIDER_IDENTIFIER) {
-            return;
-        }
-
-        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
-        $headingText = (string)$languageService->sL(
-            'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.heading.classic'
-        );
-        if ($headingText === '') {
-            $headingText = 'Classic sign-in';
-        }
-
         $this->pageRenderer->addCssInlineBlock(
-            'workos-classic-login-heading',
-            <<<CSS
+            'workos-login-heading',
+            <<<'CSS'
             .workos-login-heading {
                 margin: 0 -1.875rem 1.25rem;
                 padding: 0.85rem 1.875rem;
@@ -64,24 +55,81 @@ final readonly class InjectLoginHeadingsListener
                 color: var(--typo3-text-color-base, #1f2937);
             }
             .workos-login-heading strong { font-weight: 700; }
+
+            /* The provider switcher links and "More sign-in options" link are
+               relocated into a button row right under the heading by JS.
+               Hide the originals immediately to avoid a layout flash. */
+            .typo3-login-links { display: none !important; }
+            .workos-authkit-link[data-workos-relocate] { display: none; }
+
+            .workos-login-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                margin: 0 0 1.25rem;
+            }
+            .workos-login-buttons__btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                padding: 0.6rem 1rem;
+                font-size: 0.95rem;
+                font-weight: 500;
+                line-height: 1.4;
+                text-align: center;
+                text-decoration: none;
+                color: var(--typo3-text-color-base, #1f2937);
+                background: var(--typo3-btn-bg, #fff);
+                border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+                border-radius: var(--typo3-btn-border-radius, 6px);
+                transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            }
+            .workos-login-buttons__btn:hover,
+            .workos-login-buttons__btn:focus {
+                background: color-mix(in srgb, currentColor 6%, transparent);
+                border-color: color-mix(in srgb, currentColor 40%, transparent);
+                color: var(--typo3-text-color-base, #111827);
+                text-decoration: none;
+            }
+            .workos-login-buttons__btn--switch {
+                background: color-mix(in srgb, currentColor 4%, transparent);
+            }
+
             @media (prefers-color-scheme: dark) {
                 .workos-login-heading {
                     background: var(--typo3-surface-container-color, #2a2f36);
                     border-color: var(--typo3-component-border-color, rgba(255, 255, 255, 0.08));
                     color: var(--typo3-text-color-base, #e5e7eb);
                 }
+                .workos-login-buttons__btn {
+                    background: var(--typo3-btn-bg, transparent);
+                    color: var(--typo3-text-color-base, #e5e7eb);
+                }
             }
             CSS
         );
+
+        $this->pageRenderer->getJavaScriptRenderer()->addJavaScriptModuleInstruction(
+            JavaScriptModuleInstruction::create('@webconsulting/workos-auth/login-headings.js')
+        );
+
+        if ($providerIdentifier === self::WORKOS_PROVIDER_IDENTIFIER) {
+            return;
+        }
+
+        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        $headingText = (string)$languageService->sL(
+            'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.heading.classic'
+        );
+        if ($headingText === '') {
+            $headingText = 'Classic sign-in';
+        }
 
         // Plain-HTML data carrier (no script, so no CSP concerns).
         $this->pageRenderer->addHeaderData(sprintf(
             '<template data-workos-login-heading data-text="%s"></template>',
             htmlspecialchars($headingText, ENT_QUOTES | ENT_HTML5, 'UTF-8')
         ));
-
-        $this->pageRenderer->getJavaScriptRenderer()->addJavaScriptModuleInstruction(
-            JavaScriptModuleInstruction::create('@webconsulting/workos-auth/login-headings.js')
-        );
     }
 }
