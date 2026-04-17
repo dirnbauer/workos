@@ -62,6 +62,15 @@ TYPO3's backend login gains a WorkOS section with:
 Standard TYPO3 username + password login keeps working in parallel via
 the "Login with username and password" switcher.
 
+> **Heads-up — "This WorkOS account is not linked to a TYPO3 user":**
+> If a user authenticates successfully with WorkOS but no matching
+> `be_users` record exists and `backendAutoCreateUsers` is off, the
+> backend login shows that error card together with the WorkOS e-mail
+> and id. Either set the e-mail on an existing backend user, or enable
+> auto-create with a domain allowlist in the setup assistant. Full
+> walk-through:
+> [Troubleshooting → "This WorkOS account is not linked to a TYPO3 user"](Documentation/Troubleshooting.md#this-workos-account-is-not-linked-to-a-typo3-user-backend-login).
+
 ## WorkOS Dashboard setup
 
 All authentication methods (AuthKit, Magic Auth, Email + Password, Social
