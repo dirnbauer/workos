@@ -100,27 +100,39 @@
                 <h3 class="card-title"><f:translate key="workos_auth.messages:setup.frontend.title" /></h3>
             </div>
             <div class="card-body">
-                <div class="form-check mb-2">
+                <div class="form-check mb-3">
                     <input type="hidden" name="configuration[frontendEnabled]" value="0">
                     <input id="frontendEnabled" class="form-check-input" type="checkbox" name="configuration[frontendEnabled]" value="1" <f:if condition="{formValues.frontendEnabled}">checked</f:if>>
                     <label class="form-check-label" for="frontendEnabled"><f:translate key="workos_auth.messages:setup.frontend.enable" /></label>
+                    <small class="form-text text-muted d-block">
+                        <f:translate key="workos_auth.messages:setup.frontend.enable.description" />
+                    </small>
                 </div>
 
-                <div class="form-check mb-2">
+                <div class="form-check mb-3">
                     <input type="hidden" name="configuration[frontendAutoCreateUsers]" value="0">
                     <input id="frontendAutoCreateUsers" class="form-check-input" type="checkbox" name="configuration[frontendAutoCreateUsers]" value="1" <f:if condition="{formValues.frontendAutoCreateUsers}">checked</f:if>>
                     <label class="form-check-label" for="frontendAutoCreateUsers"><f:translate key="workos_auth.messages:setup.frontend.autoCreate" /></label>
+                    <small class="form-text text-muted d-block">
+                        <f:translate key="workos_auth.messages:setup.frontend.autoCreate.description" />
+                    </small>
                 </div>
 
                 <div class="form-check mb-3">
                     <input type="hidden" name="configuration[frontendLinkByEmail]" value="0">
                     <input id="frontendLinkByEmail" class="form-check-input" type="checkbox" name="configuration[frontendLinkByEmail]" value="1" <f:if condition="{formValues.frontendLinkByEmail}">checked</f:if>>
                     <label class="form-check-label" for="frontendLinkByEmail"><f:translate key="workos_auth.messages:setup.frontend.linkByEmail" /></label>
+                    <small class="form-text text-muted d-block">
+                        <f:translate key="workos_auth.messages:setup.frontend.linkByEmail.description" />
+                    </small>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="frontendStoragePid"><strong><f:translate key="workos_auth.messages:setup.frontend.storagePid" /></strong></label>
                     <input id="frontendStoragePid" class="form-control" type="number" min="0" name="configuration[frontendStoragePid]" value="{formValues.frontendStoragePid}">
+                    <small class="form-text text-muted">
+                        <f:translate key="workos_auth.messages:setup.frontend.storagePid.description" />
+                    </small>
                     <f:if condition="{errors.frontendStoragePid}">
                         <div class="text-danger mt-1">{errors.frontendStoragePid}</div>
                     </f:if>
@@ -129,26 +141,41 @@
                 <div class="form-group mb-3">
                     <label for="frontendDefaultGroupUids"><strong><f:translate key="workos_auth.messages:setup.frontend.defaultGroupUids" /></strong></label>
                     <input id="frontendDefaultGroupUids" class="form-control" type="text" name="configuration[frontendDefaultGroupUids]" value="{formValues.frontendDefaultGroupUids}">
+                    <small class="form-text text-muted">
+                        <f:translate key="workos_auth.messages:setup.frontend.defaultGroupUids.description" />
+                    </small>
                 </div>
 
                 <div class="row">
                     <div class="col-md-4 form-group mb-3">
                         <label for="frontendLoginPath"><strong><f:translate key="workos_auth.messages:setup.frontend.loginPath" /></strong></label>
                         <input id="frontendLoginPath" class="form-control" type="text" name="configuration[frontendLoginPath]" value="{formValues.frontendLoginPath}">
+                        <small class="form-text text-muted">
+                            <f:translate key="workos_auth.messages:setup.frontend.loginPath.description" />
+                        </small>
                     </div>
                     <div class="col-md-4 form-group mb-3">
                         <label for="frontendCallbackPath"><strong><f:translate key="workos_auth.messages:setup.frontend.callbackPath" /></strong></label>
                         <input id="frontendCallbackPath" class="form-control" type="text" name="configuration[frontendCallbackPath]" value="{formValues.frontendCallbackPath}">
+                        <small class="form-text text-muted">
+                            <f:translate key="workos_auth.messages:setup.frontend.callbackPath.description" />
+                        </small>
                     </div>
                     <div class="col-md-4 form-group mb-3">
                         <label for="frontendLogoutPath"><strong><f:translate key="workos_auth.messages:setup.frontend.logoutPath" /></strong></label>
                         <input id="frontendLogoutPath" class="form-control" type="text" name="configuration[frontendLogoutPath]" value="{formValues.frontendLogoutPath}">
+                        <small class="form-text text-muted">
+                            <f:translate key="workos_auth.messages:setup.frontend.logoutPath.description" />
+                        </small>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="frontendSuccessRedirect"><strong><f:translate key="workos_auth.messages:setup.frontend.successRedirect" /></strong></label>
                     <input id="frontendSuccessRedirect" class="form-control" type="text" name="configuration[frontendSuccessRedirect]" value="{formValues.frontendSuccessRedirect}">
+                    <small class="form-text text-muted">
+                        <f:translate key="workos_auth.messages:setup.frontend.successRedirect.description" />
+                    </small>
                 </div>
             </div>
         </div>
@@ -158,27 +185,39 @@
                 <h3 class="card-title"><f:translate key="workos_auth.messages:setup.backend.title" /></h3>
             </div>
             <div class="card-body">
-                <div class="form-check mb-2">
+                <div class="form-check mb-3">
                     <input type="hidden" name="configuration[backendEnabled]" value="0">
                     <input id="backendEnabled" class="form-check-input" type="checkbox" name="configuration[backendEnabled]" value="1" <f:if condition="{formValues.backendEnabled}">checked</f:if>>
                     <label class="form-check-label" for="backendEnabled"><f:translate key="workos_auth.messages:setup.backend.enable" /></label>
+                    <small class="form-text text-muted d-block">
+                        <f:translate key="workos_auth.messages:setup.backend.enable.description" />
+                    </small>
                 </div>
 
-                <div class="form-check mb-2">
+                <div class="form-check mb-3">
                     <input type="hidden" name="configuration[backendAutoCreateUsers]" value="0">
                     <input id="backendAutoCreateUsers" class="form-check-input" type="checkbox" name="configuration[backendAutoCreateUsers]" value="1" <f:if condition="{formValues.backendAutoCreateUsers}">checked</f:if>>
                     <label class="form-check-label" for="backendAutoCreateUsers"><f:translate key="workos_auth.messages:setup.backend.autoCreate" /></label>
+                    <small class="form-text text-muted d-block">
+                        <f:translate key="workos_auth.messages:setup.backend.autoCreate.description" />
+                    </small>
                 </div>
 
                 <div class="form-check mb-3">
                     <input type="hidden" name="configuration[backendLinkByEmail]" value="0">
                     <input id="backendLinkByEmail" class="form-check-input" type="checkbox" name="configuration[backendLinkByEmail]" value="1" <f:if condition="{formValues.backendLinkByEmail}">checked</f:if>>
                     <label class="form-check-label" for="backendLinkByEmail"><f:translate key="workos_auth.messages:setup.backend.linkByEmail" /></label>
+                    <small class="form-text text-muted d-block">
+                        <f:translate key="workos_auth.messages:setup.backend.linkByEmail.description" />
+                    </small>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="backendDefaultGroupUids"><strong><f:translate key="workos_auth.messages:setup.backend.defaultGroupUids" /></strong></label>
                     <input id="backendDefaultGroupUids" class="form-control" type="text" name="configuration[backendDefaultGroupUids]" value="{formValues.backendDefaultGroupUids}">
+                    <small class="form-text text-muted">
+                        <f:translate key="workos_auth.messages:setup.backend.defaultGroupUids.description" />
+                    </small>
                     <f:if condition="{errors.backendDefaultGroupUids}">
                         <div class="text-danger mt-1">{errors.backendDefaultGroupUids}</div>
                     </f:if>
@@ -196,14 +235,23 @@
                     <div class="col-md-4 form-group mb-3">
                         <label for="backendLoginPath"><strong><f:translate key="workos_auth.messages:setup.backend.loginPath" /></strong></label>
                         <input id="backendLoginPath" class="form-control" type="text" name="configuration[backendLoginPath]" value="{formValues.backendLoginPath}">
+                        <small class="form-text text-muted">
+                            <f:translate key="workos_auth.messages:setup.backend.loginPath.description" />
+                        </small>
                     </div>
                     <div class="col-md-4 form-group mb-3">
                         <label for="backendCallbackPath"><strong><f:translate key="workos_auth.messages:setup.backend.callbackPath" /></strong></label>
                         <input id="backendCallbackPath" class="form-control" type="text" name="configuration[backendCallbackPath]" value="{formValues.backendCallbackPath}">
+                        <small class="form-text text-muted">
+                            <f:translate key="workos_auth.messages:setup.backend.callbackPath.description" />
+                        </small>
                     </div>
                     <div class="col-md-4 form-group mb-3">
                         <label for="backendSuccessPath"><strong><f:translate key="workos_auth.messages:setup.backend.successPath" /></strong></label>
                         <input id="backendSuccessPath" class="form-control" type="text" name="configuration[backendSuccessPath]" value="{formValues.backendSuccessPath}">
+                        <small class="form-text text-muted">
+                            <f:translate key="workos_auth.messages:setup.backend.successPath.description" />
+                        </small>
                     </div>
                 </div>
             </div>

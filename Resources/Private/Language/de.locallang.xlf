@@ -548,37 +548,73 @@
                 <source>Enable frontend login</source>
                 <target>Frontend-Anmeldung aktivieren</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.enable.description">
+                <source>Expose the WorkOS-powered login routes on the website.</source>
+                <target>Stellt die WorkOS-gestützten Anmelderouten im Frontend bereit.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.autoCreate">
                 <source>Auto-create missing frontend users</source>
                 <target>Fehlende Frontend-Benutzer automatisch anlegen</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.autoCreate.description">
+                <source>Provision a new fe_users record after a successful WorkOS sign-in if no matching user exists.</source>
+                <target>Legt nach erfolgreicher WorkOS-Anmeldung automatisch einen fe_users-Datensatz an, wenn noch keiner existiert.</target>
             </trans-unit>
             <trans-unit id="setup.frontend.linkByEmail">
                 <source>Link existing frontend users by email</source>
                 <target>Bestehende Frontend-Benutzer per E-Mail verknüpfen</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.linkByEmail.description">
+                <source>Match WorkOS sign-ins to existing frontend users that share the same email address.</source>
+                <target>Verknüpft WorkOS-Anmeldungen mit bestehenden Frontend-Benutzern anhand der E-Mail-Adresse.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.storagePid">
                 <source>Frontend storage PID</source>
                 <target>Frontend-Speicher-PID</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.storagePid.description">
+                <source>Page UID where new fe_users records are stored. Required when auto-creation is enabled.</source>
+                <target>Seiten-UID, unter der neue fe_users-Datensätze gespeichert werden. Erforderlich, wenn die automatische Erstellung aktiviert ist.</target>
             </trans-unit>
             <trans-unit id="setup.frontend.defaultGroupUids">
                 <source>Default frontend group UIDs</source>
                 <target>Standard-Frontend-Gruppen-UIDs</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.defaultGroupUids.description">
+                <source>Comma-separated list of fe_groups UIDs assigned to auto-created frontend users.</source>
+                <target>Kommagetrennte Liste von fe_groups-UIDs, die automatisch angelegten Frontend-Benutzern zugewiesen werden.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.loginPath">
                 <source>Login path</source>
                 <target>Anmeldepfad</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.loginPath.description">
+                <source>Public URL path that starts the WorkOS sign-in flow for frontend users.</source>
+                <target>Öffentlicher URL-Pfad, der den WorkOS-Anmeldevorgang für Frontend-Benutzer startet.</target>
             </trans-unit>
             <trans-unit id="setup.frontend.callbackPath">
                 <source>Callback path</source>
                 <target>Callback-Pfad</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.callbackPath.description">
+                <source>URL path WorkOS redirects to after a successful sign-in. Must match a redirect URI registered in WorkOS.</source>
+                <target>URL-Pfad, zu dem WorkOS nach erfolgreicher Anmeldung weiterleitet. Muss einer in WorkOS registrierten Weiterleitungs-URI entsprechen.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.logoutPath">
                 <source>Logout path</source>
                 <target>Abmeldepfad</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.logoutPath.description">
+                <source>URL path that ends the WorkOS session and signs the frontend user out.</source>
+                <target>URL-Pfad, der die WorkOS-Sitzung beendet und den Frontend-Benutzer abmeldet.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.successRedirect">
                 <source>Success redirect</source>
                 <target>Weiterleitung nach Erfolg</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.successRedirect.description">
+                <source>Path users are redirected to after a successful sign-in (for example /).</source>
+                <target>Pfad, zu dem Benutzer nach erfolgreicher Anmeldung weitergeleitet werden (zum Beispiel /).</target>
             </trans-unit>
             <trans-unit id="setup.backend.title">
                 <source>Backend login</source>
@@ -588,17 +624,33 @@
                 <source>Enable backend login</source>
                 <target>Backend-Anmeldung aktivieren</target>
             </trans-unit>
+            <trans-unit id="setup.backend.enable.description">
+                <source>Show the WorkOS sign-in option on the TYPO3 backend login screen.</source>
+                <target>Zeigt die WorkOS-Anmeldung auf der TYPO3-Backend-Anmeldeseite an.</target>
+            </trans-unit>
             <trans-unit id="setup.backend.autoCreate">
                 <source>Auto-create missing backend users</source>
                 <target>Fehlende Backend-Benutzer automatisch anlegen</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.autoCreate.description">
+                <source>Provision a new be_users record after a successful WorkOS sign-in if no matching user exists.</source>
+                <target>Legt nach erfolgreicher WorkOS-Anmeldung automatisch einen be_users-Datensatz an, wenn noch keiner existiert.</target>
             </trans-unit>
             <trans-unit id="setup.backend.linkByEmail">
                 <source>Link existing backend users by email</source>
                 <target>Bestehende Backend-Benutzer per E-Mail verknüpfen</target>
             </trans-unit>
+            <trans-unit id="setup.backend.linkByEmail.description">
+                <source>Match WorkOS sign-ins to existing backend users that share the same email address.</source>
+                <target>Verknüpft WorkOS-Anmeldungen mit bestehenden Backend-Benutzern anhand der E-Mail-Adresse.</target>
+            </trans-unit>
             <trans-unit id="setup.backend.defaultGroupUids">
                 <source>Default backend group UIDs</source>
                 <target>Standard-Backend-Gruppen-UIDs</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.defaultGroupUids.description">
+                <source>Comma-separated list of be_groups UIDs assigned to auto-created backend users.</source>
+                <target>Kommagetrennte Liste von be_groups-UIDs, die automatisch angelegten Backend-Benutzern zugewiesen werden.</target>
             </trans-unit>
             <trans-unit id="setup.backend.allowedDomains">
                 <source>Allowed backend email domains</source>
@@ -612,13 +664,25 @@
                 <source>Login path</source>
                 <target>Anmeldepfad</target>
             </trans-unit>
+            <trans-unit id="setup.backend.loginPath.description">
+                <source>URL path that starts the WorkOS sign-in flow for backend users.</source>
+                <target>URL-Pfad, der den WorkOS-Anmeldevorgang für Backend-Benutzer startet.</target>
+            </trans-unit>
             <trans-unit id="setup.backend.callbackPath">
                 <source>Callback path</source>
                 <target>Callback-Pfad</target>
             </trans-unit>
+            <trans-unit id="setup.backend.callbackPath.description">
+                <source>URL path WorkOS redirects to after a successful backend sign-in. Must match a registered redirect URI.</source>
+                <target>URL-Pfad, zu dem WorkOS nach erfolgreicher Backend-Anmeldung weiterleitet. Muss einer registrierten Weiterleitungs-URI entsprechen.</target>
+            </trans-unit>
             <trans-unit id="setup.backend.successPath">
                 <source>Success path</source>
                 <target>Erfolgspfad</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.successPath.description">
+                <source>Backend route to open after a successful sign-in (for example /main).</source>
+                <target>Backend-Route, die nach erfolgreicher Anmeldung geöffnet wird (zum Beispiel /main).</target>
             </trans-unit>
             <trans-unit id="setup.authkit.title">
                 <source>Optional AuthKit hints</source>

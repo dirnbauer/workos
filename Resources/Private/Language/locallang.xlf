@@ -416,29 +416,56 @@
             <trans-unit id="setup.frontend.enable">
                 <source>Enable frontend login</source>
             </trans-unit>
+            <trans-unit id="setup.frontend.enable.description">
+                <source>Expose the WorkOS-powered login routes on the website.</source>
+            </trans-unit>
             <trans-unit id="setup.frontend.autoCreate">
                 <source>Auto-create missing frontend users</source>
+            </trans-unit>
+            <trans-unit id="setup.frontend.autoCreate.description">
+                <source>Provision a new fe_users record after a successful WorkOS sign-in if no matching user exists.</source>
             </trans-unit>
             <trans-unit id="setup.frontend.linkByEmail">
                 <source>Link existing frontend users by email</source>
             </trans-unit>
+            <trans-unit id="setup.frontend.linkByEmail.description">
+                <source>Match WorkOS sign-ins to existing frontend users that share the same email address.</source>
+            </trans-unit>
             <trans-unit id="setup.frontend.storagePid">
                 <source>Frontend storage PID</source>
+            </trans-unit>
+            <trans-unit id="setup.frontend.storagePid.description">
+                <source>Page UID where new fe_users records are stored. Required when auto-creation is enabled.</source>
             </trans-unit>
             <trans-unit id="setup.frontend.defaultGroupUids">
                 <source>Default frontend group UIDs</source>
             </trans-unit>
+            <trans-unit id="setup.frontend.defaultGroupUids.description">
+                <source>Comma-separated list of fe_groups UIDs assigned to auto-created frontend users.</source>
+            </trans-unit>
             <trans-unit id="setup.frontend.loginPath">
                 <source>Login path</source>
+            </trans-unit>
+            <trans-unit id="setup.frontend.loginPath.description">
+                <source>Public URL path that starts the WorkOS sign-in flow for frontend users.</source>
             </trans-unit>
             <trans-unit id="setup.frontend.callbackPath">
                 <source>Callback path</source>
             </trans-unit>
+            <trans-unit id="setup.frontend.callbackPath.description">
+                <source>URL path WorkOS redirects to after a successful sign-in. Must match a redirect URI registered in WorkOS.</source>
+            </trans-unit>
             <trans-unit id="setup.frontend.logoutPath">
                 <source>Logout path</source>
             </trans-unit>
+            <trans-unit id="setup.frontend.logoutPath.description">
+                <source>URL path that ends the WorkOS session and signs the frontend user out.</source>
+            </trans-unit>
             <trans-unit id="setup.frontend.successRedirect">
                 <source>Success redirect</source>
+            </trans-unit>
+            <trans-unit id="setup.frontend.successRedirect.description">
+                <source>Path users are redirected to after a successful sign-in (for example /).</source>
             </trans-unit>
             <trans-unit id="setup.backend.title">
                 <source>Backend login</source>
@@ -446,14 +473,26 @@
             <trans-unit id="setup.backend.enable">
                 <source>Enable backend login</source>
             </trans-unit>
+            <trans-unit id="setup.backend.enable.description">
+                <source>Show the WorkOS sign-in option on the TYPO3 backend login screen.</source>
+            </trans-unit>
             <trans-unit id="setup.backend.autoCreate">
                 <source>Auto-create missing backend users</source>
+            </trans-unit>
+            <trans-unit id="setup.backend.autoCreate.description">
+                <source>Provision a new be_users record after a successful WorkOS sign-in if no matching user exists.</source>
             </trans-unit>
             <trans-unit id="setup.backend.linkByEmail">
                 <source>Link existing backend users by email</source>
             </trans-unit>
+            <trans-unit id="setup.backend.linkByEmail.description">
+                <source>Match WorkOS sign-ins to existing backend users that share the same email address.</source>
+            </trans-unit>
             <trans-unit id="setup.backend.defaultGroupUids">
                 <source>Default backend group UIDs</source>
+            </trans-unit>
+            <trans-unit id="setup.backend.defaultGroupUids.description">
+                <source>Comma-separated list of be_groups UIDs assigned to auto-created backend users.</source>
             </trans-unit>
             <trans-unit id="setup.backend.allowedDomains">
                 <source>Allowed backend email domains</source>
@@ -464,11 +503,20 @@
             <trans-unit id="setup.backend.loginPath">
                 <source>Login path</source>
             </trans-unit>
+            <trans-unit id="setup.backend.loginPath.description">
+                <source>URL path that starts the WorkOS sign-in flow for backend users.</source>
+            </trans-unit>
             <trans-unit id="setup.backend.callbackPath">
                 <source>Callback path</source>
             </trans-unit>
+            <trans-unit id="setup.backend.callbackPath.description">
+                <source>URL path WorkOS redirects to after a successful backend sign-in. Must match a registered redirect URI.</source>
+            </trans-unit>
             <trans-unit id="setup.backend.successPath">
                 <source>Success path</source>
+            </trans-unit>
+            <trans-unit id="setup.backend.successPath.description">
+                <source>Backend route to open after a successful sign-in (for example /main).</source>
             </trans-unit>
             <trans-unit id="setup.authkit.title">
                 <source>Optional AuthKit hints</source>
