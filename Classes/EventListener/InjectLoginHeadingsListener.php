@@ -61,19 +61,36 @@ final readonly class InjectLoginHeadingsListener
                 letter-spacing: 0.01em;
             }
             .workos-login-heading__title strong { font-weight: 700; }
-            .workos-login-heading__link {
-                font-size: 0.8rem;
-                font-weight: 400;
-                line-height: 1.3;
-                color: inherit;
-                text-decoration: underline;
-                text-underline-offset: 0.15em;
+            /* Defensive: force the relocated provider switcher to render as a
+               small inline text link, regardless of any TYPO3 backend styles
+               that target anchors inside cards/headings. */
+            a.workos-login-heading__link,
+            .workos-login-heading a.workos-login-heading__link {
+                display: inline !important;
+                width: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: transparent !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                font-size: 0.8rem !important;
+                font-weight: 400 !important;
+                line-height: 1.3 !important;
+                letter-spacing: normal !important;
+                color: inherit !important;
+                text-decoration: underline !important;
+                text-underline-offset: 0.15em !important;
                 opacity: 0.85;
             }
-            .workos-login-heading__link:hover,
-            .workos-login-heading__link:focus {
-                color: inherit;
-                text-decoration: underline;
+            a.workos-login-heading__link:hover,
+            a.workos-login-heading__link:focus,
+            .workos-login-heading a.workos-login-heading__link:hover,
+            .workos-login-heading a.workos-login-heading__link:focus {
+                color: inherit !important;
+                background: transparent !important;
+                border: 0 !important;
+                text-decoration: underline !important;
                 opacity: 1;
             }
 
