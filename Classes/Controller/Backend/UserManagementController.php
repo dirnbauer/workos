@@ -119,9 +119,12 @@ final class UserManagementController implements LoggerAwareInterface
             ], 502);
         }
 
-        $token = is_object($response) && property_exists($response, 'token') ? $response->token : null;
+        // WorkOS 4.x exposes resource fields via magic properties on
+        // BaseWorkOSResource, so property_exists() would incorrectly
+        // treat a valid token response as empty.
+        $token = is_object($response) ? self::stringFromMixed($response->token ?? null) : '';
         return new JsonResponse([
-            'token' => is_string($token) ? $token : '',
+            'token' => $token,
         ]);
     }
 
