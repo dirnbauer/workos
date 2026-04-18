@@ -12,6 +12,7 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\RequestBody;
@@ -395,7 +396,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
 
     private function sanitizeSignUpError(string $message): string
     {
-        $this->logger?->error('WorkOS sign-up error: ' . $message);
+        $this->logger?->error('WorkOS sign-up error: ' . SecretRedactor::redact($message));
 
         $lower = strtolower($message);
         if (str_contains($lower, 'password_too_short') || str_contains($lower, 'too short')) {
@@ -419,7 +420,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
 
     private function sanitizeErrorMessage(string $message): string
     {
-        $this->logger?->error('WorkOS auth error: ' . $message);
+        $this->logger?->error('WorkOS auth error: ' . SecretRedactor::redact($message));
 
         $lower = strtolower($message);
         if (str_contains($lower, 'password') || str_contains($lower, 'credentials') || str_contains($lower, 'unauthorized')) {

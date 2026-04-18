@@ -18,6 +18,7 @@ use WebConsulting\WorkosAuth\Service\WorkosAccountService;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\OrganizationMembership;
 use WorkOS\Resource\Session;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 
 /**
  * "WorkOS Account Center" plugin: lets a signed-in frontend user manage
@@ -54,28 +55,28 @@ final class AccountController extends ActionController implements LoggerAwareInt
         try {
             $workosUser = $this->accountService->getUser($workosUserId);
         } catch (\Throwable $e) {
-            $this->logger?->warning('WorkOS account: getUser failed: ' . $e->getMessage());
+            $this->logger?->warning('WorkOS account: getUser failed: ' . SecretRedactor::redact($e->getMessage()));
             $errors['profile'] = $this->translate('account.error.loadProfile');
         }
 
         try {
             $factors = $this->accountService->listTotpFactors($workosUserId);
         } catch (\Throwable $e) {
-            $this->logger?->warning('WorkOS account: listAuthFactors failed: ' . $e->getMessage());
+            $this->logger?->warning('WorkOS account: listAuthFactors failed: ' . SecretRedactor::redact($e->getMessage()));
             $errors['mfa'] = $this->translate('account.error.loadFactors');
         }
 
         try {
             $sessions = $this->accountService->listSessions($workosUserId, 25);
         } catch (\Throwable $e) {
-            $this->logger?->warning('WorkOS account: listSessions failed: ' . $e->getMessage());
+            $this->logger?->warning('WorkOS account: listSessions failed: ' . SecretRedactor::redact($e->getMessage()));
             $errors['sessions'] = $this->translate('account.error.loadSessions');
         }
 
         try {
             $memberships = $this->accountService->listOrganizationMemberships($workosUserId);
         } catch (\Throwable $e) {
-            $this->logger?->warning('WorkOS account: listOrganizationMemberships failed: ' . $e->getMessage());
+            $this->logger?->warning('WorkOS account: listOrganizationMemberships failed: ' . SecretRedactor::redact($e->getMessage()));
             $errors['organizations'] = $this->translate('account.error.loadOrganizations');
         }
 
@@ -119,7 +120,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             );
             $this->setFlash('success', $this->translate('account.flash.profileUpdated'));
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS account: updateProfile failed: ' . $e->getMessage());
+            $this->logger?->error('WorkOS account: updateProfile failed: ' . SecretRedactor::redact($e->getMessage()));
             $this->setFlash('danger', $this->translate('account.flash.profileFailed'));
         }
 
@@ -158,7 +159,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             $this->accountService->changePassword($context['workosUserId'], $newPassword);
             $this->setFlash('success', $this->translate('account.flash.passwordUpdated'));
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS account: changePassword failed: ' . $e->getMessage());
+            $this->logger?->error('WorkOS account: changePassword failed: ' . SecretRedactor::redact($e->getMessage()));
             $this->setFlash('danger', $this->mapPasswordError($e->getMessage()));
         }
 
@@ -202,7 +203,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
                 'createdAt' => time(),
             ]);
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS account: enroll factor failed: ' . $e->getMessage());
+            $this->logger?->error('WorkOS account: enroll factor failed: ' . SecretRedactor::redact($e->getMessage()));
             $this->setFlash('danger', $this->translate('account.flash.mfaEnrollFailed'));
         }
 
@@ -233,7 +234,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', null);
             $this->setFlash('success', $this->translate('account.flash.mfaActivated'));
         } catch (\Throwable $e) {
-            $this->logger?->info('WorkOS account: verify factor failed: ' . $e->getMessage());
+            $this->logger?->info('WorkOS account: verify factor failed: ' . SecretRedactor::redact($e->getMessage()));
             $this->setFlash('danger', $this->translate('account.flash.mfaCodeInvalid'));
         }
 
@@ -257,7 +258,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             try {
                 $this->accountService->deleteFactor($this->stringFromMixed($pending['factorId']));
             } catch (\Throwable $e) {
-                $this->logger?->warning('WorkOS account: delete pending factor failed: ' . $e->getMessage());
+                $this->logger?->warning('WorkOS account: delete pending factor failed: ' . SecretRedactor::redact($e->getMessage()));
             }
             $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', null);
         }
@@ -287,7 +288,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             $this->accountService->deleteFactor($factorId);
             $this->setFlash('success', $this->translate('account.flash.mfaRemoved'));
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS account: delete factor failed: ' . $e->getMessage());
+            $this->logger?->error('WorkOS account: delete factor failed: ' . SecretRedactor::redact($e->getMessage()));
             $this->setFlash('danger', $this->translate('account.flash.mfaRemoveFailed'));
         }
 
@@ -315,7 +316,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             $this->accountService->revokeSession($sessionId);
             $this->setFlash('success', $this->translate('account.flash.sessionRevoked'));
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS account: revoke session failed: ' . $e->getMessage());
+            $this->logger?->error('WorkOS account: revoke session failed: ' . SecretRedactor::redact($e->getMessage()));
             $this->setFlash('danger', $this->translate('account.flash.sessionRevokeFailed'));
         }
 

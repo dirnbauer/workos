@@ -18,6 +18,7 @@ use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosTeamService;
 use WorkOS\Resource\Invitation;
 use WorkOS\Resource\Organization;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 
 /**
  * "WorkOS Team" plugin: lets a signed-in admin manage organization
@@ -53,7 +54,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         try {
             $organizations = $this->teamService->listAdminOrganizations($workosUserId);
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS team: list memberships failed: ' . $e->getMessage());
+            $this->logger?->error('WorkOS team: list memberships failed: ' . SecretRedactor::redact($e->getMessage()));
             $sectionErrors['organizations'] = $this->translate('team.error.loadOrganizations');
         }
 
@@ -76,7 +77,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         try {
             $invitations = $this->teamService->listInvitations($selectedOrgId, 25);
         } catch (\Throwable $e) {
-            $this->logger?->warning('WorkOS team: list invitations failed: ' . $e->getMessage());
+            $this->logger?->warning('WorkOS team: list invitations failed: ' . SecretRedactor::redact($e->getMessage()));
             $sectionErrors['invitations'] = $this->translate('team.error.loadInvitations');
         }
 
@@ -137,7 +138,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             );
             $this->setFlash('success', $this->translate('team.flash.inviteSent', ['email' => $email]));
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS team: send invitation failed: ' . $e->getMessage());
+            $this->logger?->error('WorkOS team: send invitation failed: ' . SecretRedactor::redact($e->getMessage()));
             $this->setFlash('danger', $this->mapInvitationError($e->getMessage()));
         }
 
@@ -164,7 +165,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
                 $this->teamService->resendInvitation($invitationId);
                 $this->setFlash('success', $this->translate('team.flash.inviteResent'));
             } catch (\Throwable $e) {
-                $this->logger?->error('WorkOS team: resend invitation failed: ' . $e->getMessage());
+                $this->logger?->error('WorkOS team: resend invitation failed: ' . SecretRedactor::redact($e->getMessage()));
                 $this->setFlash('danger', $this->translate('team.flash.inviteResendFailed'));
             }
         }
@@ -192,7 +193,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
                 $this->teamService->revokeInvitation($invitationId);
                 $this->setFlash('success', $this->translate('team.flash.inviteRevoked'));
             } catch (\Throwable $e) {
-                $this->logger?->error('WorkOS team: revoke invitation failed: ' . $e->getMessage());
+                $this->logger?->error('WorkOS team: revoke invitation failed: ' . SecretRedactor::redact($e->getMessage()));
                 $this->setFlash('danger', $this->translate('team.flash.inviteRevokeFailed'));
             }
         }
@@ -234,7 +235,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             }
             return new RedirectResponse($link, 303);
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS team: generate portal link failed: ' . $e->getMessage());
+            $this->logger?->error('WorkOS team: generate portal link failed: ' . SecretRedactor::redact($e->getMessage()));
             $this->setFlash('danger', $this->translate('team.flash.portalFailed'));
             return $this->redirectToDashboard($organizationId);
         }

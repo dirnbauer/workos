@@ -8,19 +8,24 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
 use WebConsulting\WorkosAuth\Service\UserProvisioningService;
 use WebConsulting\WorkosAuth\Service\WorkosAuthenticationService;
 
-final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
+final class FrontendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     public function __construct(
         private WorkosConfiguration $configuration,
         private WorkosAuthenticationService $workosAuthenticationService,
@@ -94,7 +99,8 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
                 302
             );
         } catch (\Throwable $exception) {
-            return $this->errorResponse($exception->getMessage(), 500);
+            $this->logger?->error('WorkOS frontend login error: ' . SecretRedactor::redact($exception->getMessage()));
+            return $this->errorResponse($this->translate('error.loginError'), 500);
         }
     }
 
@@ -107,10 +113,11 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
             return $this->typo3SessionService->createFrontendLoginResponse(
                 $request,
                 $frontendUser,
-                (string)$authenticationResult['returnTo']
+                $authenticationResult['returnTo']
             );
         } catch (\Throwable $exception) {
-            return $this->errorResponse($exception->getMessage(), 403);
+            $this->logger?->error('WorkOS frontend callback error: ' . SecretRedactor::redact($exception->getMessage()));
+            return $this->errorResponse($this->translate('error.loginError'), 403);
         }
     }
 

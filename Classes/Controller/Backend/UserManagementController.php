@@ -28,6 +28,7 @@ use WebConsulting\WorkosAuth\Service\WorkosClientFactory;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\OrganizationMembership;
 use WorkOS\Resource\WidgetScope;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 
 /**
  * Backend module that embeds the WorkOS "User Management" Widget.
@@ -112,7 +113,7 @@ final class UserManagementController implements LoggerAwareInterface
                 [WidgetScope::UsersTableManage],
             );
         } catch (\Throwable $exception) {
-            $this->logger?->error('WorkOS widget token error: ' . $exception->getMessage());
+            $this->logger?->error('WorkOS widget token error: ' . SecretRedactor::redact($exception->getMessage()));
             return new JsonResponse([
                 'error' => $this->translate('module.users.error.tokenFailed'),
             ], 502);
@@ -154,7 +155,7 @@ final class UserManagementController implements LoggerAwareInterface
                 'admin',
             );
         } catch (\Throwable $exception) {
-            $this->logger?->error('WorkOS join organization failed: ' . $exception->getMessage());
+            $this->logger?->error('WorkOS join organization failed: ' . SecretRedactor::redact($exception->getMessage()));
             $this->flash(sprintf('%s %s', $this->translate('module.users.error.joinFailed'), $exception->getMessage()), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
@@ -203,7 +204,7 @@ final class UserManagementController implements LoggerAwareInterface
                 'admin',
             );
         } catch (\Throwable $exception) {
-            $this->logger?->error('WorkOS create organization failed: ' . $exception->getMessage());
+            $this->logger?->error('WorkOS create organization failed: ' . SecretRedactor::redact($exception->getMessage()));
             $this->flash(sprintf('%s %s', $this->translate('module.users.error.createFailed'), $exception->getMessage()), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
@@ -298,7 +299,7 @@ final class UserManagementController implements LoggerAwareInterface
                 }
             }
         } catch (\Throwable $exception) {
-            $this->logger?->warning('WorkOS organization lookup failed: ' . $exception->getMessage());
+            $this->logger?->warning('WorkOS organization lookup failed: ' . SecretRedactor::redact($exception->getMessage()));
         }
 
         return $this->configuration->getAuthkitOrganizationId() ?? '';
@@ -328,7 +329,7 @@ final class UserManagementController implements LoggerAwareInterface
             usort($organizations, static fn(array $a, array $b): int => strcasecmp($a['name'], $b['name']));
             return $organizations;
         } catch (\Throwable $exception) {
-            $this->logger?->warning('WorkOS list organizations failed: ' . $exception->getMessage());
+            $this->logger?->warning('WorkOS list organizations failed: ' . SecretRedactor::redact($exception->getMessage()));
             return [];
         }
     }

@@ -16,6 +16,7 @@ use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
@@ -118,7 +119,8 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
                 302
             );
         } catch (\Throwable $exception) {
-            return $this->errorResponse($exception->getMessage(), 500);
+            $this->logger?->error('WorkOS backend login error: ' . SecretRedactor::redact($exception->getMessage()));
+            return $this->errorResponse($this->translate('error.loginError'), 500);
         }
     }
 
@@ -139,17 +141,15 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
                 $authenticationResult['returnTo']
             );
         } catch (\Throwable $exception) {
-            $this->logger?->error('WorkOS backend callback error: ' . $exception->getMessage());
+            $this->logger?->error('WorkOS backend callback error: ' . SecretRedactor::redact($exception->getMessage()));
             $fallbackLoginPath = PathUtility::joinBaseAndPath($backendBasePath, '/login');
-            $response = new RedirectResponse(
+            return new RedirectResponse(
                 PathUtility::appendQueryParameters($fallbackLoginPath, [
                     'loginProvider' => '1744276800',
                     'workosAuthError' => $this->sanitizeErrorMessage($exception->getMessage()),
                 ]),
                 303
             );
-
-            return $response->withAddedHeader('X-WorkOS-Auth-Error', $exception->getMessage());
         }
     }
 
@@ -175,7 +175,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         } catch (EmailVerificationRequiredException $e) {
             return $this->redirectToEmailVerification($backendBasePath, $e);
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend password auth error: ' . $e->getMessage());
+            $this->logger?->error('WorkOS backend password auth error: ' . SecretRedactor::redact($e->getMessage()));
             return $this->redirectToLoginWithError($backendBasePath, $this->sanitizeErrorMessage($e->getMessage()));
         }
     }
@@ -210,7 +210,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
                 303
             );
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend magic auth send error: ' . $e->getMessage());
+            $this->logger?->error('WorkOS backend magic auth send error: ' . SecretRedactor::redact($e->getMessage()));
             return $this->redirectToLoginWithError($backendBasePath, $this->sanitizeErrorMessage($e->getMessage()));
         }
     }
@@ -237,7 +237,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         } catch (EmailVerificationRequiredException $e) {
             return $this->redirectToEmailVerification($backendBasePath, $e);
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend magic auth verify error: ' . $e->getMessage());
+            $this->logger?->error('WorkOS backend magic auth verify error: ' . SecretRedactor::redact($e->getMessage()));
             return $this->redirectToLoginWithError($backendBasePath, $this->sanitizeErrorMessage($e->getMessage()));
         }
     }
@@ -264,7 +264,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         } catch (EmailVerificationRequiredException $e) {
             return $this->redirectToEmailVerification($backendBasePath, $e);
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend email verify error: ' . $e->getMessage());
+            $this->logger?->error('WorkOS backend email verify error: ' . SecretRedactor::redact($e->getMessage()));
             $state = $this->encodeEmailVerificationState(
                 $pendingToken,
                 $body->string('email'),
@@ -308,7 +308,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             $this->workosAuthenticationService->resendEmailVerification($userId);
             $params['workosAuthNotice'] = $this->translate('message.verificationCodeResent');
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend email verify resend error: ' . $e->getMessage());
+            $this->logger?->error('WorkOS backend email verify resend error: ' . SecretRedactor::redact($e->getMessage()));
             $params['workosAuthError'] = $this->sanitizeErrorMessage($e->getMessage());
         }
 
