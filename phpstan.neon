@@ -6,9 +6,8 @@ parameters:
         - Tests
         - ext_emconf.php
         - ext_localconf.php
-        - ext_tables.sql
-    excludePaths:
-        - ext_tables.sql
+    stubFiles:
+        - Build/phpstan/stubs/WorkOsResources.stub
     tmpDir: var/cache/phpstan
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true

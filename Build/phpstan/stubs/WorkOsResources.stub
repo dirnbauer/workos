@@ -1,0 +1,218 @@
+<?php
+
+/**
+ * PHPStan stub declarations for the WorkOS PHP SDK.
+ *
+ * The SDK resource classes expose fields via a magic __get accessor backed
+ * by RESOURCE_ATTRIBUTES const arrays. PHPStan cannot see these dynamic
+ * properties, so we declare @property lines here to give static analysis
+ * an accurate view of the shapes the SDK can return at runtime.
+ *
+ * Property types use ?string/mixed/array because the SDK converts
+ * untyped JSON without a schema — the null branches represent absent
+ * fields in the raw API response.
+ */
+
+namespace WorkOS\Resource;
+
+/**
+ * @property array<string, mixed> $raw
+ */
+class BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $object
+ * @property string|null $id
+ * @property string|null $email
+ * @property string|null $firstName
+ * @property string|null $lastName
+ * @property bool|null $emailVerified
+ * @property string|null $profilePictureUrl
+ * @property string|null $lastSignInAt
+ * @property string|null $createdAt
+ * @property string|null $updatedAt
+ * @property string|null $externalId
+ * @property array<string, mixed>|null $metadata
+ */
+class User extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $object
+ * @property string|null $id
+ * @property string|null $name
+ * @property bool|null $allowProfilesOutsideOrganization
+ * @property array<int, array<string, mixed>>|null $domains
+ * @property string|null $externalId
+ * @property array<string, mixed>|null $metadata
+ */
+class Organization extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $object
+ * @property string|null $id
+ * @property string|null $userId
+ * @property string|null $organizationId
+ * @property string|null $role
+ * @property array<int, array<string, mixed>>|null $roles
+ * @property string|null $status
+ * @property array<string, mixed>|null $customAttributes
+ * @property bool|null $directoryManaged
+ * @property string|null $createdAt
+ * @property string|null $updatedAt
+ */
+class OrganizationMembership extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $object
+ * @property string|null $id
+ * @property string|null $email
+ * @property string|null $state
+ * @property string|null $acceptedAt
+ * @property string|null $revokedAt
+ * @property string|null $expiresAt
+ * @property string|null $token
+ * @property string|null $acceptInvitationUrl
+ * @property string|null $organizationId
+ * @property string|null $inviterUserId
+ * @property string|null $createdAt
+ * @property string|null $updatedAt
+ */
+class Invitation extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $object
+ * @property string|null $id
+ * @property string|null $userId
+ * @property string|null $email
+ * @property string|null $expiresAt
+ * @property string|null $code
+ * @property string|null $createdAt
+ * @property string|null $updatedAt
+ */
+class MagicAuth extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $object
+ * @property string|null $id
+ * @property string|null $userId
+ * @property string|null $email
+ * @property string|null $expiresAt
+ * @property string|null $code
+ * @property string|null $createdAt
+ * @property string|null $updatedAt
+ */
+class EmailVerification extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $id
+ * @property string|null $email
+ * @property string|null $expiresAt
+ * @property string|null $link
+ * @property string|null $object
+ */
+class PasswordlessSession extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $id
+ * @property string|null $userId
+ * @property string|null $ipAddress
+ * @property string|null $userAgent
+ * @property string|null $organizationId
+ * @property string|null $authenticationMethod
+ * @property string|null $status
+ * @property string|null $expiresAt
+ * @property string|null $endedAt
+ * @property string|null $createdAt
+ * @property string|null $updatedAt
+ * @property string|null $object
+ */
+class Session extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $object
+ * @property string|null $id
+ * @property string|null $createdAt
+ * @property string|null $updatedAt
+ * @property string|null $type
+ * @property array<string, mixed>|null $totp
+ */
+class AuthenticationFactorTotp extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $object
+ * @property string|null $id
+ * @property string|null $userId
+ * @property string|null $createdAt
+ * @property string|null $updatedAt
+ * @property string|null $type
+ * @property array<string, mixed>|null $totp
+ */
+class UserAuthenticationFactorTotp extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property AuthenticationFactorTotp|null $authenticationFactor
+ * @property AuthenticationChallengeTotp|null $authenticationChallenge
+ */
+class AuthenticationFactorAndChallengeTotp extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $id
+ * @property string|null $code
+ * @property string|null $expiresAt
+ */
+class AuthenticationChallengeTotp extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property array<string, mixed>|null $user
+ * @property string|null $organizationId
+ * @property array<string, mixed>|null $impersonator
+ * @property string|null $accessToken
+ * @property string|null $refreshToken
+ * @property array<string, mixed>|null $oauthTokens
+ * @property string|null $authenticationMethod
+ */
+class AuthenticationResponse extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $link
+ */
+class PortalLink extends BaseWorkOSResource
+{
+}
+
+/**
+ * @property string|null $before
+ * @property string|null $after
+ * @property array<int, mixed> $data
+ */
+class PaginatedResource implements \ArrayAccess, \IteratorAggregate, \Countable
+{
+}

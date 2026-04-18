@@ -12,7 +12,11 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Service\IdentityService;
+use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosAccountService;
+use WorkOS\Resource\Organization;
+use WorkOS\Resource\OrganizationMembership;
+use WorkOS\Resource\Session;
 
 /**
  * "WorkOS Account Center" plugin: lets a signed-in frontend user manage
@@ -94,9 +98,9 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $context['response'];
         }
 
-        $body = $this->request->getParsedBody();
-        $firstName = trim((string)($body['firstName'] ?? ''));
-        $lastName = trim((string)($body['lastName'] ?? ''));
+        $body = RequestBody::fromRequest($this->request);
+        $firstName = $body->trimmedString('firstName');
+        $lastName = $body->trimmedString('lastName');
 
         try {
             $this->accountService->updateProfile(
@@ -120,9 +124,9 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $context['response'];
         }
 
-        $body = $this->request->getParsedBody();
-        $newPassword = (string)($body['password'] ?? '');
-        $confirmPassword = (string)($body['passwordConfirm'] ?? '');
+        $body = RequestBody::fromRequest($this->request);
+        $newPassword = $body->string('password');
+        $confirmPassword = $body->string('passwordConfirm');
 
         if ($newPassword === '' || $confirmPassword === '') {
             $this->setFlash('danger', $this->translate('account.flash.passwordRequired'));
@@ -162,18 +166,21 @@ final class AccountController extends ActionController implements LoggerAwareInt
             $accountName = $this->detectAccountName($workosUserId);
             $enrollment = $this->accountService->enrollTotpFactor($workosUserId, $issuer, $accountName);
 
-            $factor = $enrollment->authenticationFactor ?? null;
-            $factorId = (string)($factor->id ?? '');
+            $factor = $enrollment->authenticationFactor;
+            if ($factor === null) {
+                throw new \RuntimeException('WorkOS did not return an MFA factor.', 1744277950);
+            }
+            $factorId = $factor->id ?? '';
             if ($factorId === '') {
                 throw new \RuntimeException('WorkOS did not return an MFA factor.', 1744277950);
             }
 
-            $totp = is_array($factor->totp ?? null) ? $factor->totp : [];
+            $totp = $factor->totp ?? [];
             $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', [
                 'factorId' => $factorId,
-                'qrCode' => (string)($totp['qr_code'] ?? ''),
-                'uri' => (string)($totp['uri'] ?? ''),
-                'secret' => (string)($totp['secret'] ?? ''),
+                'qrCode' => $this->stringFromMixed($totp['qr_code'] ?? null),
+                'uri' => $this->stringFromMixed($totp['uri'] ?? null),
+                'secret' => $this->stringFromMixed($totp['secret'] ?? null),
                 'createdAt' => time(),
             ]);
         } catch (\Throwable $e) {
@@ -197,9 +204,9 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $this->redirect('dashboard');
         }
 
-        $code = trim((string)($this->request->getParsedBody()['code'] ?? ''));
+        $code = RequestBody::fromRequest($this->request)->trimmedString('code');
         try {
-            $this->accountService->verifyTotpFactor($pending['factorId'], $code);
+            $this->accountService->verifyTotpFactor($this->stringFromMixed($pending['factorId']), $code);
             $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', null);
             $this->setFlash('success', $this->translate('account.flash.mfaActivated'));
         } catch (\Throwable $e) {
@@ -220,7 +227,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
         $pending = $this->getPendingEnrollment();
         if ($pending !== null) {
             try {
-                $this->accountService->deleteFactor($pending['factorId']);
+                $this->accountService->deleteFactor($this->stringFromMixed($pending['factorId']));
             } catch (\Throwable $e) {
                 $this->logger?->warning('WorkOS account: delete pending factor failed: ' . $e->getMessage());
             }
@@ -238,7 +245,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $context['response'];
         }
 
-        $factorId = trim((string)($this->request->getParsedBody()['factorId'] ?? ''));
+        $factorId = RequestBody::fromRequest($this->request)->trimmedString('factorId');
         if ($factorId === '') {
             return $this->redirect('dashboard');
         }
@@ -261,7 +268,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $context['response'];
         }
 
-        $sessionId = trim((string)($this->request->getParsedBody()['sessionId'] ?? ''));
+        $sessionId = RequestBody::fromRequest($this->request)->trimmedString('sessionId');
         if ($sessionId === '') {
             return $this->redirect('dashboard');
         }
@@ -322,28 +329,30 @@ final class AccountController extends ActionController implements LoggerAwareInt
     }
 
     /**
-     * @param mixed $session
      * @return array<string, mixed>
      */
-    private function prepareSessionRow($session): array
+    private function prepareSessionRow(Session $session): array
     {
+        $userAgent = $session->userAgent ?? '';
+        $status = $session->status ?? '';
+
         return [
-            'id' => (string)($session->id ?? ''),
-            'ipAddress' => (string)($session->ipAddress ?? ''),
-            'userAgent' => (string)($session->userAgent ?? ''),
-            'organizationId' => (string)($session->organizationId ?? ''),
-            'authenticationMethod' => (string)($session->authenticationMethod ?? ''),
-            'status' => (string)($session->status ?? ''),
-            'expiresAt' => (string)($session->expiresAt ?? ''),
-            'createdAt' => (string)($session->createdAt ?? ''),
-            'updatedAt' => (string)($session->updatedAt ?? ''),
-            'deviceLabel' => $this->summarizeUserAgent((string)($session->userAgent ?? '')),
-            'isActive' => strtolower((string)($session->status ?? '')) === 'active',
+            'id' => $session->id ?? '',
+            'ipAddress' => $session->ipAddress ?? '',
+            'userAgent' => $userAgent,
+            'organizationId' => $session->organizationId ?? '',
+            'authenticationMethod' => $session->authenticationMethod ?? '',
+            'status' => $status,
+            'expiresAt' => $session->expiresAt ?? '',
+            'createdAt' => $session->createdAt ?? '',
+            'updatedAt' => $session->updatedAt ?? '',
+            'deviceLabel' => $this->summarizeUserAgent($userAgent),
+            'isActive' => strtolower($status) === 'active',
         ];
     }
 
     /**
-     * @param array{membership: object, organization: ?object} $entry
+     * @param array{membership: OrganizationMembership, organization: ?Organization} $entry
      * @return array<string, mixed>
      */
     private function prepareMembershipRow(array $entry): array
@@ -352,24 +361,24 @@ final class AccountController extends ActionController implements LoggerAwareInt
         $organization = $entry['organization'];
 
         $roleSlugs = [];
-        $roles = $membership->roles ?? [];
-        if (is_array($roles)) {
-            foreach ($roles as $role) {
-                $roleSlugs[] = (string)($role->slug ?? '');
+        foreach ($membership->roles ?? [] as $role) {
+            $slug = is_array($role) ? ($role['slug'] ?? '') : '';
+            if (is_string($slug) && $slug !== '') {
+                $roleSlugs[] = $slug;
             }
         }
-        if ($roleSlugs === [] && isset($membership->role->slug)) {
-            $roleSlugs[] = (string)$membership->role->slug;
+        if ($roleSlugs === [] && is_string($membership->role) && $membership->role !== '') {
+            $roleSlugs[] = $membership->role;
         }
 
         return [
-            'id' => (string)($membership->id ?? ''),
-            'organizationId' => (string)($membership->organizationId ?? ''),
-            'organizationName' => (string)($organization?->name ?? ''),
-            'status' => (string)($membership->status ?? ''),
-            'roleSlugs' => array_values(array_filter($roleSlugs, static fn ($r) => $r !== '')),
-            'directoryManaged' => (bool)($membership->directoryManaged ?? false),
-            'createdAt' => (string)($membership->createdAt ?? ''),
+            'id' => $membership->id ?? '',
+            'organizationId' => $membership->organizationId ?? '',
+            'organizationName' => $organization !== null ? ($organization->name ?? '') : '',
+            'status' => $membership->status ?? '',
+            'roleSlugs' => $roleSlugs,
+            'directoryManaged' => $membership->directoryManaged ?? false,
+            'createdAt' => $membership->createdAt ?? '',
         ];
     }
 
@@ -402,13 +411,14 @@ final class AccountController extends ActionController implements LoggerAwareInt
     private function detectIssuer(): string
     {
         $site = $this->request->getAttribute('site');
-        if ($site !== null) {
+        if ($site instanceof \TYPO3\CMS\Core\Site\Entity\Site) {
             $host = $site->getBase()->getHost();
             if ($host !== '') {
                 return $host;
             }
         }
-        return $this->request->getUri()->getHost() ?: 'TYPO3';
+        $host = $this->request->getUri()->getHost();
+        return $host !== '' ? $host : 'TYPO3';
     }
 
     private function detectAccountName(string $fallback): string
@@ -423,10 +433,13 @@ final class AccountController extends ActionController implements LoggerAwareInt
         return $fallback;
     }
 
+    /**
+     * @return array|null
+     */
     private function getPendingEnrollment(): ?array
     {
         $data = $this->getFrontendUser()->getSessionData('workos_account_mfa_pending');
-        if (!is_array($data) || empty($data['factorId'])) {
+        if (!is_array($data) || !isset($data['factorId']) || $data['factorId'] === '') {
             return null;
         }
         return $data;
@@ -440,14 +453,28 @@ final class AccountController extends ActionController implements LoggerAwareInt
         ]);
     }
 
+    /**
+     * @return array|null
+     */
     private function consumeFlash(): ?array
     {
         $flash = $this->getFrontendUser()->getSessionData('workos_account_flash');
-        if (!is_array($flash) || empty($flash['message'])) {
+        if (!is_array($flash) || !isset($flash['message']) || $flash['message'] === '') {
             return null;
         }
         $this->getFrontendUser()->setAndSaveSessionData('workos_account_flash', null);
         return $flash;
+    }
+
+    private function stringFromMixed(mixed $value): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+        if (is_int($value) || is_float($value) || is_bool($value)) {
+            return (string)$value;
+        }
+        return '';
     }
 
     private function getFrontendUser(): FrontendUserAuthentication
@@ -474,6 +501,9 @@ final class AccountController extends ActionController implements LoggerAwareInt
         return $this->translate('account.flash.passwordFailed');
     }
 
+    /**
+     * @param array<int|string, mixed> $arguments
+     */
     private function translate(string $key, array $arguments = []): string
     {
         return LocalizationUtility::translate($key, 'WorkosAuth', $arguments !== [] ? $arguments : null) ?? $key;

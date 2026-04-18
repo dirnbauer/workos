@@ -82,7 +82,10 @@ final class WorkosAccountService
         $this->workosClientFactory->createUserManagement();
         $mfa = new \WorkOS\MFA();
         $challenge = $mfa->challengeFactor(authenticationFactorId: $factorId);
-        $challengeId = (string)($challenge->id ?? '');
+        $challengeId = '';
+        if ($challenge instanceof \WorkOS\Resource\AuthenticationChallengeTotp) {
+            $challengeId = $challenge->id ?? '';
+        }
         if ($challengeId === '') {
             throw new \RuntimeException('challenge_failed', 1744277903);
         }
@@ -121,7 +124,7 @@ final class WorkosAccountService
         );
 
         $sessions = [];
-        foreach ($paginated->data ?? [] as $session) {
+        foreach ($paginated->data as $session) {
             if ($session instanceof Session) {
                 $sessions[] = $session;
             }
@@ -150,7 +153,7 @@ final class WorkosAccountService
 
         $organizations = $this->workosClientFactory->createOrganizations();
         $memberships = [];
-        foreach (($response->data ?? []) as $membership) {
+        foreach ($response->data as $membership) {
             if (!$membership instanceof OrganizationMembership) {
                 continue;
             }
