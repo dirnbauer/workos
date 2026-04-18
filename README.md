@@ -36,7 +36,7 @@ composer require webconsulting/workos-auth
 5. In the WorkOS Dashboard, enable the authentication methods you need (Magic Auth, Email + Password, Social providers).
 6. Add the **WorkOS Login** content element to a frontend page.
 
-A detailed walk-through is in [`Documentation/Configuration.md`](Documentation/Configuration.md).
+A detailed walk-through is in [`Documentation/Configuration.rst`](Documentation/Configuration.rst).
 
 ## Frontend login
 
@@ -50,7 +50,7 @@ Place the **WorkOS Login** plugin on a page and users get a ready-to-go card:
 Signed-in users see their WorkOS profile, including any **custom metadata**
 stored on the WorkOS user record.
 
-Detailed feature guide: [`Documentation/Features.md`](Documentation/Features.md).
+Detailed feature guide: [`Documentation/Features.rst`](Documentation/Features.rst).
 
 ## Account Center (frontend)
 
@@ -120,14 +120,14 @@ the "Login with username and password" switcher.
 > and id. Either set the e-mail on an existing backend user, or enable
 > auto-create with a domain allowlist in the setup assistant. Full
 > walk-through:
-> [Troubleshooting → "This WorkOS account is not linked to a TYPO3 user"](Documentation/Troubleshooting.md#this-workos-account-is-not-linked-to-a-typo3-user-backend-login).
+> [Troubleshooting → "This WorkOS account is not linked to a TYPO3 user"](Documentation/Troubleshooting.rst).
 
 ## WorkOS Dashboard setup
 
 All authentication methods (AuthKit, Magic Auth, Email + Password, Social
 providers) are **enabled in the WorkOS Dashboard**, not in TYPO3.
 
-See [`Documentation/WorkosDashboard.md`](Documentation/WorkosDashboard.md)
+See [`Documentation/WorkosDashboard.rst`](Documentation/WorkosDashboard.rst)
 for step-by-step screenshots of:
 
 - Adding Redirect URIs
@@ -161,15 +161,15 @@ persisted to `config/system/settings.php`, which is the right place for
 installation-wide auth secrets.
 
 The full list of keys is in
-[`Documentation/Configuration.md`](Documentation/Configuration.md#all-configuration-keys).
+[`Documentation/Configuration.rst`](Documentation/Configuration.rst).
 
 ## Documentation
 
-- [Configuration](Documentation/Configuration.md) – Setup assistant, every config key, workspaces behaviour
-- [Features](Documentation/Features.md) – Frontend/backend flows, profile display, dynamic parameters
-- [WorkOS Dashboard](Documentation/WorkosDashboard.md) – Redirect URIs and enabling auth methods
-- [Troubleshooting](Documentation/Troubleshooting.md) – Common errors and fixes
-- [Changelog](Documentation/Changelog.md) – Release notes
+- [Configuration](Documentation/Configuration.rst) – Setup assistant, every config key, workspaces behaviour
+- [Features](Documentation/Features.rst) – Frontend/backend flows, profile display, dynamic parameters
+- [WorkOS Dashboard](Documentation/WorkosDashboard.rst) – Redirect URIs and enabling auth methods
+- [Troubleshooting](Documentation/Troubleshooting.rst) – Common errors and fixes
+- [Changelog](Documentation/Changelog.rst) – Release notes
 - [Audit reports](Documentation/Reports/) – Workspaces, upgrade, conformance, security, testing, docs
 
 ## Security

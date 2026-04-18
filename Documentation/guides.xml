@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<guides xmlns="https://www.phpdoc.org/guides"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://www.phpdoc.org/guides packages/guides-cli/resources/schema/guides.xsd">
+    <project title="WorkOS Auth"
+             release="0.24"
+             version="0.24"
+             copyright="since 2026 by webconsulting. Licensed under GPL-2.0-or-later."/>
+
+    <extension class="\T3Docs\Typo3DocsTheme\DependencyInjection\Typo3DocsThemeExtension"
+               project-home="https://github.com/webconsulting/typo3-workos-auth"
+               project-issues="https://github.com/webconsulting/typo3-workos-auth/issues"
+               project-repository="https://github.com/webconsulting/typo3-workos-auth"
+               edit-on-github="webconsulting/typo3-workos-auth"
+               edit-on-github-branch="main"
+               typo3-core-preferred="main"/>
+
+    <inventory id="t3coreapi" url="https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/"/>
+    <inventory id="t3tca" url="https://docs.typo3.org/m/typo3/reference-tca/main/en-us/"/>
+    <inventory id="t3install" url="https://docs.typo3.org/m/typo3/guide-installation/main/en-us/"/>
+</guides>
