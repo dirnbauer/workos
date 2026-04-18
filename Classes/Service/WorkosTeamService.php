@@ -80,6 +80,57 @@ final class WorkosTeamService
     }
 
     /**
+     * Authorization helper. Throws when the given WorkOS user is not an
+     * active member of the given organization. Call this before any
+     * action whose `organizationId` came from the user's POST body.
+     *
+     * Guards against CWE-285 (Improper Authorization) in the Team*
+     * controller actions: without this check, a logged-in frontend
+     * user could invite, revoke, or mint portal links for arbitrary
+     * organizations the API key can reach.
+     */
+    public function assertMemberOfOrganization(string $workosUserId, string $organizationId): void
+    {
+        if ($workosUserId === '' || $organizationId === '') {
+            throw new \RuntimeException('forbidden_organization', 1744278100);
+        }
+        $this->assertConfigured();
+        $response = $this->workosClientFactory->createUserManagement()->listOrganizationMemberships(
+            userId: $workosUserId,
+            organizationId: $organizationId,
+            statuses: ['active'],
+            limit: 1,
+        );
+        foreach ($response->data as $membership) {
+            if ($membership instanceof OrganizationMembership
+                && ($membership->userId ?? '') === $workosUserId
+                && ($membership->organizationId ?? '') === $organizationId) {
+                return;
+            }
+        }
+        throw new \RuntimeException('forbidden_organization', 1744278101);
+    }
+
+    /**
+     * Fetch a single invitation so the caller can resolve the
+     * organization id it belongs to before running authorization
+     * checks. Returns null when the invitation cannot be loaded.
+     */
+    public function findInvitation(string $invitationId): ?Invitation
+    {
+        if ($invitationId === '') {
+            return null;
+        }
+        $this->assertConfigured();
+        try {
+            $invitation = $this->workosClientFactory->createUserManagement()->getInvitation($invitationId);
+        } catch (\Throwable) {
+            return null;
+        }
+        return $invitation instanceof Invitation ? $invitation : null;
+    }
+
+    /**
      * @return Invitation[]
      */
     public function listInvitations(string $organizationId, int $limit = 25): array

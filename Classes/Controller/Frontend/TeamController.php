@@ -131,6 +131,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         try {
+            $this->teamService->assertMemberOfOrganization($context['workosUserId'], $organizationId);
             $this->teamService->sendInvitation(
                 email: $email,
                 organizationId: $organizationId,
@@ -163,6 +164,9 @@ final class TeamController extends ActionController implements LoggerAwareInterf
 
         if ($invitationId !== '') {
             try {
+                $invitation = $this->teamService->findInvitation($invitationId);
+                $invitationOrgId = $invitation === null ? '' : (string)($invitation->organizationId ?? '');
+                $this->teamService->assertMemberOfOrganization($context['workosUserId'], $invitationOrgId);
                 $this->teamService->resendInvitation($invitationId);
                 $this->setFlash('success', $this->translate('team.flash.inviteResent'));
             } catch (\Throwable $e) {
@@ -191,6 +195,9 @@ final class TeamController extends ActionController implements LoggerAwareInterf
 
         if ($invitationId !== '') {
             try {
+                $invitation = $this->teamService->findInvitation($invitationId);
+                $invitationOrgId = $invitation === null ? '' : (string)($invitation->organizationId ?? '');
+                $this->teamService->assertMemberOfOrganization($context['workosUserId'], $invitationOrgId);
                 $this->teamService->revokeInvitation($invitationId);
                 $this->setFlash('success', $this->translate('team.flash.inviteRevoked'));
             } catch (\Throwable $e) {
@@ -225,6 +232,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         $returnUrl = (string)$this->request->getUri();
 
         try {
+            $this->teamService->assertMemberOfOrganization($context['workosUserId'], $organizationId);
             $portalLink = $this->teamService->generatePortalLink(
                 organizationId: $organizationId,
                 intent: $intent,
@@ -390,6 +398,9 @@ final class TeamController extends ActionController implements LoggerAwareInterf
     private function mapInvitationError(string $message): string
     {
         $lower = strtolower($message);
+        if (str_contains($lower, 'forbidden_organization')) {
+            return $this->translate('team.flash.forbidden');
+        }
         if (str_contains($lower, 'already') && (str_contains($lower, 'invited') || str_contains($lower, 'exists'))) {
             return $this->translate('team.flash.inviteAlreadyExists');
         }

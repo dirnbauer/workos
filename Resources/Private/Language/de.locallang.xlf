@@ -1237,6 +1237,10 @@
                 <source>Security check failed. Please reload the page and try again.</source>
                 <target>Sicherheitsprüfung fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.</target>
             </trans-unit>
+            <trans-unit id="team.flash.forbidden">
+                <source>You are not allowed to manage this organization.</source>
+                <target>Sie sind nicht berechtigt, diese Organisation zu verwalten.</target>
+            </trans-unit>
             <trans-unit id="team.flash.inviteSent">
                 <source>Invitation sent to {email}.</source>
                 <target>Einladung an {email} verschickt.</target>

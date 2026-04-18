@@ -971,6 +971,9 @@
             <trans-unit id="team.flash.csrfInvalid">
                 <source>Security check failed. Please reload the page and try again.</source>
             </trans-unit>
+            <trans-unit id="team.flash.forbidden">
+                <source>You are not allowed to manage this organization.</source>
+            </trans-unit>
             <trans-unit id="team.error.loadOrganizations">
                 <source>Your active organizations could not be loaded.</source>
             </trans-unit>
