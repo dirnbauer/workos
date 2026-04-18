@@ -12,6 +12,15 @@ parameters:
     tmpDir: var/cache/phpstan
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true
+    phpat:
+        show_rule_names: true
+        ignore_doc_comments: true
     ignoreErrors:
         -
             identifier: missingType.iterableValue
+
+services:
+    -
+        class: WebConsulting\WorkosAuth\Tests\Architecture\LayeringTest
+        tags:
+            - phpat.test

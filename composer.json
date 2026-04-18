@@ -35,6 +35,7 @@
         "workos/workos-php": "^4.32"
     },
     "require-dev": {
+        "phpat/phpat": "^0.11",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-deprecation-rules": "^2.0",
