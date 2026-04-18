@@ -116,3 +116,23 @@ The setup assistant shows warnings but still saves. Validation rules:
 - `cookiePassword` must be at least 32 characters.
 - Frontend auto-create requires `frontendStoragePid > 0`.
 - Backend auto-create requires at least one entry in `backendDefaultGroupUids`.
+
+## Workspaces
+
+The extension is designed to be workspace-neutral.
+
+- The identity mapping table `tx_workosauth_identity` is an
+  authentication cache, not editorial content. Its TCA sets
+  `versioningWS => false`, `adminOnly => true`, and `hideTable => true`.
+  Records are managed exclusively by `IdentityService`; you never see
+  them in the List module unless you explicitly enable the table.
+- Authentication lookups against `fe_users` and `be_users` run with
+  restrictions removed so they always see live records. Workspace-
+  versioned user records are never used for login — this is
+  intentional; a staging copy of a user account would be unsafe for
+  authentication.
+- The frontend middleware only reacts to the three configured paths
+  (`login`, `callback`, `logout`). Workspace preview of a content page
+  never enters the WorkOS flow.
+- Publishing a workspace does not change identity records because the
+  identity table is excluded from workspace versioning.
