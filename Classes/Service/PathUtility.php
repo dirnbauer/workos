@@ -122,6 +122,14 @@ final class PathUtility
             return $fallback;
         }
 
+        // Reject protocol-relative URLs (`//evil.com/path`) and their
+        // backslash variants (`/\`, `\\`, `\/`). Browsers follow
+        // `Location: //host/path` as `scheme://host/path`, so these
+        // would be open-redirects if we treated them as safe paths.
+        if (self::startsWithTwoSlashVariant($candidate)) {
+            return $fallback;
+        }
+
         if (str_starts_with($candidate, '/')) {
             return $candidate;
         }
@@ -139,6 +147,17 @@ final class PathUtility
         $samePort = $candidatePort === null || $candidatePort === $requestUri->getPort();
 
         return $sameHost && $sameScheme && $samePort ? $candidate : $fallback;
+    }
+
+    private static function startsWithTwoSlashVariant(string $candidate): bool
+    {
+        if (strlen($candidate) < 2) {
+            return false;
+        }
+        $first = $candidate[0];
+        $second = $candidate[1];
+        $slashlike = ['/', '\\'];
+        return in_array($first, $slashlike, true) && in_array($second, $slashlike, true);
     }
 
     private static function isDefaultPort(string $scheme, int $port): bool

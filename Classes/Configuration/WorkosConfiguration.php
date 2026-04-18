@@ -13,6 +13,20 @@ final class WorkosConfiguration
 {
     public const EXTENSION_KEY = 'workos_auth';
 
+    /**
+     * Social login providers supported by the `?provider=` query
+     * parameter on the login endpoints. Values are the identifiers
+     * WorkOS expects when building the authorization URL.
+     *
+     * @var list<string>
+     */
+    public const SUPPORTED_SOCIAL_PROVIDERS = [
+        'GoogleOAuth',
+        'MicrosoftOAuth',
+        'GitHubOAuth',
+        'AppleOAuth',
+    ];
+
     private const DEFAULTS = [
         'apiKey' => '',
         'clientId' => '',

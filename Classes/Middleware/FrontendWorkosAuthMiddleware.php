@@ -74,9 +74,9 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
                 ? $queryParams['screen']
                 : 'sign-in';
 
-            $allowedProviders = ['GoogleOAuth', 'MicrosoftOAuth', 'GitHubOAuth', 'AppleOAuth'];
-            $provider = in_array($queryParams['provider'] ?? '', $allowedProviders, true)
-                ? $queryParams['provider']
+            $requestedProvider = $queryParams['provider'] ?? '';
+            $provider = is_string($requestedProvider) && in_array($requestedProvider, WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS, true)
+                ? $requestedProvider
                 : null;
 
             $loginHint = isset($queryParams['login_hint']) ? trim((string)$queryParams['login_hint']) : '';

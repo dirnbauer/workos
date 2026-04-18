@@ -93,9 +93,8 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             $fallbackReturnTo
         );
 
-        $allowedProviders = ['GoogleOAuth', 'MicrosoftOAuth', 'GitHubOAuth', 'AppleOAuth'];
         $requestedProvider = $queryParams['provider'] ?? '';
-        $provider = is_string($requestedProvider) && in_array($requestedProvider, $allowedProviders, true)
+        $provider = is_string($requestedProvider) && in_array($requestedProvider, WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS, true)
             ? $requestedProvider
             : null;
 

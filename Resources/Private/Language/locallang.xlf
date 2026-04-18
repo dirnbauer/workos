@@ -817,6 +817,9 @@
             <trans-unit id="account.flash.sessionRevokeFailed">
                 <source>Could not sign that session out. Please try again.</source>
             </trans-unit>
+            <trans-unit id="account.flash.csrfInvalid">
+                <source>Security check failed. Please reload the page and try again.</source>
+            </trans-unit>
 
             <trans-unit id="account.error.loadProfile">
                 <source>Your WorkOS profile could not be loaded.</source>
@@ -961,6 +964,9 @@
             </trans-unit>
             <trans-unit id="team.flash.portalFailed">
                 <source>Could not open the WorkOS Admin Portal. Please try again.</source>
+            </trans-unit>
+            <trans-unit id="team.flash.csrfInvalid">
+                <source>Security check failed. Please reload the page and try again.</source>
             </trans-unit>
             <trans-unit id="team.error.loadOrganizations">
                 <source>Your active organizations could not be loaded.</source>

@@ -11,6 +11,7 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\FrontendCsrfService;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosAccountService;
@@ -27,10 +28,13 @@ final class AccountController extends ActionController implements LoggerAwareInt
 {
     use LoggerAwareTrait;
 
+    private const CSRF_SCOPE = 'account';
+
     public function __construct(
         private readonly WorkosConfiguration $configuration,
         private readonly IdentityService $identityService,
         private readonly WorkosAccountService $accountService,
+        private readonly FrontendCsrfService $csrfService,
     ) {}
 
     public function dashboardAction(): ResponseInterface
@@ -86,6 +90,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             'pendingEnrollment' => $pendingEnrollment,
             'flash' => $flash,
             'sectionErrors' => $errors,
+            'csrfToken' => $this->csrfService->issue($this->getFrontendUser(), self::CSRF_SCOPE),
         ]);
 
         return $this->htmlResponse();
@@ -99,6 +104,10 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
 
         $body = RequestBody::fromRequest($this->request);
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
+            return $this->redirect('dashboard');
+        }
         $firstName = $body->trimmedString('firstName');
         $lastName = $body->trimmedString('lastName');
 
@@ -125,6 +134,10 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
 
         $body = RequestBody::fromRequest($this->request);
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
+            return $this->redirect('dashboard');
+        }
         $newPassword = $body->string('password');
         $confirmPassword = $body->string('passwordConfirm');
 
@@ -157,6 +170,11 @@ final class AccountController extends ActionController implements LoggerAwareInt
         $context = $this->resolveContext();
         if ($context['response'] !== null) {
             return $context['response'];
+        }
+
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, RequestBody::fromRequest($this->request)->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
+            return $this->redirect('dashboard');
         }
 
         $workosUserId = $context['workosUserId'];
@@ -204,7 +222,12 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $this->redirect('dashboard');
         }
 
-        $code = RequestBody::fromRequest($this->request)->trimmedString('code');
+        $body = RequestBody::fromRequest($this->request);
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
+            return $this->redirect('dashboard');
+        }
+        $code = $body->trimmedString('code');
         try {
             $this->accountService->verifyTotpFactor($this->stringFromMixed($pending['factorId']), $code);
             $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', null);
@@ -222,6 +245,11 @@ final class AccountController extends ActionController implements LoggerAwareInt
         $context = $this->resolveContext();
         if ($context['response'] !== null) {
             return $context['response'];
+        }
+
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, RequestBody::fromRequest($this->request)->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
+            return $this->redirect('dashboard');
         }
 
         $pending = $this->getPendingEnrollment();
@@ -245,7 +273,12 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $context['response'];
         }
 
-        $factorId = RequestBody::fromRequest($this->request)->trimmedString('factorId');
+        $body = RequestBody::fromRequest($this->request);
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
+            return $this->redirect('dashboard');
+        }
+        $factorId = $body->trimmedString('factorId');
         if ($factorId === '') {
             return $this->redirect('dashboard');
         }
@@ -268,7 +301,12 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $context['response'];
         }
 
-        $sessionId = RequestBody::fromRequest($this->request)->trimmedString('sessionId');
+        $body = RequestBody::fromRequest($this->request);
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
+            return $this->redirect('dashboard');
+        }
+        $sessionId = $body->trimmedString('sessionId');
         if ($sessionId === '') {
             return $this->redirect('dashboard');
         }

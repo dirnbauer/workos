@@ -161,6 +161,7 @@
                                     <div class="workos-account__alert workos-account__alert--danger">{sectionErrors.profile}</div>
                                 </f:if>
                                 <f:form action="updateProfile" method="post">
+                                    <f:form.hidden name="csrfToken" value="{csrfToken}" />
                                     <div class="workos-account__row">
                                         <div>
                                             <label for="wa-firstname"><f:translate key="workos_auth.messages:account.profile.firstName" /></label>
@@ -188,6 +189,7 @@
                                     <f:translate key="workos_auth.messages:account.password.subtitle" />
                                 </p>
                                 <f:form action="changePassword" method="post" autocomplete="off">
+                                    <f:form.hidden name="csrfToken" value="{csrfToken}" />
                                     <div class="workos-account__row">
                                         <div>
                                             <label for="wa-pass1"><f:translate key="workos_auth.messages:account.password.new" /></label>
@@ -238,6 +240,7 @@
                                             </p>
                                             <code>{pendingEnrollment.secret}</code>
                                             <f:form action="verifyMfaEnrollment" method="post" style="margin-top:0.85rem;">
+                                    <f:form.hidden name="csrfToken" value="{csrfToken}" />
                                                 <label for="wa-mfa-code"><f:translate key="workos_auth.messages:account.mfa.codeLabel" /></label>
                                                 <input id="wa-mfa-code" type="text" name="code" inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456" required />
                                                 <div class="workos-account__actions">
@@ -245,6 +248,7 @@
                                                         <f:translate key="workos_auth.messages:account.mfa.verify" />
                                                     </button>
                                                     <f:form action="cancelMfaEnrollment" method="post" style="margin:0;">
+                                    <f:form.hidden name="csrfToken" value="{csrfToken}" />
                                                         <button type="submit" class="workos-account__btn workos-account__btn--ghost">
                                                             <f:translate key="workos_auth.messages:account.mfa.cancel" />
                                                         </button>
@@ -270,6 +274,7 @@
                                                         </div>
                                                     </div>
                                                     <f:form action="deleteFactor" method="post" style="margin:0;">
+                                    <f:form.hidden name="csrfToken" value="{csrfToken}" />
                                                         <input type="hidden" name="factorId" value="{factor.id}" />
                                                         <button type="submit" class="workos-account__btn workos-account__btn--danger" onclick="return confirm('{f:translate(key: \'workos_auth.messages:account.mfa.confirmDelete\')}');">
                                                             <f:translate key="workos_auth.messages:account.mfa.remove" />
@@ -291,6 +296,7 @@
                                 <f:if condition="!{pendingEnrollment}">
                                     <div class="workos-account__actions">
                                         <f:form action="startMfaEnrollment" method="post" style="margin:0;">
+                                    <f:form.hidden name="csrfToken" value="{csrfToken}" />
                                             <button type="submit" class="workos-account__btn workos-account__btn--primary">
                                                 <f:translate key="workos_auth.messages:account.mfa.enroll" />
                                             </button>
@@ -333,6 +339,7 @@
                                                     </div>
                                                     <f:if condition="{session.isActive}">
                                                         <f:form action="revokeSession" method="post" style="margin:0;">
+                                    <f:form.hidden name="csrfToken" value="{csrfToken}" />
                                                             <input type="hidden" name="sessionId" value="{session.id}" />
                                                             <button type="submit" class="workos-account__btn workos-account__btn--danger">
                                                                 <f:translate key="workos_auth.messages:account.sessions.revoke" />

@@ -12,6 +12,7 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\FrontendCsrfService;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosTeamService;
@@ -29,11 +30,13 @@ final class TeamController extends ActionController implements LoggerAwareInterf
 
     private const SESSION_FLASH = 'workos_team_flash';
     private const SESSION_ORG = 'workos_team_org';
+    private const CSRF_SCOPE = 'team';
 
     public function __construct(
         private readonly WorkosConfiguration $configuration,
         private readonly IdentityService $identityService,
         private readonly WorkosTeamService $teamService,
+        private readonly FrontendCsrfService $csrfService,
     ) {}
 
     public function dashboardAction(?string $organizationId = null): ResponseInterface
@@ -98,6 +101,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             'portalIntents' => $portalIntents,
             'flash' => $this->consumeFlash(),
             'sectionErrors' => $sectionErrors,
+            'csrfToken' => $this->csrfService->issue($this->getFrontendUser(), self::CSRF_SCOPE),
         ]);
 
         return $this->htmlResponse();
@@ -111,6 +115,10 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         $body = RequestBody::fromRequest($this->request);
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
+            return $this->redirectToDashboard($body->trimmedString('organizationId'));
+        }
         $email = $body->trimmedString('email');
         $roleSlug = $body->trimmedString('roleSlug');
         $organizationId = $body->trimmedString('organizationId');
@@ -144,6 +152,10 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         $body = RequestBody::fromRequest($this->request);
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
+            return $this->redirectToDashboard($body->trimmedString('organizationId'));
+        }
         $invitationId = $body->trimmedString('invitationId');
         $organizationId = $body->trimmedString('organizationId');
 
@@ -168,6 +180,10 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         $body = RequestBody::fromRequest($this->request);
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
+            return $this->redirectToDashboard($body->trimmedString('organizationId'));
+        }
         $invitationId = $body->trimmedString('invitationId');
         $organizationId = $body->trimmedString('organizationId');
 
@@ -192,6 +208,10 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         $body = RequestBody::fromRequest($this->request);
+        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+            $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
+            return $this->redirectToDashboard($body->trimmedString('organizationId'));
+        }
         $intent = $body->trimmedString('intent');
         $organizationId = $body->trimmedString('organizationId');
 
