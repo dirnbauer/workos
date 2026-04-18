@@ -124,6 +124,92 @@ final class PathUtilityTest extends TestCase
         self::assertSame('/', PathUtility::sanitizeReturnTo($request, null, '/'));
     }
 
+    public function testJoinBaseUrlAndPathAbsoluteUrl(): void
+    {
+        self::assertSame(
+            'https://app.local/workos-auth/frontend/callback',
+            PathUtility::joinBaseUrlAndPath('https://app.local', '/workos-auth/frontend/callback')
+        );
+        self::assertSame(
+            'https://app.local/workos-auth/frontend/callback',
+            PathUtility::joinBaseUrlAndPath('https://app.local/', 'workos-auth/frontend/callback')
+        );
+    }
+
+    public function testGetPathRelativeToSiteBase(): void
+    {
+        self::assertSame('/login', PathUtility::getPathRelativeToSiteBase('/de/login', '/de'));
+        self::assertSame('/', PathUtility::getPathRelativeToSiteBase('/de', '/de'));
+        self::assertSame('/login', PathUtility::getPathRelativeToSiteBase('/login', '/'));
+        // unrelated path returns the request path unchanged
+        self::assertSame('/other/foo', PathUtility::getPathRelativeToSiteBase('/other/foo', '/de'));
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function guessBackendBasePathProvider(): array
+    {
+        return [
+            'under /module/' => ['/typo3/module/workos/setup', '/typo3'],
+            'under /login' => ['/typo3/login', '/typo3'],
+            'under /main' => ['/typo3/main', '/typo3'],
+            'under /logout' => ['/typo3/logout', '/typo3'],
+            'no marker' => ['/some/path', '/some/path'],
+        ];
+    }
+
+    #[DataProvider('guessBackendBasePathProvider')]
+    public function testGuessBackendBasePath(string $path, string $expected): void
+    {
+        self::assertSame($expected, PathUtility::guessBackendBasePath($path));
+    }
+
+    public function testGuessBasePathFromMatchedPath(): void
+    {
+        self::assertSame(
+            '/typo3',
+            PathUtility::guessBasePathFromMatchedPath(
+                '/typo3/workos-auth/backend/login',
+                '/workos-auth/backend/login'
+            )
+        );
+        self::assertSame(
+            '',
+            PathUtility::guessBasePathFromMatchedPath(
+                '/workos-auth/backend/login',
+                '/workos-auth/backend/login'
+            )
+        );
+    }
+
+    public function testBuildAbsoluteUrlFromRequestUsesHostAndScheme(): void
+    {
+        $request = self::request('https://app.local/login');
+        self::assertSame(
+            'https://app.local/callback',
+            PathUtility::buildAbsoluteUrlFromRequest($request, '/callback')
+        );
+    }
+
+    public function testBuildAbsoluteUrlFromRequestOmitsDefaultPort(): void
+    {
+        $request = self::request('https://app.local:443/login');
+        self::assertSame(
+            'https://app.local/callback',
+            PathUtility::buildAbsoluteUrlFromRequest($request, '/callback')
+        );
+    }
+
+    public function testBuildAbsoluteUrlFromRequestKeepsNonDefaultPort(): void
+    {
+        $request = self::request('https://app.local:8443/login');
+        self::assertSame(
+            'https://app.local:8443/callback',
+            PathUtility::buildAbsoluteUrlFromRequest($request, '/callback')
+        );
+    }
+
     private static function request(string $uri): ServerRequest
     {
         return new ServerRequest(new Uri($uri));
