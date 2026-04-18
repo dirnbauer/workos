@@ -535,6 +535,9 @@
             </trans-unit>
 
             <!-- Error messages -->
+            <trans-unit id="error.generic">
+                <source>Sign-in failed. Please try again or contact your administrator.</source>
+            </trans-unit>
             <trans-unit id="error.invalidEmailOrPassword">
                 <source>Invalid email or password.</source>
             </trans-unit>

@@ -368,7 +368,10 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         if (str_contains($lower, 'user_not_found') || str_contains($lower, 'not found')) {
             return $this->translate('error.userNotFound');
         }
-        return $message;
+        // Fallback: stable, translatable generic message. The original
+        // WorkOS text is already logged via SecretRedactor, so we do not
+        // leak it into the redirect URL / browser history / access logs.
+        return $this->translate('error.generic');
     }
 
     private function errorResponse(string $message, int $statusCode): ResponseInterface

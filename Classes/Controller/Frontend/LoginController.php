@@ -415,7 +415,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
             return $this->translate('error.passwordInvalid');
         }
 
-        return $message;
+        return $this->translate('error.generic');
     }
 
     private function sanitizeErrorMessage(string $message): string
@@ -439,7 +439,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
             return $this->translate('error.userNotFound');
         }
 
-        return $message;
+        return $this->translate('error.generic');
     }
 
     /**

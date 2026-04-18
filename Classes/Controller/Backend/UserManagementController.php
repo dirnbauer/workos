@@ -99,6 +99,15 @@ final class UserManagementController implements LoggerAwareInterface
      */
     public function tokenAction(ServerRequestInterface $request): ResponseInterface
     {
+        if (!$this->isCurrentBackendUserAdmin()) {
+            return new JsonResponse(['error' => $this->translate('module.users.error.noSession')], 403);
+        }
+
+        $payload = RequestBody::fromRequest($request);
+        if (!$this->isValidToken($payload->string('csrfToken'))) {
+            return new JsonResponse(['error' => $this->translate('error.csrfTokenInvalid')], 400);
+        }
+
         $status = $this->resolveStatus();
         if (!$status['canLoadWidget']) {
             return new JsonResponse([
@@ -137,6 +146,11 @@ final class UserManagementController implements LoggerAwareInterface
      */
     public function joinAction(ServerRequestInterface $request): ResponseInterface
     {
+        if (!$this->isCurrentBackendUserAdmin()) {
+            $this->flash($this->translate('module.users.error.noSession'), ContextualFeedbackSeverity::ERROR);
+            return $this->redirectToIndex();
+        }
+
         $payload = RequestBody::fromRequest($request);
         if (!$this->isValidToken($payload->string('csrfToken'))) {
             $this->flash($this->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
@@ -177,6 +191,11 @@ final class UserManagementController implements LoggerAwareInterface
      */
     public function createOrganizationAction(ServerRequestInterface $request): ResponseInterface
     {
+        if (!$this->isCurrentBackendUserAdmin()) {
+            $this->flash($this->translate('module.users.error.noSession'), ContextualFeedbackSeverity::ERROR);
+            return $this->redirectToIndex();
+        }
+
         $payload = RequestBody::fromRequest($request);
         if (!$this->isValidToken($payload->string('csrfToken'))) {
             $this->flash($this->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
@@ -385,6 +404,18 @@ final class UserManagementController implements LoggerAwareInterface
         return $this->formProtectionFactory
             ->createForType('backend')
             ->validateToken($token, 'workosAuth', 'manageOrganizationMembership');
+    }
+
+    /**
+     * Explicit admin assertion that does not rely on the module's
+     * `access => 'admin'` gate. Defence in depth: if a site package ever
+     * re-registers the route outside `admin` access, the controller
+     * itself still refuses to mint widget tokens or mutate WorkOS data.
+     */
+    private function isCurrentBackendUserAdmin(): bool
+    {
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        return $beUser instanceof BackendUserAuthentication && $beUser->isAdmin();
     }
 
     /**
