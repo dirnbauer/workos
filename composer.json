@@ -1,8 +1,30 @@
 {
     "name": "webconsulting/workos-auth",
-    "description": "TYPO3 v14 extension for WorkOS-powered frontend and backend login.",
+    "description": "TYPO3 v14 extension for WorkOS-powered frontend and backend login (AuthKit, SSO, MFA, Admin Portal).",
     "type": "typo3-cms-extension",
     "license": "GPL-2.0-or-later",
+    "keywords": [
+        "typo3",
+        "typo3-cms-extension",
+        "authentication",
+        "sso",
+        "workos",
+        "oidc",
+        "mfa"
+    ],
+    "homepage": "https://github.com/webconsulting/typo3-workos-auth",
+    "authors": [
+        {
+            "name": "webconsulting",
+            "email": "office@webconsulting.at",
+            "homepage": "https://webconsulting.at",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webconsulting/typo3-workos-auth/issues",
+        "source": "https://github.com/webconsulting/typo3-workos-auth"
+    },
     "require": {
         "php": "^8.2",
         "typo3/cms-backend": "^14.0",
@@ -33,6 +55,7 @@
         }
     },
     "config": {
+        "sort-packages": true,
         "allow-plugins": {
             "phpstan/extension-installer": true,
             "typo3/class-alias-loader": true,
@@ -42,7 +65,8 @@
     "scripts": {
         "phpstan": "phpstan analyse --memory-limit=1G",
         "phpstan:baseline": "phpstan analyse --generate-baseline --memory-limit=1G",
-        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml"
+        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml",
+        "test:functional": "phpunit -c Build/phpunit/FunctionalTests.xml"
     },
     "extra": {
         "typo3/cms": {
