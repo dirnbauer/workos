@@ -1,0 +1,114 @@
+name: Tests
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch: {}
+
+permissions:
+    contents: read
+
+jobs:
+    static-analysis:
+        name: Static analysis (PHP ${{ matrix.php }})
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php: ['8.2', '8.3', '8.4']
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PHP ${{ matrix.php }}
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: none
+                  tools: composer:v2
+
+            - name: Composer cache
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/composer
+                  key: composer-${{ matrix.php }}-${{ hashFiles('composer.json') }}
+                  restore-keys: composer-${{ matrix.php }}-
+
+            - name: Install dependencies
+              run: composer install --no-interaction --no-progress --prefer-dist
+
+            - name: PHPStan (level max + phpat)
+              run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=github
+
+    unit-tests:
+        name: Unit tests (PHP ${{ matrix.php }})
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php: ['8.2', '8.3', '8.4']
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PHP ${{ matrix.php }}
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: pcov
+                  tools: composer:v2
+
+            - name: Composer cache
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/composer
+                  key: composer-${{ matrix.php }}-${{ hashFiles('composer.json') }}
+                  restore-keys: composer-${{ matrix.php }}-
+
+            - name: Install dependencies
+              run: composer install --no-interaction --no-progress --prefer-dist
+
+            - name: PHPUnit unit suite
+              run: Build/Scripts/runTests.sh -s unit
+
+    security-audit:
+        name: Composer audit
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PHP 8.3
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.3'
+                  coverage: none
+                  tools: composer:v2
+
+            - name: Install dependencies
+              run: composer install --no-interaction --no-progress --prefer-dist
+
+            - name: Audit direct + transitive deps
+              run: composer audit --no-dev=false
+
+    mutation:
+        name: Mutation testing
+        runs-on: ubuntu-latest
+        needs: [unit-tests]
+        continue-on-error: true
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PHP 8.3
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.3'
+                  coverage: pcov
+                  tools: composer:v2
+
+            - name: Install dependencies
+              run: composer install --no-interaction --no-progress --prefer-dist
+
+            - name: Infection
+              env:
+                  STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+              run: Build/Scripts/runTests.sh -s mutation
