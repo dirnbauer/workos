@@ -22,3 +22,4 @@ composer.lock
 /var/
 /public/
 /.claude/
+Build/phpunit/.phpunit.cache/

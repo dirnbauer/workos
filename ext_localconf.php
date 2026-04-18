@@ -40,10 +40,21 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
         ]
     );
 
-    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'][1744276800] = [
+    /** @var array<string, mixed> $confVars */
+    $confVars = is_array($GLOBALS['TYPO3_CONF_VARS'] ?? null) ? $GLOBALS['TYPO3_CONF_VARS'] : [];
+    $extconf = is_array($confVars['EXTCONF'] ?? null) ? $confVars['EXTCONF'] : [];
+    $backend = is_array($extconf['backend'] ?? null) ? $extconf['backend'] : [];
+    $providers = is_array($backend['loginProviders'] ?? null) ? $backend['loginProviders'] : [];
+
+    $providers[1744276800] = [
         'provider' => \WebConsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider::class,
         'sorting' => 60,
         'iconIdentifier' => 'workos-auth-logo',
         'label' => 'workos_auth.messages:loginprovider.label',
     ];
+
+    $backend['loginProviders'] = $providers;
+    $extconf['backend'] = $backend;
+    $confVars['EXTCONF'] = $extconf;
+    $GLOBALS['TYPO3_CONF_VARS'] = $confVars;
 })();

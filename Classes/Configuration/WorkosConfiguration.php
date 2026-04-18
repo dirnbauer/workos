@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebConsulting\WorkosAuth\Configuration;
 
+use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use WebConsulting\WorkosAuth\Service\PathUtility;
@@ -81,11 +82,13 @@ final class WorkosConfiguration
             'backendCallbackPath',
             'backendSuccessPath',
         ] as $pathKey) {
-            $normalized[$pathKey] = PathUtility::normalizePath($normalized[$pathKey]);
+            $pathValue = $normalized[$pathKey] ?? '';
+            $normalized[$pathKey] = PathUtility::normalizePath(is_string($pathValue) ? $pathValue : '');
         }
 
-        $normalized['frontendSuccessRedirect'] = $normalized['frontendSuccessRedirect'] !== ''
-            ? trim((string)$normalized['frontendSuccessRedirect'])
+        $successRedirect = $normalized['frontendSuccessRedirect'] ?? '';
+        $normalized['frontendSuccessRedirect'] = is_string($successRedirect) && $successRedirect !== ''
+            ? trim($successRedirect)
             : '/';
 
         return $normalized;
@@ -125,9 +128,15 @@ final class WorkosConfiguration
         return $errors;
     }
 
+    /**
+     * @param array<int|string, mixed> $arguments
+     */
     private function translate(string $key, array $arguments = []): string
     {
-        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        $languageService = $this->languageServiceFactory->createFromUserPreferences(
+            $beUser instanceof AbstractUserAuthentication ? $beUser : null
+        );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
     }
 
@@ -203,7 +212,8 @@ final class WorkosConfiguration
 
     public function getFrontendSuccessRedirect(): string
     {
-        return trim((string)$this->all()['frontendSuccessRedirect']) ?: '/';
+        $value = trim((string)$this->all()['frontendSuccessRedirect']);
+        return $value !== '' ? $value : '/';
     }
 
     public function isBackendEnabled(): bool
@@ -242,9 +252,13 @@ final class WorkosConfiguration
         return implode(',', $this->getBackendDefaultGroupUids());
     }
 
+    /**
+     * @return list<string>
+     */
     public function getBackendAllowedDomains(): array
     {
-        $domains = preg_split('/[,\s;]+/', strtolower((string)$this->all()['backendAllowedDomains'])) ?: [];
+        $split = preg_split('/[,\s;]+/', strtolower((string)$this->all()['backendAllowedDomains']));
+        $domains = $split === false ? [] : $split;
         return array_values(array_filter(array_map('trim', $domains), static fn(string $value): bool => $value !== ''));
     }
 
@@ -296,9 +310,13 @@ final class WorkosConfiguration
         return $this->normalizeInput(array_replace(self::DEFAULTS, $configuration));
     }
 
+    /**
+     * @return list<int>
+     */
     private function parseIntegerList(string $value): array
     {
-        $items = preg_split('/[,\s;]+/', $value) ?: [];
+        $split = preg_split('/[,\s;]+/', $value);
+        $items = $split === false ? [] : $split;
         $items = array_map(static fn(string $item): int => (int)$item, $items);
         return array_values(array_filter($items, static fn(int $item): bool => $item > 0));
     }

@@ -14,6 +14,9 @@ final class StateService
         private readonly HashService $hashService,
     ) {}
 
+    /**
+     * @param array<string, mixed> $payload
+     */
     public function issue(array $payload): string
     {
         $payload['issuedAt'] = $payload['issuedAt'] ?? time();
@@ -23,6 +26,9 @@ final class StateService
         return $encodedPayload . '.' . $hmac;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function consume(string $token): array
     {
         $parts = explode('.', $token, 2);
@@ -41,8 +47,9 @@ final class StateService
             throw new \RuntimeException('The WorkOS state payload is invalid.', 1744277403);
         }
 
-        $issuedAt = (int)($payload['issuedAt'] ?? 0);
-        if ($issuedAt <= 0 || (time() - $issuedAt) > self::TTL) {
+        $issuedAt = $payload['issuedAt'] ?? 0;
+        $issuedAtTimestamp = is_int($issuedAt) ? $issuedAt : (is_string($issuedAt) && ctype_digit($issuedAt) ? (int)$issuedAt : 0);
+        if ($issuedAtTimestamp <= 0 || (time() - $issuedAtTimestamp) > self::TTL) {
             throw new \RuntimeException('The WorkOS state token has expired.', 1744277404);
         }
 
@@ -58,7 +65,8 @@ final class StateService
 
         $decoded = json_decode($rawState, true);
         if (is_array($decoded)) {
-            $token = trim((string)($decoded['token'] ?? ''));
+            $rawToken = $decoded['token'] ?? '';
+            $token = is_string($rawToken) ? trim($rawToken) : '';
             if ($token === '') {
                 throw new \RuntimeException('Missing WorkOS state token.', 1744277406);
             }
@@ -80,6 +88,7 @@ final class StateService
             $value .= str_repeat('=', 4 - $padding);
         }
 
-        return (string)base64_decode(strtr($value, '-_', '+/'));
+        $decoded = base64_decode(strtr($value, '-_', '+/'), true);
+        return $decoded !== false ? $decoded : '';
     }
 }

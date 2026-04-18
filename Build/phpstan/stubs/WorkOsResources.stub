@@ -212,6 +212,9 @@ class PortalLink extends BaseWorkOSResource
  * @property string|null $before
  * @property string|null $after
  * @property array<int, mixed> $data
+ *
+ * @implements \ArrayAccess<array-key, mixed>
+ * @implements \IteratorAggregate<array-key, mixed>
  */
 class PaginatedResource implements \ArrayAccess, \IteratorAggregate, \Countable
 {

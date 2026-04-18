@@ -89,6 +89,9 @@ final class IdentityService
         return is_array($row) ? $row : null;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findProfileByLocalUser(string $context, string $userTable, int $userUid): ?array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
@@ -106,13 +109,24 @@ final class IdentityService
             ->executeQuery()
             ->fetchAssociative();
 
-        if (!is_array($row) || empty($row['workos_profile_json'])) {
+        if (!is_array($row)) {
+            return null;
+        }
+        $json = $row['workos_profile_json'] ?? '';
+        if (!is_string($json) || $json === '') {
             return null;
         }
 
         try {
-            $profile = json_decode($row['workos_profile_json'], true, 512, JSON_THROW_ON_ERROR);
-            return is_array($profile) ? $profile : null;
+            $profile = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+            if (!is_array($profile)) {
+                return null;
+            }
+            $keyed = [];
+            foreach ($profile as $key => $value) {
+                $keyed[(string)$key] = $value;
+            }
+            return $keyed;
         } catch (\JsonException) {
             return null;
         }

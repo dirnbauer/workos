@@ -57,11 +57,11 @@ final class WorkosTeamService
         );
 
         $result = [];
-        foreach (($response->data ?? []) as $membership) {
+        foreach ($response->data as $membership) {
             if (!$membership instanceof OrganizationMembership) {
                 continue;
             }
-            $organizationId = (string)$membership->organizationId;
+            $organizationId = $membership->organizationId ?? '';
             if ($organizationId === '' || isset($result[$organizationId])) {
                 continue;
             }
@@ -92,7 +92,7 @@ final class WorkosTeamService
         );
 
         $invitations = [];
-        foreach (($response->data ?? []) as $invitation) {
+        foreach ($response->data as $invitation) {
             if ($invitation instanceof Invitation) {
                 $invitations[] = $invitation;
             }
@@ -108,7 +108,7 @@ final class WorkosTeamService
         ?int $expiresInDays = null,
     ): Invitation {
         $this->assertConfigured();
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             throw new \RuntimeException('invalid_email', 1744278001);
         }
         if ($organizationId === '') {
@@ -119,7 +119,7 @@ final class WorkosTeamService
             email: $email,
             organizationId: $organizationId,
             expiresInDays: $expiresInDays,
-            inviterUserId: $inviterUserId !== '' ? $inviterUserId : null,
+            inviterUserId: $inviterUserId !== null && $inviterUserId !== '' ? $inviterUserId : null,
             roleSlug: $roleSlug !== null && $roleSlug !== '' ? $roleSlug : null,
         );
     }

@@ -94,12 +94,17 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         );
 
         $allowedProviders = ['GoogleOAuth', 'MicrosoftOAuth', 'GitHubOAuth', 'AppleOAuth'];
-        $provider = in_array($queryParams['provider'] ?? '', $allowedProviders, true)
-            ? (string)$queryParams['provider']
+        $requestedProvider = $queryParams['provider'] ?? '';
+        $provider = is_string($requestedProvider) && in_array($requestedProvider, $allowedProviders, true)
+            ? $requestedProvider
             : null;
 
-        $loginHint = isset($queryParams['login_hint']) ? trim((string)$queryParams['login_hint']) : null;
-        $organizationId = isset($queryParams['organization']) ? trim((string)$queryParams['organization']) : null;
+        $loginHint = isset($queryParams['login_hint']) && is_string($queryParams['login_hint'])
+            ? trim($queryParams['login_hint'])
+            : '';
+        $organizationId = isset($queryParams['organization']) && is_string($queryParams['organization'])
+            ? trim($queryParams['organization'])
+            : '';
 
         try {
             return new RedirectResponse(

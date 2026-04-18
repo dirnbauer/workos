@@ -301,7 +301,7 @@ final class UserManagementController implements LoggerAwareInterface
             $this->logger?->warning('WorkOS organization lookup failed: ' . $exception->getMessage());
         }
 
-        return $this->configuration->getAuthkitOrganizationId();
+        return $this->configuration->getAuthkitOrganizationId() ?? '';
     }
 
     /**

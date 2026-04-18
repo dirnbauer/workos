@@ -103,7 +103,7 @@ final class UserProvisioningService
             'usergroup' => $this->configuration->getFrontendDefaultGroupCsv(),
         ]);
 
-        return $this->findUserByUid('fe_users', (int)$connection->lastInsertId('fe_users'))
+        return $this->findUserByUid('fe_users', (int)$connection->lastInsertId())
             ?? throw new \RuntimeException('The frontend user could not be loaded after creation.', 1744277604);
     }
 
@@ -133,7 +133,7 @@ final class UserProvisioningService
             'usergroup' => $this->configuration->getBackendDefaultGroupCsv(),
         ]);
 
-        return $this->findUserByUid('be_users', (int)$connection->lastInsertId('be_users'))
+        return $this->findUserByUid('be_users', (int)$connection->lastInsertId())
             ?? throw new \RuntimeException('The backend user could not be loaded after creation.', 1744277606);
     }
 
@@ -225,7 +225,7 @@ final class UserProvisioningService
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
         $queryBuilder->getRestrictions()->removeAll();
 
-        $count = (int)$queryBuilder
+        $count = $queryBuilder
             ->count('uid')
             ->from($table)
             ->where(
@@ -234,7 +234,7 @@ final class UserProvisioningService
             ->executeQuery()
             ->fetchOne();
 
-        return $count > 0;
+        return is_numeric($count) && (int)$count > 0;
     }
 
     private function hashRandomPassword(string $mode): string
@@ -265,7 +265,8 @@ final class UserProvisioningService
             return;
         }
 
-        $domain = strtolower((string)substr(strrchr($email, '@') ?: '', 1));
+        $localHost = strrchr($email, '@');
+        $domain = $localHost !== false ? strtolower(substr($localHost, 1)) : '';
         if ($domain === '' || !in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException('This WorkOS account is not allowed to create a TYPO3 backend user.', 1744277608);
         }
