@@ -16,6 +16,7 @@ use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\RequestBody;
@@ -90,21 +91,17 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         $fallbackReturnTo = PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendSuccessPath());
         $returnTo = PathUtility::sanitizeReturnTo(
             $request,
-            (string)($queryParams['returnTo'] ?? ''),
+            MixedCaster::string($queryParams['returnTo'] ?? null),
             $fallbackReturnTo
         );
 
-        $requestedProvider = $queryParams['provider'] ?? '';
-        $provider = is_string($requestedProvider) && in_array($requestedProvider, WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS, true)
+        $requestedProvider = MixedCaster::string($queryParams['provider'] ?? null);
+        $provider = in_array($requestedProvider, WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS, true)
             ? $requestedProvider
             : null;
 
-        $loginHint = isset($queryParams['login_hint']) && is_string($queryParams['login_hint'])
-            ? trim($queryParams['login_hint'])
-            : '';
-        $organizationId = isset($queryParams['organization']) && is_string($queryParams['organization'])
-            ? trim($queryParams['organization'])
-            : '';
+        $loginHint = trim(MixedCaster::string($queryParams['login_hint'] ?? null));
+        $organizationId = trim(MixedCaster::string($queryParams['organization'] ?? null));
 
         try {
             return new RedirectResponse(

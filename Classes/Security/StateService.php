@@ -47,13 +47,18 @@ final class StateService
             throw new \RuntimeException('The WorkOS state payload is invalid.', 1744277403);
         }
 
-        $issuedAt = $payload['issuedAt'] ?? 0;
+        $narrowed = [];
+        foreach ($payload as $key => $value) {
+            $narrowed[(string)$key] = $value;
+        }
+
+        $issuedAt = $narrowed['issuedAt'] ?? 0;
         $issuedAtTimestamp = is_int($issuedAt) ? $issuedAt : (is_string($issuedAt) && ctype_digit($issuedAt) ? (int)$issuedAt : 0);
         if ($issuedAtTimestamp <= 0 || (time() - $issuedAtTimestamp) > self::TTL) {
             throw new \RuntimeException('The WorkOS state token has expired.', 1744277404);
         }
 
-        return $payload;
+        return $narrowed;
     }
 
     public function extractTokenFromCallbackState(string $rawState): string

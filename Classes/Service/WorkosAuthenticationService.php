@@ -67,15 +67,18 @@ final class WorkosAuthenticationService
         );
     }
 
+    /**
+     * @return array{workosUser: User, returnTo: string}
+     */
     public function handleCallback(ServerRequestInterface $request, string $expectedContext): array
     {
         $queryParameters = $request->getQueryParams();
-        $code = trim((string)($queryParameters['code'] ?? ''));
+        $code = trim(self::stringFromMixed($queryParameters['code'] ?? null));
         if ($code === '') {
             throw new \RuntimeException('The WorkOS callback did not contain an authorization code.', 1744277801);
         }
 
-        $stateToken = $this->stateService->extractTokenFromCallbackState((string)($queryParameters['state'] ?? ''));
+        $stateToken = $this->stateService->extractTokenFromCallbackState(self::stringFromMixed($queryParameters['state'] ?? null));
         $payload = $this->stateService->consume($stateToken);
         if (($payload['context'] ?? '') !== $expectedContext) {
             throw new \RuntimeException('The WorkOS callback context did not match the login flow.', 1744277802);
@@ -138,6 +141,9 @@ final class WorkosAuthenticationService
         return $value !== null && $value !== '' ? $value : null;
     }
 
+    /**
+     * @return array{workosUser: User}
+     */
     public function authenticateWithPassword(ServerRequestInterface $request, string $email, string $password): array
     {
         $this->assertBaseConfiguration();
@@ -167,6 +173,9 @@ final class WorkosAuthenticationService
      * Complete an authentication that previously failed with
      * `email_verification_required` by submitting the code the user
      * received via email.
+     */
+    /**
+     * @return array{workosUser: User}
      */
     public function authenticateWithEmailVerification(ServerRequestInterface $request, string $code, string $pendingAuthenticationToken): array
     {
@@ -249,6 +258,9 @@ final class WorkosAuthenticationService
         );
     }
 
+    /**
+     * @return array{magicAuthId: string, userId: string, email: string}
+     */
     public function sendMagicAuthCode(string $email): array
     {
         $this->assertBaseConfiguration();
@@ -262,6 +274,9 @@ final class WorkosAuthenticationService
         ];
     }
 
+    /**
+     * @return array{workosUser: User}
+     */
     public function authenticateWithMagicAuth(ServerRequestInterface $request, string $code, string $userId): array
     {
         $this->assertBaseConfiguration();

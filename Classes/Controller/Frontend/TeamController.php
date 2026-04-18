@@ -13,6 +13,7 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Security\FrontendCsrfService;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosTeamService;
@@ -336,10 +337,10 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         $identity = $this->identityService->findIdentityByLocalUser(
             'frontend',
             'fe_users',
-            (int)$frontendUser->user['uid']
+            MixedCaster::int($frontendUser->user['uid'] ?? null)
         );
 
-        $workosUserId = is_array($identity) ? (string)($identity['workos_user_id'] ?? '') : '';
+        $workosUserId = is_array($identity) ? MixedCaster::string($identity['workos_user_id'] ?? null) : '';
         if ($workosUserId === '') {
             $this->view->assignMultiple([
                 'configured' => true,

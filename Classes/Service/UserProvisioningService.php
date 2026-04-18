@@ -8,6 +8,7 @@ use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WorkOS\Resource\User;
 
 final class UserProvisioningService
@@ -39,12 +40,12 @@ final class UserProvisioningService
 
         $identity = $this->identityService->findIdentity($context, $workosUserId);
         if ($identity !== null) {
-            $linkedUser = $this->findUserByUid($table, (int)$identity['user_uid']);
+            $linkedUser = $this->findUserByUid($table, MixedCaster::int($identity['user_uid']));
             if ($linkedUser !== null) {
                 $updatedUser = $context === 'frontend'
                     ? $this->synchronizeFrontendProfile($linkedUser, $workosUser)
                     : $this->synchronizeBackendProfile($linkedUser, $workosUser);
-                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, (int)$updatedUser['uid'], $this->extractProfile($workosUser));
+                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, MixedCaster::int($updatedUser['uid']), $this->extractProfile($workosUser));
                 return $updatedUser;
             }
         }
@@ -59,7 +60,7 @@ final class UserProvisioningService
                 $updatedUser = $context === 'frontend'
                     ? $this->synchronizeFrontendProfile($user, $workosUser)
                     : $this->synchronizeBackendProfile($user, $workosUser);
-                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, (int)$updatedUser['uid'], $this->extractProfile($workosUser));
+                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, MixedCaster::int($updatedUser['uid']), $this->extractProfile($workosUser));
                 return $updatedUser;
             }
         }
@@ -68,7 +69,7 @@ final class UserProvisioningService
             ? $this->createFrontendUser($workosUser)
             : $this->createBackendUser($workosUser);
 
-        $this->identityService->storeIdentity($context, $workosUserId, $email, $table, (int)$user['uid'], $this->extractProfile($workosUser));
+        $this->identityService->storeIdentity($context, $workosUserId, $email, $table, MixedCaster::int($user['uid']), $this->extractProfile($workosUser));
         return $user;
     }
 
@@ -91,8 +92,8 @@ final class UserProvisioningService
         $connection = $this->connectionPool->getConnectionForTable('fe_users');
         $connection->insert('fe_users', [
             'pid' => $storagePid,
-            'tstamp' => $GLOBALS['EXEC_TIME'] ?? time(),
-            'crdate' => $GLOBALS['EXEC_TIME'] ?? time(),
+            'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
+            'crdate' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
             'disable' => 0,
             'username' => $this->generateUniqueUsername('fe_users', 'fe', (string)$workosUser->id),
             'password' => $this->hashRandomPassword('FE'),
@@ -122,8 +123,8 @@ final class UserProvisioningService
         $connection = $this->connectionPool->getConnectionForTable('be_users');
         $connection->insert('be_users', [
             'pid' => 0,
-            'tstamp' => $GLOBALS['EXEC_TIME'] ?? time(),
-            'crdate' => $GLOBALS['EXEC_TIME'] ?? time(),
+            'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
+            'crdate' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
             'disable' => 0,
             'admin' => 0,
             'username' => $this->generateUniqueUsername('be_users', 'be', (string)$workosUser->id),
@@ -141,30 +142,30 @@ final class UserProvisioningService
     {
         $connection = $this->connectionPool->getConnectionForTable('fe_users');
         $connection->update('fe_users', [
-            'tstamp' => $GLOBALS['EXEC_TIME'] ?? time(),
+            'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
             'email' => strtolower(trim((string)$workosUser->email)),
             'name' => $this->buildDisplayName($workosUser),
             'first_name' => trim((string)($workosUser->firstName ?? '')),
             'last_name' => trim((string)($workosUser->lastName ?? '')),
         ], [
-            'uid' => (int)$user['uid'],
+            'uid' => MixedCaster::int($user['uid']),
         ]);
 
-        return $this->findUserByUid('fe_users', (int)$user['uid']) ?? $user;
+        return $this->findUserByUid('fe_users', MixedCaster::int($user['uid'])) ?? $user;
     }
 
     private function synchronizeBackendProfile(array $user, User $workosUser): array
     {
         $connection = $this->connectionPool->getConnectionForTable('be_users');
         $connection->update('be_users', [
-            'tstamp' => $GLOBALS['EXEC_TIME'] ?? time(),
+            'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
             'email' => strtolower(trim((string)$workosUser->email)),
             'realName' => $this->buildDisplayName($workosUser),
         ], [
-            'uid' => (int)$user['uid'],
+            'uid' => MixedCaster::int($user['uid']),
         ]);
 
-        return $this->findUserByUid('be_users', (int)$user['uid']) ?? $user;
+        return $this->findUserByUid('be_users', MixedCaster::int($user['uid'])) ?? $user;
     }
 
     private function findUserByUid(string $table, int $uid): ?array

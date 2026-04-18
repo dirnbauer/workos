@@ -12,6 +12,7 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Security\FrontendCsrfService;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosAccountService;
@@ -342,10 +343,10 @@ final class AccountController extends ActionController implements LoggerAwareInt
         $identity = $this->identityService->findIdentityByLocalUser(
             'frontend',
             'fe_users',
-            (int)$frontendUser->user['uid']
+            MixedCaster::int($frontendUser->user['uid'] ?? null)
         );
 
-        $workosUserId = is_array($identity) ? (string)($identity['workos_user_id'] ?? '') : '';
+        $workosUserId = is_array($identity) ? MixedCaster::string($identity['workos_user_id'] ?? null) : '';
         if ($workosUserId === '') {
             $this->view->assignMultiple([
                 'configured' => true,
@@ -355,7 +356,9 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return ['response' => $this->htmlResponse(), 'workosUserId' => '', 'displayName' => ''];
         }
 
-        $displayName = (string)($frontendUser->user['name'] ?? $frontendUser->user['username'] ?? $frontendUser->user['email'] ?? '');
+        $displayName = MixedCaster::string(
+            $frontendUser->user['name'] ?? $frontendUser->user['username'] ?? $frontendUser->user['email'] ?? null
+        );
 
         $this->view->assignMultiple([
             'configured' => true,
@@ -463,8 +466,8 @@ final class AccountController extends ActionController implements LoggerAwareInt
     private function detectAccountName(string $fallback): string
     {
         $frontendUser = $this->request->getAttribute('frontend.user');
-        if ($frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user ?? null)) {
-            $email = trim((string)($frontendUser->user['email'] ?? ''));
+        if ($frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user)) {
+            $email = trim(MixedCaster::string($frontendUser->user['email'] ?? null));
             if ($email !== '') {
                 return $email;
             }

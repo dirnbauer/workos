@@ -16,6 +16,7 @@ use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
@@ -71,21 +72,20 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface, LoggerA
             $queryParams = $request->getQueryParams();
             $returnTo = PathUtility::sanitizeReturnTo(
                 $request,
-                (string)($queryParams['returnTo'] ?? ''),
+                MixedCaster::string($queryParams['returnTo'] ?? null),
                 $this->configuration->getFrontendSuccessRedirect()
             );
 
-            $screenHint = in_array($queryParams['screen'] ?? '', ['sign-in', 'sign-up'], true)
-                ? $queryParams['screen']
-                : 'sign-in';
+            $requestedScreen = MixedCaster::string($queryParams['screen'] ?? null, 'sign-in');
+            $screenHint = in_array($requestedScreen, ['sign-in', 'sign-up'], true) ? $requestedScreen : 'sign-in';
 
-            $requestedProvider = $queryParams['provider'] ?? '';
-            $provider = is_string($requestedProvider) && in_array($requestedProvider, WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS, true)
+            $requestedProvider = MixedCaster::string($queryParams['provider'] ?? null);
+            $provider = in_array($requestedProvider, WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS, true)
                 ? $requestedProvider
                 : null;
 
-            $loginHint = isset($queryParams['login_hint']) ? trim((string)$queryParams['login_hint']) : '';
-            $organizationId = isset($queryParams['organization']) ? trim((string)$queryParams['organization']) : '';
+            $loginHint = trim(MixedCaster::string($queryParams['login_hint'] ?? null));
+            $organizationId = trim(MixedCaster::string($queryParams['organization'] ?? null));
 
             return new RedirectResponse(
                 $this->workosAuthenticationService->buildFrontendAuthorizationUrl(
@@ -125,7 +125,7 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface, LoggerA
     {
         $returnTo = PathUtility::sanitizeReturnTo(
             $request,
-            (string)($request->getQueryParams()['returnTo'] ?? ''),
+            MixedCaster::string($request->getQueryParams()['returnTo'] ?? null),
             $this->configuration->getFrontendSuccessRedirect()
         );
 

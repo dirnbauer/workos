@@ -13,6 +13,7 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\View\ViewInterface;
 use TYPO3\CMS\Fluid\View\FluidViewAdapter;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 
 final class WorkosBackendLoginProvider implements LoginProviderInterface
@@ -28,7 +29,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         $backendBasePath = PathUtility::guessBackendBasePath($request->getUri()->getPath());
         $loginUrl = PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendLoginPath());
 
-        $redirect = (string)($request->getQueryParams()['redirect'] ?? '');
+        $redirect = MixedCaster::string($request->getQueryParams()['redirect'] ?? null);
         if ($redirect !== '') {
             $loginUrl = PathUtility::appendQueryParameters($loginUrl, ['returnTo' => $redirect]);
         }
@@ -45,8 +46,8 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         }
 
         $queryParams = $request->getQueryParams();
-        $authError = (string)($queryParams['workosAuthError'] ?? '');
-        $authNotice = (string)($queryParams['workosAuthNotice'] ?? '');
+        $authError = MixedCaster::string($queryParams['workosAuthError'] ?? null);
+        $authNotice = MixedCaster::string($queryParams['workosAuthNotice'] ?? null);
         $authErrorDetails = $this->buildAuthErrorDetails($authError, $backendBasePath);
 
         $passwordAuthUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/password-auth');
@@ -55,7 +56,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         $emailVerifyUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/email-verify');
         $emailVerifyResendUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/email-verify-resend');
 
-        $magicAuthState = trim((string)($queryParams['magicAuthState'] ?? ''));
+        $magicAuthState = trim(MixedCaster::string($queryParams['magicAuthState'] ?? null));
         $magicAuthEmail = '';
         $magicAuthUserId = '';
         if ($magicAuthState !== '') {
@@ -75,7 +76,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             }
         }
 
-        $emailVerificationState = trim((string)($queryParams['emailVerificationState'] ?? ''));
+        $emailVerificationState = trim(MixedCaster::string($queryParams['emailVerificationState'] ?? null));
         $emailVerificationEmail = '';
         $emailVerificationUserId = '';
         $emailVerificationPendingToken = '';

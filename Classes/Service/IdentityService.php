@@ -6,6 +6,7 @@ namespace WebConsulting\WorkosAuth\Service;
 
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 
 final class IdentityService
 {
@@ -43,7 +44,7 @@ final class IdentityService
     ): void {
         $connection = $this->connectionPool->getConnectionForTable(self::TABLE);
         $existingIdentity = $this->findIdentity($context, $workosUserId);
-        $timestamp = $GLOBALS['EXEC_TIME'] ?? time();
+        $timestamp = MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time());
 
         $data = [
             'tstamp' => $timestamp,
@@ -65,7 +66,7 @@ final class IdentityService
         $connection->update(
             self::TABLE,
             $data,
-            ['uid' => (int)$existingIdentity['uid']]
+            ['uid' => MixedCaster::int($existingIdentity['uid'])]
         );
     }
 

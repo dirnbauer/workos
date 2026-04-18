@@ -32,7 +32,14 @@ final class RequestBody
     public static function fromRequest(ServerRequestInterface $request): self
     {
         $body = $request->getParsedBody();
-        return new self(is_array($body) ? $body : []);
+        if (!is_array($body)) {
+            return new self([]);
+        }
+        $narrow = [];
+        foreach ($body as $key => $value) {
+            $narrow[(string)$key] = $value;
+        }
+        return new self($narrow);
     }
 
     public function string(string $key, string $default = ''): string

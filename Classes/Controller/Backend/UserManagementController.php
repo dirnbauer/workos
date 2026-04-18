@@ -119,8 +119,9 @@ final class UserManagementController implements LoggerAwareInterface
             ], 502);
         }
 
+        $token = is_object($response) && property_exists($response, 'token') ? $response->token : null;
         return new JsonResponse([
-            'token' => $response->token ?? '',
+            'token' => is_string($token) ? $token : '',
         ]);
     }
 

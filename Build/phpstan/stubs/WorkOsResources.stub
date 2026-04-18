@@ -220,11 +220,10 @@ class PaginatedResource implements \ArrayAccess, \IteratorAggregate, \Countable
 {
 }
 
+/**
+ * @property string|null $token
+ */
 class WidgetTokenResponse extends BaseWorkOSResource
 {
-    /**
-     * @var string|null
-     */
-    public $token;
 }
 

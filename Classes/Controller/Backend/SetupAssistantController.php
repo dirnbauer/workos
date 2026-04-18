@@ -88,16 +88,27 @@ final class SetupAssistantController
     public function saveAction(ServerRequestInterface $request): ResponseInterface
     {
         $parsedBody = $request->getParsedBody();
-        $payload = is_array($parsedBody) ? $parsedBody : [];
-        $formValues = $this->configuration->normalizeInput(
-            is_array($payload['configuration'] ?? null) ? $payload['configuration'] : []
-        );
+        $rawPayload = is_array($parsedBody) ? $parsedBody : [];
+        $payload = [];
+        foreach ($rawPayload as $key => $value) {
+            $payload[(string)$key] = $value;
+        }
+
+        $configurationInput = $payload['configuration'] ?? null;
+        $stringKeyedConfiguration = [];
+        if (is_array($configurationInput)) {
+            foreach ($configurationInput as $key => $value) {
+                $stringKeyedConfiguration[(string)$key] = $value;
+            }
+        }
+        $formValues = $this->configuration->normalizeInput($stringKeyedConfiguration);
 
         if (($payload['generateCookiePassword'] ?? '') === '1') {
             $formValues['cookiePassword'] = $this->generateCookiePassword();
         }
 
-        if (!$this->isValidToken((string)($payload['csrfToken'] ?? ''))) {
+        $csrfToken = $payload['csrfToken'] ?? '';
+        if (!$this->isValidToken(is_string($csrfToken) ? $csrfToken : '')) {
             $this->enqueueFlashMessage(
                 $this->translate('error.csrfTokenInvalid'),
                 ContextualFeedbackSeverity::ERROR,
