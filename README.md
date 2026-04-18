@@ -165,10 +165,42 @@ The full list of keys is in
 
 ## Documentation
 
-- [Configuration](Documentation/Configuration.md) – Setup assistant, every config key
+- [Configuration](Documentation/Configuration.md) – Setup assistant, every config key, workspaces behaviour
 - [Features](Documentation/Features.md) – Frontend/backend flows, profile display, dynamic parameters
 - [WorkOS Dashboard](Documentation/WorkosDashboard.md) – Redirect URIs and enabling auth methods
 - [Troubleshooting](Documentation/Troubleshooting.md) – Common errors and fixes
+- [Changelog](Documentation/Changelog.md) – Release notes
+- [Audit reports](Documentation/Reports/) – Workspaces, upgrade, conformance, security, testing, docs
+
+## Security
+
+The extension takes an auth-first stance. Notable guarantees:
+
+- **CSRF tokens** are enforced on every state-changing action of the
+  Account Center and Team plugins (password change, MFA, session
+  revoke, invitations, Admin Portal launch).
+- **No open-redirects**: `returnTo` parameters only accept strict
+  relative paths or absolute URLs on the same scheme+host+port as the
+  request. Protocol-relative (`//evil.example`) and backslash variants
+  fall back to the configured default redirect.
+- **Secrets never hit logs**: all log entries run through a
+  `SecretRedactor` that strips WorkOS API keys, client ids, bearer
+  tokens, and JWTs.
+- **Workspaces-safe**: the identity mapping table is `adminOnly`,
+  `hideTable`, and pinned to `versioningWS=false` so workspace
+  drafts can never mutate live authentication state.
+
+Details are in [Documentation/Reports/04-security-audit.md](Documentation/Reports/04-security-audit.md)
+and [Documentation/Reports/05-security-audit-broader.md](Documentation/Reports/05-security-audit-broader.md).
+
+## Quality
+
+- PHPStan **level 9** with `saschaegerer/phpstan-typo3 ^3.0` — run
+  `composer phpstan`.
+- 43 unit tests, including regressions for every security fix — run
+  `composer test:unit`.
+- A `composer test:functional` scaffold is wired to
+  `typo3/testing-framework ^9.2`.
 
 ## Licence
 

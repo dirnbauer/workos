@@ -124,3 +124,19 @@ SELECT be_user, workos_user_id, email FROM tx_workosauth_identity
 ```
 
 If a row exists, the next sign-in goes straight through and the error stops appearing.
+
+## "Security check failed. Please reload the page and try again."
+
+Shown as a red flash message on the Account Center or Team dashboard.
+
+**Cause.** Each dashboard render stamps a CSRF token into a hidden
+form field (`csrfToken`). The corresponding controller action verifies
+the token before talking to WorkOS. A mismatch means the page was
+loaded with one frontend session and the form was submitted under a
+different one — usually because the user signed out and back in
+between opening the page and submitting.
+
+**Fix.** Reload the page. The new render ships a fresh token. If the
+problem persists in a single session, check that you are not caching
+the Account Center / Team plugin output via TYPO3's content cache:
+CSRF tokens must be rendered per request.
