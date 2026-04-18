@@ -371,7 +371,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
     }
 
     /**
-     * @return array|null
+     * @return array<string, mixed>|null
      */
     private function consumeFlash(): ?array
     {
@@ -380,7 +380,11 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             return null;
         }
         $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_FLASH, null);
-        return $flash;
+        $keyed = [];
+        foreach ($flash as $key => $value) {
+            $keyed[(string)$key] = $value;
+        }
+        return $keyed;
     }
 
     private function mapInvitationError(string $message): string

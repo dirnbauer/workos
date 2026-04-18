@@ -20,16 +20,25 @@ final class UserProvisioningService
         private WorkosConfiguration $configuration,
     ) {}
 
+    /**
+     * @return array<string, mixed>
+     */
     public function resolveFrontendUser(User $workosUser): array
     {
         return $this->resolveUser($workosUser, 'frontend', 'fe_users');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function resolveBackendUser(User $workosUser): array
     {
         return $this->resolveUser($workosUser, 'backend', 'be_users');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function resolveUser(User $workosUser, string $context, string $table): array
     {
         $workosUserId = trim((string)$workosUser->id);
@@ -73,6 +82,9 @@ final class UserProvisioningService
         return $user;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function createFrontendUser(User $workosUser): array
     {
         if (!$this->configuration->shouldAutoCreateFrontendUsers()) {
@@ -108,6 +120,9 @@ final class UserProvisioningService
             ?? throw new \RuntimeException('The frontend user could not be loaded after creation.', 1744277604);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function createBackendUser(User $workosUser): array
     {
         if (!$this->configuration->shouldAutoCreateBackendUsers()) {
@@ -138,6 +153,10 @@ final class UserProvisioningService
             ?? throw new \RuntimeException('The backend user could not be loaded after creation.', 1744277606);
     }
 
+    /**
+     * @param array<string, mixed> $user
+     * @return array<string, mixed>
+     */
     private function synchronizeFrontendProfile(array $user, User $workosUser): array
     {
         $connection = $this->connectionPool->getConnectionForTable('fe_users');
@@ -154,6 +173,10 @@ final class UserProvisioningService
         return $this->findUserByUid('fe_users', MixedCaster::int($user['uid'])) ?? $user;
     }
 
+    /**
+     * @param array<string, mixed> $user
+     * @return array<string, mixed>
+     */
     private function synchronizeBackendProfile(array $user, User $workosUser): array
     {
         $connection = $this->connectionPool->getConnectionForTable('be_users');
@@ -168,6 +191,9 @@ final class UserProvisioningService
         return $this->findUserByUid('be_users', MixedCaster::int($user['uid'])) ?? $user;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     private function findUserByUid(string $table, int $uid): ?array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
@@ -187,6 +213,9 @@ final class UserProvisioningService
         return is_array($user) ? $user : null;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     private function findUserByEmail(string $table, string $email): ?array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
@@ -273,6 +302,9 @@ final class UserProvisioningService
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function extractProfile(User $workosUser): array
     {
         $profile = [];

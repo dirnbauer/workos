@@ -15,9 +15,6 @@ parameters:
     phpat:
         show_rule_names: true
         ignore_doc_comments: true
-    ignoreErrors:
-        -
-            identifier: missingType.iterableValue
 
 services:
     -

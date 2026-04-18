@@ -476,7 +476,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
     }
 
     /**
-     * @return array|null
+     * @return array<string, mixed>|null
      */
     private function getPendingEnrollment(): ?array
     {
@@ -484,7 +484,11 @@ final class AccountController extends ActionController implements LoggerAwareInt
         if (!is_array($data) || !isset($data['factorId']) || $data['factorId'] === '') {
             return null;
         }
-        return $data;
+        $keyed = [];
+        foreach ($data as $key => $value) {
+            $keyed[(string)$key] = $value;
+        }
+        return $keyed;
     }
 
     private function setFlash(string $type, string $message): void
@@ -496,7 +500,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
     }
 
     /**
-     * @return array|null
+     * @return array<string, mixed>|null
      */
     private function consumeFlash(): ?array
     {
@@ -505,7 +509,11 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return null;
         }
         $this->getFrontendUser()->setAndSaveSessionData('workos_account_flash', null);
-        return $flash;
+        $keyed = [];
+        foreach ($flash as $key => $value) {
+            $keyed[(string)$key] = $value;
+        }
+        return $keyed;
     }
 
     private function stringFromMixed(mixed $value): string

@@ -37,6 +37,9 @@ final class PathUtility
         return rtrim(trim($baseUrl), '/') . self::normalizePath($path);
     }
 
+    /**
+     * @param array<string, mixed> $queryParameters
+     */
     public static function appendQueryParameters(string $url, array $queryParameters): string
     {
         $filteredParameters = array_filter(

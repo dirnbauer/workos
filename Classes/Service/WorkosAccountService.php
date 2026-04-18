@@ -71,6 +71,8 @@ final class WorkosAccountService
     /**
      * Activate an existing factor by submitting the 6-digit code from
      * the user's authenticator app.
+     *
+     * @return array{response: mixed, factorId: string}
      */
     public function verifyTotpFactor(string $factorId, string $code): array
     {

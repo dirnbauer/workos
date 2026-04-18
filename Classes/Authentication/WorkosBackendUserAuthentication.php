@@ -9,6 +9,9 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 final class WorkosBackendUserAuthentication extends BackendUserAuthentication
 {
+    /**
+     * @param array<string, mixed> $userRow
+     */
     public function signIn(array $userRow, ServerRequestInterface $request): void
     {
         $this->initializeUserSessionManager();

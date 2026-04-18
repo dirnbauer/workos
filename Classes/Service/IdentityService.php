@@ -16,6 +16,9 @@ final class IdentityService
         private ConnectionPool $connectionPool,
     ) {}
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findIdentity(string $context, string $workosUserId): ?array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
@@ -34,6 +37,9 @@ final class IdentityService
         return is_array($identity) ? $identity : null;
     }
 
+    /**
+     * @param array<string, mixed> $workosProfile
+     */
     public function storeIdentity(
         string $context,
         string $workosUserId,
@@ -70,6 +76,9 @@ final class IdentityService
         );
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findIdentityByLocalUser(string $context, string $userTable, int $userUid): ?array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);

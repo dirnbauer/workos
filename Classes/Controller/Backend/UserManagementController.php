@@ -28,6 +28,7 @@ use WebConsulting\WorkosAuth\Service\WorkosClientFactory;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\OrganizationMembership;
 use WorkOS\Resource\WidgetScope;
+use WorkOS\Resource\WidgetTokenResponse;
 use WebConsulting\WorkosAuth\Security\SecretRedactor;
 
 /**
@@ -119,12 +120,15 @@ final class UserManagementController implements LoggerAwareInterface
             ], 502);
         }
 
-        // WorkOS 4.x exposes resource fields via magic properties on
-        // BaseWorkOSResource, so property_exists() would incorrectly
-        // treat a valid token response as empty.
-        $token = is_object($response) ? self::stringFromMixed($response->token ?? null) : '';
+        if (!$response instanceof WidgetTokenResponse) {
+            $this->logger?->error('WorkOS widget token response had an unexpected type.');
+            return new JsonResponse([
+                'error' => $this->translate('module.users.error.tokenFailed'),
+            ], 502);
+        }
+
         return new JsonResponse([
-            'token' => $token,
+            'token' => self::stringFromMixed($response->token),
         ]);
     }
 

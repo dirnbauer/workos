@@ -22,6 +22,9 @@ final class Typo3SessionService
         private readonly LoggerInterface $logger,
     ) {}
 
+    /**
+     * @param array<string, mixed> $userRow
+     */
     public function createFrontendLoginResponse(ServerRequestInterface $request, array $userRow, string $redirectUrl): ResponseInterface
     {
         $frontendUser = new WorkosFrontendUserAuthentication();
@@ -46,6 +49,9 @@ final class Typo3SessionService
         return $this->appendCookie(new RedirectResponse($redirectUrl, 303), $cookie);
     }
 
+    /**
+     * @param array<string, mixed> $userRow
+     */
     public function createBackendLoginResponse(ServerRequestInterface $request, array $userRow, string $redirectUrl): ResponseInterface
     {
         $backendUser = new WorkosBackendUserAuthentication();
