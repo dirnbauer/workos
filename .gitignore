@@ -21,3 +21,4 @@ composer.lock
 # Build artifacts
 /var/
 /public/
+/.claude/
