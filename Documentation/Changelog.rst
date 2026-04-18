@@ -8,6 +8,81 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
+..  _changelog-0-25-0:
+
+0.25.0 — Authorization + workspaces polish
+==========================================
+
+Follow-up to 0.24.0. Third conformance / security / docs sweep.
+
+..  rubric:: Security
+
+-   **High:** close an authorization gap in the three Team plugin
+    actions that accept ``organizationId`` / ``invitationId`` from
+    POST bodies (``inviteAction``, ``resendInvitationAction``,
+    ``revokeInvitationAction``, ``launchPortalAction``). Before this
+    release, a logged-in frontend user could invite or revoke
+    members of — or mint Admin Portal links for — any organization
+    the app-scoped WorkOS API key could reach. A new
+    ``WorkosTeamService::assertMemberOfOrganization()`` gate runs
+    before every SDK call, and invitation actions first resolve the
+    owning org via a new ``findInvitation()`` wrapper. A translated
+    ``team.flash.forbidden`` surfaces the rejection.
+-   ``UserManagementController::tokenAction`` now validates a
+    ``FormProtectionFactory`` token before minting a WorkOS widget
+    token. The backend module passes the token via a new
+    ``data-csrf-token`` attribute on the mount element.
+-   All three POST routes in the backend User Management module
+    (``token``, ``join``, ``createOrganization``) now call an
+    explicit ``isCurrentBackendUserAdmin()`` guard in addition to
+    the module's ``access => 'admin'`` gate.
+-   ``sanitizeErrorMessage()`` in both backend middleware and
+    ``LoginController`` now falls back to a new ``error.generic``
+    translated message instead of echoing the raw WorkOS error
+    string into the redirect URL. The original remains in the log
+    via ``SecretRedactor::redact()``.
+
+..  rubric:: Workspaces
+
+-   WorkOS backend modules (``workos``, ``workos_users``,
+    ``workos_setup``) register with ``workspaces => 'live'`` so they
+    are only visible in the LIVE workspace. Configuration and
+    widget-token actions are not meaningful inside a custom
+    workspace.
+-   TCA ctrl on ``tx_workosauth_identity`` carries a short intent
+    comment explaining why ``versioningWS`` stays ``false``.
+-   New ``Tests/Functional/Service/IdentityServiceWorkspaceTest``
+    proves identity reads still succeed when a workspace aspect is
+    active — the intended behaviour for an auth extension that must
+    work under workspace preview.
+
+..  rubric:: Conformance
+
+-   ``de.locallang.xlf`` reaches parity with the English source:
+    adds ``account.flash.csrfInvalid`` and ``team.flash.csrfInvalid``.
+-   New ``de.locallang_mod_users.xlf`` and
+    ``de.locallang_mod_setup.xlf`` translate the backend module
+    metadata.
+-   Large inline ``<style>`` blocks in
+    :file:`Resources/Private/Templates/Frontend/Account/Dashboard.html`
+    and :file:`Resources/Private/Templates/Frontend/Team/Dashboard.html`
+    move to dedicated CSS files under
+    :file:`Resources/Public/Css/Frontend/` and load via
+    ``<f:asset.css>``.
+
+..  rubric:: Testing
+
+-   New ``Tests/Unit/Configuration/XliffParityTest`` fails when any
+    translation key added to ``locallang.xlf`` forgets its German
+    counterpart (or vice versa).
+-   Unit suite moves from 77 tests / 139 assertions to 82 / 151.
+
+..  rubric:: Quality
+
+-   PHPStan ``level: max`` remains clean after the level-max
+    uplift. ``treatPhpDocTypesAsCertain: false`` keeps stub-based
+    type hints pragmatic.
+
 ..  _changelog-0-24-0:
 
 0.24.0 — Level max and expanded coverage
