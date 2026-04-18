@@ -5,7 +5,7 @@ TYPO3 **frontend** and the TYPO3 **backend**. It supports the full WorkOS
 AuthKit feature set: email + password, passwordless magic auth, and
 social sign-in with Google, Microsoft, GitHub, and Apple.
 
-Requirements: TYPO3 `^14.0`, PHP `^8.2`.
+Requirements: TYPO3 `^14.0`, PHP `^8.2`. Current release: **0.25.0**.
 
 ---
 
@@ -176,32 +176,48 @@ The full list of keys is in
 
 The extension takes an auth-first stance. Notable guarantees:
 
+- **Authorization on Team actions**: every Team plugin action
+  verifies the signed-in WorkOS user is an active member of the
+  organization the POST references before calling the SDK. Stops
+  cross-tenant invite / revoke / Admin-Portal-link mints via crafted
+  POST bodies.
 - **CSRF tokens** are enforced on every state-changing action of the
   Account Center and Team plugins (password change, MFA, session
-  revoke, invitations, Admin Portal launch).
+  revoke, invitations, Admin Portal launch) and on the backend
+  User Management module's widget-token, join, and
+  create-organization routes.
+- **Admin guard** is asserted inside the backend
+  `UserManagementController` in addition to the module's
+  `access => 'admin'` gate — defence in depth if the module is ever
+  re-registered outside admin access.
 - **No open-redirects**: `returnTo` parameters only accept strict
   relative paths or absolute URLs on the same scheme+host+port as the
   request. Protocol-relative (`//evil.example`) and backslash variants
   fall back to the configured default redirect.
 - **Secrets never hit logs**: all log entries run through a
   `SecretRedactor` that strips WorkOS API keys, client ids, bearer
-  tokens, and JWTs.
+  tokens, and JWTs. Unknown WorkOS error bodies fall back to a
+  translated `error.generic` instead of leaking into redirect URLs.
 - **Workspaces-safe**: the identity mapping table is `adminOnly`,
   `hideTable`, and pinned to `versioningWS=false` so workspace
-  drafts can never mutate live authentication state.
+  drafts can never mutate live authentication state. The three
+  WorkOS backend modules are registered with `workspaces => 'live'`
+  and only appear in the LIVE workspace.
 
-Details are in [Documentation/Reports/04-security-audit.md](Documentation/Reports/04-security-audit.md)
-and [Documentation/Reports/05-security-audit-broader.md](Documentation/Reports/05-security-audit-broader.md).
+All third-sweep audit reports live under
+[`Documentation/Reports/`](Documentation/Reports/).
 
 ## Quality
 
 - PHPStan **level max** (10 on 2.x) with
   `saschaegerer/phpstan-typo3 ^3.0` — run `composer phpstan`.
-- **77 unit tests**, including regressions for every security fix
-  and a TCA contract guard on the identity table — run
+- **82 unit tests** (151 assertions), including regressions for
+  every security fix, a TCA contract guard on the identity table,
+  and XLIFF parity between English and German — run
   `composer test:unit`.
-- A `composer test:functional` scaffold is wired to
-  `typo3/testing-framework ^9.2`.
+- Functional tests cover `IdentityService` round-trips (including
+  under a workspace aspect) and `UserProvisioningService`
+  create-or-link flows via `typo3/testing-framework ^9.2`.
 - Uniform entry point: `Build/Scripts/runTests.sh -s ci` runs
   PHPStan + unit tests with the same flags locally and in CI.
 
