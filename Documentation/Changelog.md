@@ -2,6 +2,48 @@
 
 All notable changes to this extension are documented in this file.
 
+## 0.24.0 — Level max and expanded coverage
+
+Follow-up to 0.23.0. Still no user-facing behavior change; continued
+internal hardening and test coverage uplift.
+
+### Quality
+
+- PHPStan moves from level 9 to **level max** with zero errors.
+- New `WebConsulting\WorkosAuth\Configuration\WorkosSettings`
+  array-shape alias makes `WorkosConfiguration::all()` return a
+  fully-typed settings record so getters no longer need to cast
+  `mixed` values.
+- New `Classes/Security/MixedCaster` helper centralises
+  mixed-to-scalar narrowing. Middlewares, controllers, login
+  provider, services and event listener all flow query params,
+  parsed bodies, session data, `$GLOBALS['EXEC_TIME']` and database
+  row values through it.
+- `WorkosAuthenticationService` declares precise return shapes on
+  `handleCallback` (returns `array{workosUser: User, returnTo:
+  string}`), `authenticateWithPassword`, `authenticateWithMagicAuth`,
+  `authenticateWithEmailVerification`, `sendMagicAuthCode`.
+- PHPStan stub for `WorkOS\Widgets::getToken()` accepts
+  `list<string>` — matches the runtime contract, works with the
+  string-const `WidgetScope` identifiers.
+
+### Testing
+
+- 77 unit tests (was 43). New coverage: `MixedCaster` scalar
+  narrowing, extended `PathUtility` helpers (joinBaseUrlAndPath,
+  getPathRelativeToSiteBase, guessBackendBasePath,
+  guessBasePathFromMatchedPath, buildAbsoluteUrlFromRequest),
+  `IdentityTableTcaTest` locking in the workspace-exclusion contract.
+
+### Developer experience
+
+- `.editorconfig` at project root.
+- `Build/Scripts/runTests.sh` wraps PHPStan and PHPUnit behind a
+  single `-s` flag (`phpstan`, `unit`, `functional`, `ci`).
+- Inline `<style>` block in `Frontend/Login/Show.html` extracted to
+  `Resources/Public/Css/plugin-login.css` and loaded via
+  `<f:asset.css>`.
+
 ## 0.23.0 — Security hardening and level 9
 
 This release contains no user-facing behavioral changes. It bundles

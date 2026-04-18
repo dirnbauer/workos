@@ -195,12 +195,15 @@ and [Documentation/Reports/05-security-audit-broader.md](Documentation/Reports/0
 
 ## Quality
 
-- PHPStan **level 9** with `saschaegerer/phpstan-typo3 ^3.0` — run
-  `composer phpstan`.
-- 43 unit tests, including regressions for every security fix — run
+- PHPStan **level max** (10 on 2.x) with
+  `saschaegerer/phpstan-typo3 ^3.0` — run `composer phpstan`.
+- **77 unit tests**, including regressions for every security fix
+  and a TCA contract guard on the identity table — run
   `composer test:unit`.
 - A `composer test:functional` scaffold is wired to
   `typo3/testing-framework ^9.2`.
+- Uniform entry point: `Build/Scripts/runTests.sh -s ci` runs
+  PHPStan + unit tests with the same flags locally and in CI.
 
 ## Licence
 
