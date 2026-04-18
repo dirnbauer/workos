@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 return [
+    // Auth mapping between WorkOS users and local fe_users / be_users.
+    // Deliberately NOT workspace-versioned: identity records are
+    // transactional (no editorial workflow) and resolving them inside a
+    // workspace overlay would break login. Keep versioningWS => false.
     'ctrl' => [
         'title' => 'LLL:EXT:workos_auth/Resources/Private/Language/locallang_db.xlf:tx_workosauth_identity',
         'label' => 'email',

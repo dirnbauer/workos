@@ -232,3 +232,8 @@ The extension is designed to be workspace-neutral.
     content page never enters the WorkOS flow.
 -   Publishing a workspace does not change identity records because
     the identity table is excluded from workspace versioning.
+-   The :guilabel:`WorkOS` backend modules are registered with
+    ``workspaces => 'live'`` and only appear in the LIVE workspace.
+    This avoids the situation where an admin, previewing a custom
+    workspace, accidentally saves configuration or mints widget tokens
+    that are not actually workspace-scoped.
