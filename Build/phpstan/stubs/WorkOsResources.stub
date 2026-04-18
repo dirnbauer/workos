@@ -216,3 +216,12 @@ class PortalLink extends BaseWorkOSResource
 class PaginatedResource implements \ArrayAccess, \IteratorAggregate, \Countable
 {
 }
+
+class WidgetTokenResponse extends BaseWorkOSResource
+{
+    /**
+     * @var string|null
+     */
+    public $token;
+}
+

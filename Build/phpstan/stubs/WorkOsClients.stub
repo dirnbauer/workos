@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * PHPStan stubs for WorkOS SDK client classes that have looser runtime
+ * signatures than their docblocks advertise. We re-declare the methods
+ * we actually call with the types PHPStan should enforce at our call
+ * sites.
+ */
+
+namespace WorkOS;
+
+use WorkOS\Resource\WidgetTokenResponse;
+
+class Widgets
+{
+    /**
+     * @param list<string> $scopes
+     */
+    public function getToken(string $organizationId, string $userId, array $scopes): WidgetTokenResponse {}
+}

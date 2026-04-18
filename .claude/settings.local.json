@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/dirnbauer/projects/workos log --oneline -20)",
+      "Bash(git -C /Users/dirnbauer/projects/workos status)",
+      "WebFetch(domain:packagist.org)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(composer --version)",
+      "Bash(/opt/homebrew/Cellar/php/*/bin/php -v)",
+      "Bash(/opt/homebrew/Cellar/php@8.3/*/bin/php -v)",
+      "Bash(composer update *)",
+      "Bash(vendor/bin/phpstan analyse *)"
+    ]
+  }
+}

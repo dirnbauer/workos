@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
@@ -78,8 +79,8 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
                 ? $queryParams['provider']
                 : null;
 
-            $loginHint = isset($queryParams['login_hint']) ? trim((string)$queryParams['login_hint']) : null;
-            $organizationId = isset($queryParams['organization']) ? trim((string)$queryParams['organization']) : null;
+            $loginHint = isset($queryParams['login_hint']) ? trim((string)$queryParams['login_hint']) : '';
+            $organizationId = isset($queryParams['organization']) ? trim((string)$queryParams['organization']) : '';
 
             return new RedirectResponse(
                 $this->workosAuthenticationService->buildFrontendAuthorizationUrl(
@@ -87,8 +88,8 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
                     $returnTo,
                     $screenHint,
                     $provider,
-                    $loginHint ?: null,
-                    $organizationId ?: null,
+                    $loginHint !== '' ? $loginHint : null,
+                    $organizationId !== '' ? $organizationId : null,
                 ),
                 302
             );
@@ -131,9 +132,15 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
         return new HtmlResponse('<h1>' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1><p>' . $safeMessage . '</p>', $statusCode);
     }
 
+    /**
+     * @param array<int|string, mixed> $arguments
+     */
     private function translate(string $key, array $arguments = []): string
     {
-        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        $languageService = $this->languageServiceFactory->createFromUserPreferences(
+            $beUser instanceof AbstractUserAuthentication ? $beUser : null
+        );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
     }
 }

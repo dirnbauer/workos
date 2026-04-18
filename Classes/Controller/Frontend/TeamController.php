@@ -13,7 +13,10 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Service\IdentityService;
+use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosTeamService;
+use WorkOS\Resource\Invitation;
+use WorkOS\Resource\Organization;
 
 /**
  * "WorkOS Team" plugin: lets a signed-in admin manage organization
@@ -88,10 +91,10 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             'workosUserId' => $workosUserId,
             'organizations' => $this->prepareOrganizations($organizations, $selectedOrgId),
             'selectedOrganization' => $selectedOrg !== null ? [
-                'id' => (string)$selectedOrg->id,
-                'name' => (string)$selectedOrg->name,
+                'id' => $selectedOrg->id ?? '',
+                'name' => $selectedOrg->name ?? '',
             ] : null,
-            'invitations' => array_map(fn ($i) => $this->prepareInvitationRow($i), $invitations),
+            'invitations' => array_map(fn (Invitation $i) => $this->prepareInvitationRow($i), $invitations),
             'portalIntents' => $portalIntents,
             'flash' => $this->consumeFlash(),
             'sectionErrors' => $sectionErrors,
@@ -107,10 +110,10 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             return $context['response'];
         }
 
-        $body = $this->request->getParsedBody();
-        $email = trim((string)($body['email'] ?? ''));
-        $roleSlug = trim((string)($body['roleSlug'] ?? ''));
-        $organizationId = trim((string)($body['organizationId'] ?? ''));
+        $body = RequestBody::fromRequest($this->request);
+        $email = $body->trimmedString('email');
+        $roleSlug = $body->trimmedString('roleSlug');
+        $organizationId = $body->trimmedString('organizationId');
 
         if ($email === '' || $organizationId === '') {
             $this->setFlash('danger', $this->translate('team.flash.inviteFieldsRequired'));
@@ -140,9 +143,9 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             return $context['response'];
         }
 
-        $body = $this->request->getParsedBody();
-        $invitationId = trim((string)($body['invitationId'] ?? ''));
-        $organizationId = trim((string)($body['organizationId'] ?? ''));
+        $body = RequestBody::fromRequest($this->request);
+        $invitationId = $body->trimmedString('invitationId');
+        $organizationId = $body->trimmedString('organizationId');
 
         if ($invitationId !== '') {
             try {
@@ -164,9 +167,9 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             return $context['response'];
         }
 
-        $body = $this->request->getParsedBody();
-        $invitationId = trim((string)($body['invitationId'] ?? ''));
-        $organizationId = trim((string)($body['organizationId'] ?? ''));
+        $body = RequestBody::fromRequest($this->request);
+        $invitationId = $body->trimmedString('invitationId');
+        $organizationId = $body->trimmedString('organizationId');
 
         if ($invitationId !== '') {
             try {
@@ -188,26 +191,24 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             return $context['response'];
         }
 
-        $body = $this->request->getParsedBody();
-        $intent = trim((string)($body['intent'] ?? ''));
-        $organizationId = trim((string)($body['organizationId'] ?? ''));
+        $body = RequestBody::fromRequest($this->request);
+        $intent = $body->trimmedString('intent');
+        $organizationId = $body->trimmedString('organizationId');
 
         if ($intent === '' || $organizationId === '') {
             $this->setFlash('danger', $this->translate('team.flash.portalMissingArgs'));
             return $this->redirectToDashboard($organizationId);
         }
 
-        $returnUrl = method_exists($this->request, 'getUri')
-            ? (string)$this->request->getUri()
-            : null;
+        $returnUrl = (string)$this->request->getUri();
 
         try {
             $portalLink = $this->teamService->generatePortalLink(
                 organizationId: $organizationId,
                 intent: $intent,
-                returnUrl: $returnUrl,
+                returnUrl: $returnUrl !== '' ? $returnUrl : null,
             );
-            $link = (string)$portalLink->link;
+            $link = $portalLink->link ?? '';
             if ($link === '') {
                 throw new \RuntimeException('Empty portal link returned.', 1744278050);
             }
@@ -220,7 +221,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
     }
 
     /**
-     * @param array<string, \WorkOS\Resource\Organization> $organizations
+     * @param array<string, Organization> $organizations
      * @return array<int, array{id:string,name:string,domains:string,selected:bool}>
      */
     private function prepareOrganizations(array $organizations, string $selectedOrgId): array
@@ -228,35 +229,49 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         $rows = [];
         foreach ($organizations as $organization) {
             $domains = '';
-            if (isset($organization->domains) && is_array($organization->domains)) {
-                $names = array_filter(array_map(static fn ($d) => is_object($d) ? (string)($d->domain ?? '') : (string)($d['domain'] ?? ''), $organization->domains));
+            $orgDomains = $organization->domains;
+            if (is_array($orgDomains)) {
+                $names = [];
+                foreach ($orgDomains as $entry) {
+                    $domain = is_array($entry) ? ($entry['domain'] ?? '') : '';
+                    if (is_string($domain) && $domain !== '') {
+                        $names[] = $domain;
+                    }
+                }
                 $domains = implode(', ', $names);
             }
+            $orgId = $organization->id ?? '';
             $rows[] = [
-                'id' => (string)$organization->id,
-                'name' => (string)$organization->name,
+                'id' => $orgId,
+                'name' => $organization->name ?? '',
                 'domains' => $domains,
-                'selected' => (string)$organization->id === $selectedOrgId,
+                'selected' => $orgId === $selectedOrgId,
             ];
         }
         return $rows;
     }
 
-    private function prepareInvitationRow(\WorkOS\Resource\Invitation $invitation): array
+    /**
+     * @return array<string, mixed>
+     */
+    private function prepareInvitationRow(Invitation $invitation): array
     {
-        $state = strtolower((string)($invitation->state ?? ''));
+        $state = strtolower($invitation->state ?? '');
 
         return [
-            'id' => (string)$invitation->id,
-            'email' => (string)$invitation->email,
+            'id' => $invitation->id ?? '',
+            'email' => $invitation->email ?? '',
             'state' => $state,
-            'expiresAt' => (string)($invitation->expiresAt ?? ''),
-            'createdAt' => (string)($invitation->createdAt ?? ''),
-            'acceptUrl' => (string)($invitation->acceptInvitationUrl ?? ''),
+            'expiresAt' => $invitation->expiresAt ?? '',
+            'createdAt' => $invitation->createdAt ?? '',
+            'acceptUrl' => $invitation->acceptInvitationUrl ?? '',
             'isPending' => $state === 'pending',
         ];
     }
 
+    /**
+     * @param array<string, Organization> $organizations
+     */
     private function resolveSelectedOrganization(?string $requested, array $organizations): string
     {
         if ($requested !== null && $requested !== '' && isset($organizations[$requested])) {
@@ -269,7 +284,8 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             return $stored;
         }
 
-        return (string)array_key_first($organizations);
+        $firstKey = array_key_first($organizations);
+        return $firstKey !== null ? $firstKey : '';
     }
 
     private function redirectToDashboard(string $organizationId = ''): ResponseInterface
@@ -332,10 +348,13 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         ]);
     }
 
+    /**
+     * @return array|null
+     */
     private function consumeFlash(): ?array
     {
         $flash = $this->getFrontendUser()->getSessionData(self::SESSION_FLASH);
-        if (!is_array($flash) || empty($flash['message'])) {
+        if (!is_array($flash) || !isset($flash['message']) || $flash['message'] === '') {
             return null;
         }
         $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_FLASH, null);
@@ -354,6 +373,9 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         return $this->translate('team.flash.inviteFailed');
     }
 
+    /**
+     * @param array<int|string, mixed> $arguments
+     */
     private function translate(string $key, array $arguments = []): string
     {
         return LocalizationUtility::translate($key, 'WorkosAuth', $arguments !== [] ? $arguments : null) ?? $key;

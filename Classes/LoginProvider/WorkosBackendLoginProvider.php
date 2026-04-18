@@ -6,6 +6,7 @@ namespace WebConsulting\WorkosAuth\LoginProvider;
 
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
+use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -63,8 +64,8 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
                 try {
                     $payload = json_decode($decoded, true, 8, JSON_THROW_ON_ERROR);
                     if (is_array($payload)) {
-                        $magicAuthEmail = (string)($payload['email'] ?? '');
-                        $magicAuthUserId = (string)($payload['userId'] ?? '');
+                        $magicAuthEmail = self::stringFromMixed($payload['email'] ?? null);
+                        $magicAuthUserId = self::stringFromMixed($payload['userId'] ?? null);
                     }
                 } catch (\JsonException) {
                     $magicAuthState = '';
@@ -84,9 +85,9 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
                 try {
                     $payload = json_decode($decoded, true, 8, JSON_THROW_ON_ERROR);
                     if (is_array($payload)) {
-                        $emailVerificationEmail = (string)($payload['email'] ?? '');
-                        $emailVerificationUserId = (string)($payload['userId'] ?? '');
-                        $emailVerificationPendingToken = (string)($payload['pendingToken'] ?? '');
+                        $emailVerificationEmail = self::stringFromMixed($payload['email'] ?? null);
+                        $emailVerificationUserId = self::stringFromMixed($payload['userId'] ?? null);
+                        $emailVerificationPendingToken = self::stringFromMixed($payload['pendingToken'] ?? null);
                     }
                 } catch (\JsonException) {
                     $emailVerificationState = '';
@@ -138,6 +139,9 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         return 'Login/WorkosLoginProvider';
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     private function buildAuthErrorDetails(string $rawMessage, string $backendBasePath): ?array
     {
         $rawMessage = trim($rawMessage);
@@ -178,9 +182,26 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         return $details;
     }
 
+    /**
+     * @param array<int|string, mixed> $arguments
+     */
     private function translate(string $key, array $arguments = []): string
     {
-        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        $languageService = $this->languageServiceFactory->createFromUserPreferences(
+            $beUser instanceof AbstractUserAuthentication ? $beUser : null
+        );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
+    }
+
+    private static function stringFromMixed(mixed $value): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+        if (is_int($value) || is_float($value) || is_bool($value)) {
+            return (string)$value;
+        }
+        return '';
     }
 }

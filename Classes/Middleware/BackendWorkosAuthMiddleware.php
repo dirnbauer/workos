@@ -10,12 +10,14 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
 use WebConsulting\WorkosAuth\Service\PathUtility;
+use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
 use WebConsulting\WorkosAuth\Service\UserProvisioningService;
 use WebConsulting\WorkosAuth\Service\WorkosAuthenticationService;
@@ -130,7 +132,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             return $this->typo3SessionService->createBackendLoginResponse(
                 $request,
                 $backendUser,
-                (string)$authenticationResult['returnTo']
+                $authenticationResult['returnTo']
             );
         } catch (\Throwable $exception) {
             $this->logger?->error('WorkOS backend callback error: ' . $exception->getMessage());
@@ -149,9 +151,9 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
     private function handlePasswordAuth(ServerRequestInterface $request): ResponseInterface
     {
-        $body = $request->getParsedBody();
-        $email = trim((string)($body['email'] ?? ''));
-        $password = (string)($body['password'] ?? '');
+        $body = RequestBody::fromRequest($request);
+        $email = $body->trimmedString('email');
+        $password = $body->string('password');
         $backendBasePath = PathUtility::guessBasePathFromMatchedPath(
             $request->getUri()->getPath(),
             '/workos-auth/backend/password-auth'
@@ -176,8 +178,8 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
     private function handleMagicAuthSend(ServerRequestInterface $request): ResponseInterface
     {
-        $body = $request->getParsedBody();
-        $email = trim((string)($body['email'] ?? ''));
+        $body = RequestBody::fromRequest($request);
+        $email = $body->trimmedString('email');
         $backendBasePath = PathUtility::guessBasePathFromMatchedPath(
             $request->getUri()->getPath(),
             '/workos-auth/backend/magic-auth-send'
@@ -189,10 +191,11 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
         try {
             $magicAuth = $this->workosAuthenticationService->sendMagicAuthCode($email);
-            $state = base64_encode(json_encode([
+            $magicAuthJson = json_encode([
                 'userId' => $magicAuth['userId'],
                 'email' => $email,
-            ], JSON_THROW_ON_ERROR));
+            ], JSON_THROW_ON_ERROR);
+            $state = base64_encode($magicAuthJson);
 
             $loginUrl = PathUtility::joinBaseAndPath($backendBasePath, '/login');
             return new RedirectResponse(
@@ -210,9 +213,9 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
     private function handleMagicAuthVerify(ServerRequestInterface $request): ResponseInterface
     {
-        $body = $request->getParsedBody();
-        $code = trim((string)($body['code'] ?? ''));
-        $userId = trim((string)($body['userId'] ?? ''));
+        $body = RequestBody::fromRequest($request);
+        $code = $body->trimmedString('code');
+        $userId = $body->trimmedString('userId');
         $backendBasePath = PathUtility::guessBasePathFromMatchedPath(
             $request->getUri()->getPath(),
             '/workos-auth/backend/magic-auth-verify'
@@ -237,9 +240,9 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
     private function handleEmailVerify(ServerRequestInterface $request): ResponseInterface
     {
-        $body = $request->getParsedBody();
-        $code = trim((string)($body['code'] ?? ''));
-        $pendingToken = trim((string)($body['pendingToken'] ?? ''));
+        $body = RequestBody::fromRequest($request);
+        $code = $body->trimmedString('code');
+        $pendingToken = $body->trimmedString('pendingToken');
         $backendBasePath = PathUtility::guessBasePathFromMatchedPath(
             $request->getUri()->getPath(),
             '/workos-auth/backend/email-verify'
@@ -260,8 +263,8 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             $this->logger?->error('WorkOS backend email verify error: ' . $e->getMessage());
             $state = $this->encodeEmailVerificationState(
                 $pendingToken,
-                (string)($body['email'] ?? ''),
-                (string)($body['userId'] ?? '')
+                $body->string('email'),
+                $body->string('userId')
             );
             $loginUrl = PathUtility::joinBaseAndPath($backendBasePath, '/login');
             return new RedirectResponse(
@@ -277,10 +280,10 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
     private function handleEmailVerifyResend(ServerRequestInterface $request): ResponseInterface
     {
-        $body = $request->getParsedBody();
-        $userId = trim((string)($body['userId'] ?? ''));
-        $pendingToken = trim((string)($body['pendingToken'] ?? ''));
-        $email = trim((string)($body['email'] ?? ''));
+        $body = RequestBody::fromRequest($request);
+        $userId = $body->trimmedString('userId');
+        $pendingToken = $body->trimmedString('pendingToken');
+        $email = $body->trimmedString('email');
         $backendBasePath = PathUtility::guessBasePathFromMatchedPath(
             $request->getUri()->getPath(),
             '/workos-auth/backend/email-verify-resend'
@@ -328,11 +331,13 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
     private function encodeEmailVerificationState(string $pendingToken, string $email, string $userId): string
     {
-        return base64_encode(json_encode([
+        $json = json_encode([
             'pendingToken' => $pendingToken,
             'email' => $email,
             'userId' => $userId,
-        ], JSON_THROW_ON_ERROR));
+        ], JSON_THROW_ON_ERROR);
+
+        return base64_encode($json);
     }
 
     private function redirectToLoginWithError(string $backendBasePath, string $message): ResponseInterface
@@ -372,9 +377,15 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         return new HtmlResponse('<h1>' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1><p>' . $safeMessage . '</p>', $statusCode);
     }
 
+    /**
+     * @param array<int|string, mixed> $arguments
+     */
     private function translate(string $key, array $arguments = []): string
     {
-        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        $languageService = $this->languageServiceFactory->createFromUserPreferences(
+            $beUser instanceof AbstractUserAuthentication ? $beUser : null
+        );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
     }
 }

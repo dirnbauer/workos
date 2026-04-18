@@ -8,6 +8,7 @@ parameters:
         - ext_localconf.php
     stubFiles:
         - Build/phpstan/stubs/WorkOsResources.stub
+        - Build/phpstan/stubs/WorkOsClients.stub
     tmpDir: var/cache/phpstan
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true
