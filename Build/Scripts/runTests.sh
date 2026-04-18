@@ -9,6 +9,7 @@
 #   Build/Scripts/runTests.sh -s phpstan         # static analysis
 #   Build/Scripts/runTests.sh -s unit            # PHPUnit unit suite
 #   Build/Scripts/runTests.sh -s functional      # PHPUnit functional suite
+#   Build/Scripts/runTests.sh -s mutation        # Infection mutation testing
 #   Build/Scripts/runTests.sh -s ci              # phpstan + unit (CI shorthand)
 #
 # Environment variables picked up from typo3/testing-framework
@@ -55,6 +56,10 @@ case "$suite" in
         require_vendor phpunit
         exec vendor/bin/phpunit -c Build/phpunit/FunctionalTests.xml
         ;;
+    mutation)
+        require_vendor infection
+        exec vendor/bin/infection --threads=4 --no-progress
+        ;;
     ci)
         require_vendor phpstan
         require_vendor phpunit
@@ -62,7 +67,7 @@ case "$suite" in
         exec vendor/bin/phpunit -c Build/phpunit/UnitTests.xml
         ;;
     *)
-        echo "Unknown suite: $suite (valid: phpstan, unit, functional, ci)" >&2
+        echo "Unknown suite: $suite (valid: phpstan, unit, functional, mutation, ci)" >&2
         exit 2
         ;;
 esac

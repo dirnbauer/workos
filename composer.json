@@ -35,6 +35,7 @@
         "workos/workos-php": "^4.32"
     },
     "require-dev": {
+        "infection/infection": "^0.29",
         "phpat/phpat": "^0.11",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.1",
@@ -60,14 +61,16 @@
         "allow-plugins": {
             "phpstan/extension-installer": true,
             "typo3/class-alias-loader": true,
-            "typo3/cms-composer-installers": true
+            "typo3/cms-composer-installers": true,
+            "infection/extension-installer": true
         }
     },
     "scripts": {
         "phpstan": "phpstan analyse --memory-limit=1G",
         "phpstan:baseline": "phpstan analyse --generate-baseline --memory-limit=1G",
         "test:unit": "phpunit -c Build/phpunit/UnitTests.xml",
-        "test:functional": "phpunit -c Build/phpunit/FunctionalTests.xml"
+        "test:functional": "phpunit -c Build/phpunit/FunctionalTests.xml",
+        "test:mutation": "infection --threads=4 --no-progress"
     },
     "extra": {
         "typo3/cms": {

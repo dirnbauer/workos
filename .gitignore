@@ -23,3 +23,9 @@ composer.lock
 /public/
 /.claude/
 Build/phpunit/.phpunit.cache/
+
+# Infection
+/.infection/
+/infection.log
+infection-summary.log
+infection.html
