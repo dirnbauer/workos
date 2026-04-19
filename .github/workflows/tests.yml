@@ -131,7 +131,7 @@ jobs:
               run: composer install --no-interaction --no-progress --prefer-dist
 
             - name: Audit direct + transitive deps
-              run: composer audit --no-dev=false
+              run: composer audit
 
     mutation:
         name: Mutation testing
