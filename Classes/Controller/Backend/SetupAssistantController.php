@@ -60,7 +60,20 @@ final class SetupAssistantController
 
         $frontendSites = [];
         foreach ($this->siteFinder->getAllSites() as $site) {
-            $baseUrl = rtrim((string)$site->getBase(), '/');
+            // Sites configured with a path-only base (e.g. "/camino/") have
+            // no host on $site->getBase(), which would produce relative URLs
+            // like "/camino/workos-auth/frontend/callback". Fall back to the
+            // current request's scheme+host so WorkOS gets a real absolute
+            // URL it can match against the Redirect URIs allow-list.
+            $siteBase = $site->getBase();
+            if ($siteBase->getHost() !== '') {
+                $baseUrl = rtrim((string)$siteBase, '/');
+            } else {
+                $baseUrl = rtrim(
+                    PathUtility::buildAbsoluteUrlFromRequest($request, $siteBase->getPath()),
+                    '/'
+                );
+            }
             $frontendSites[] = [
                 'identifier' => $site->getIdentifier(),
                 'baseUrl' => $baseUrl,
