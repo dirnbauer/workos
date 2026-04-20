@@ -274,6 +274,13 @@ final class UserManagementController implements LoggerAwareInterface
             ];
         }
 
+        if (!$beUser instanceof BackendUserAuthentication) {
+            return [
+                'canLoadWidget' => false,
+                'message' => $this->translate('module.users.error.noSession'),
+            ];
+        }
+
         $identity = $this->identityService->findIdentityByLocalUser('backend', 'be_users', $beUserUid);
         $workosUserId = $this->resolveCurrentWorkosUserId($beUser, $identity);
         if ($workosUserId === '') {
