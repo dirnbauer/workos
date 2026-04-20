@@ -70,13 +70,43 @@ function normalizeAppearance(value) {
     return hasDark ? 'dark' : 'light';
 }
 
+function resolveAutoAppearance() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function resolveTypo3Appearance() {
+    const switchElement = document.querySelector('typo3-backend-color-scheme-switch');
+    if (!switchElement) {
+        return null;
+    }
+
+    if (typeof switchElement.getRealColorScheme === 'function') {
+        return normalizeAppearance(switchElement.getRealColorScheme());
+    }
+
+    const activeColorScheme = typeof switchElement.activeColorScheme === 'string'
+        ? switchElement.activeColorScheme.trim().toLowerCase()
+        : '';
+
+    if (activeColorScheme === 'auto') {
+        return resolveAutoAppearance();
+    }
+
+    return normalizeAppearance(activeColorScheme);
+}
+
 function detectAppearanceFromAttributes(element) {
     if (!element) {
         return null;
     }
 
     for (const attributeName of ['data-color-scheme', 'data-bs-theme', 'data-theme']) {
-        const appearance = normalizeAppearance(element.getAttribute(attributeName));
+        const value = element.getAttribute(attributeName);
+        if (typeof value === 'string' && value.trim().toLowerCase() === 'auto') {
+            return resolveAutoAppearance();
+        }
+
+        const appearance = normalizeAppearance(value);
         if (appearance) {
             return appearance;
         }
@@ -146,6 +176,7 @@ function detectAppearanceFromComputedStyles(elements) {
 
 function resolveWidgetAppearance(mountEl) {
     return (
+        resolveTypo3Appearance() ||
         detectAppearanceFromAttributes(document.documentElement) ||
         detectAppearanceFromAttributes(document.body) ||
         detectAppearanceFromAttributes(mountEl.closest('.module-body')) ||
