@@ -50,6 +50,9 @@ final class IdentityService
     ): void {
         $connection = $this->connectionPool->getConnectionForTable(self::TABLE);
         $existingIdentity = $this->findIdentity($context, $workosUserId);
+        if ($existingIdentity === null) {
+            $existingIdentity = $this->findIdentityByLocalUser($context, $userTable, $userUid);
+        }
         $timestamp = MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time());
 
         $data = [
@@ -69,10 +72,17 @@ final class IdentityService
             return;
         }
 
+        $data['workos_user_id'] = $workosUserId;
         $connection->update(
             self::TABLE,
             $data,
             ['uid' => MixedCaster::int($existingIdentity['uid'])]
+        );
+        $this->deleteDuplicateLocalUserIdentities(
+            context: $context,
+            userTable: $userTable,
+            userUid: $userUid,
+            keepUid: MixedCaster::int($existingIdentity['uid'])
         );
     }
 
@@ -92,6 +102,8 @@ final class IdentityService
                 $queryBuilder->expr()->eq('user_table', $queryBuilder->createNamedParameter($userTable)),
                 $queryBuilder->expr()->eq('user_uid', $queryBuilder->createNamedParameter($userUid, Connection::PARAM_INT))
             )
+            ->orderBy('tstamp', 'DESC')
+            ->addOrderBy('uid', 'DESC')
             ->setMaxResults(1)
             ->executeQuery()
             ->fetchAssociative();
@@ -140,5 +152,25 @@ final class IdentityService
         } catch (\JsonException) {
             return null;
         }
+    }
+
+    private function deleteDuplicateLocalUserIdentities(string $context, string $userTable, int $userUid, int $keepUid): void
+    {
+        if ($keepUid <= 0) {
+            return;
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $queryBuilder
+            ->delete(self::TABLE)
+            ->where(
+                $queryBuilder->expr()->eq('login_context', $queryBuilder->createNamedParameter($context)),
+                $queryBuilder->expr()->eq('user_table', $queryBuilder->createNamedParameter($userTable)),
+                $queryBuilder->expr()->eq('user_uid', $queryBuilder->createNamedParameter($userUid, Connection::PARAM_INT)),
+                $queryBuilder->expr()->neq('uid', $queryBuilder->createNamedParameter($keepUid, Connection::PARAM_INT))
+            )
+            ->executeStatement();
     }
 }

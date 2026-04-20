@@ -76,6 +76,31 @@ final class IdentityServiceTest extends FunctionalTestCase
         self::assertNull($service->findIdentityByLocalUser('backend', 'be_users', 999));
     }
 
+    public function testStoreIdentityRebindsLocalUserToLatestWorkosIdentity(): void
+    {
+        $service = $this->get(IdentityService::class);
+        self::assertInstanceOf(IdentityService::class, $service);
+
+        $service->storeIdentity('backend', 'user_old', 'admin@example.com', 'be_users', 7);
+        $service->storeIdentity('backend', 'user_new', 'admin@example.com', 'be_users', 7);
+
+        $row = $service->findIdentityByLocalUser('backend', 'be_users', 7);
+        self::assertIsArray($row);
+        self::assertSame('user_new', $row['workos_user_id']);
+
+        $allRows = $this->getConnectionPool()
+            ->getConnectionForTable('tx_workosauth_identity')
+            ->select(['uid', 'workos_user_id'], 'tx_workosauth_identity', [
+                'login_context' => 'backend',
+                'user_table' => 'be_users',
+                'user_uid' => 7,
+            ])
+            ->fetchAllAssociative();
+
+        self::assertCount(1, $allRows, 'local user must only keep one current WorkOS identity mapping');
+        self::assertSame('user_new', $allRows[0]['workos_user_id']);
+    }
+
     public function testFindProfileByLocalUserReturnsDecodedArray(): void
     {
         $service = $this->get(IdentityService::class);
