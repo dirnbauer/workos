@@ -8,11 +8,13 @@ use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Security\RequestToken;
+use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use WebConsulting\WorkosAuth\Security\RequestTokenService;
 
 final class RequestTokenServiceTest extends TestCase
 {
+    /** @var array<class-string, SingletonInterface> */
     private array $singletonInstances = [];
     private RequestTokenService $subject;
     private Context $context;
@@ -43,7 +45,6 @@ final class RequestTokenServiceTest extends TestCase
     {
         $token = $this->subject->create('workos/frontend/account');
 
-        self::assertInstanceOf(RequestToken::class, $token);
         self::assertSame('workos/frontend/account', $token->scope);
     }
 
