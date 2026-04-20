@@ -9,8 +9,8 @@
                 <target>WorkOS-Anmeldung</target>
             </trans-unit>
             <trans-unit id="loginprovider.label">
-                <source>Continue with WorkOS</source>
-                <target>Weiter mit WorkOS</target>
+                <source>Login with WorkOS</source>
+                <target>WorkOS-Anmeldung</target>
             </trans-unit>
 
             <!-- Social provider labels -->
@@ -228,6 +228,14 @@
                 <source>Classic sign-in</source>
                 <target>Klassische Anmeldung</target>
             </trans-unit>
+            <trans-unit id="backend.login.switch.toClassic">
+                <source>switch to Login with username and password</source>
+                <target>Zur klassischen Anmeldung wechseln</target>
+            </trans-unit>
+            <trans-unit id="backend.login.switch.toWorkos">
+                <source>switch to login with WorkOS</source>
+                <target>Zur WorkOS-Anmeldung wechseln</target>
+            </trans-unit>
             <trans-unit id="backend.login.signInWithEmail">
                 <source>Sign in with email</source>
                 <target>Mit E-Mail anmelden</target>
@@ -266,7 +274,7 @@
             </trans-unit>
             <trans-unit id="backend.login.magic.codeSent">
                 <source>We sent a six-digit code to %s. Enter it below to sign in.</source>
-                <target>Wir haben einen sechsstelligen Code an %s gesendet. Bitte gib ihn unten ein, um dich anzumelden.</target>
+                <target>Wir haben einen sechsstelligen Code an %s gesendet. Bitte geben Sie ihn unten ein, um sich anzumelden.</target>
             </trans-unit>
             <trans-unit id="backend.login.magic.codeLabel">
                 <source>Sign-in code</source>
@@ -302,7 +310,7 @@
             </trans-unit>
             <trans-unit id="backend.login.error.notLinked.hint">
                 <source>Ask a TYPO3 administrator to set this e-mail on your backend user, or open the WorkOS setup assistant to enable automatic backend provisioning for trusted domains.</source>
-                <target>Lass eine Administratorin oder einen Administrator diese E-Mail-Adresse an deinem Backend-Benutzer eintragen, oder öffne den WorkOS-Einrichtungsassistenten und aktiviere das automatische Anlegen für vertrauenswürdige Domains.</target>
+                <target>Bitten Sie eine Administratorin oder einen Administrator, diese E-Mail-Adresse an Ihrem Backend-Benutzer einzutragen, oder öffnen Sie den WorkOS-Einrichtungsassistenten und aktivieren Sie das automatische Anlegen für vertrauenswürdige Domains.</target>
             </trans-unit>
             <trans-unit id="backend.login.error.notLinked.action">
                 <source>Open WorkOS setup assistant</source>

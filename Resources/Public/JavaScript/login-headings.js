@@ -67,18 +67,25 @@ function relocateProviderSwitcherIntoHeading(heading) {
         return;
     }
 
-    // TYPO3 default provider switcher (e.g. "Login with username and password"
-    // when the WorkOS provider is active, or "Continue with WorkOS" when the
-    // classic provider is active). The TYPO3 markup wraps the label in a
-    // second <span> after an icon span, so prefer the explicit label span and
-    // fall back to the anchor's full text content (the SVG icon contributes
-    // no text on its own).
+    // TYPO3 core renders the switch-provider links inside
+    // `.typo3-login-links`. We relocate them into our heading box, but
+    // replace the core-supplied label with our own localised text
+    // (delivered via <template data-switch-text="…">) so we can keep the
+    // wording short and formal ("Sie"-Form) regardless of which provider
+    // TYPO3 hands back.
+    const tpl = document.querySelector('template[data-workos-login-heading]');
+    const switchText = (tpl && tpl.getAttribute('data-switch-text')) || '';
+
     const anchors = document.querySelectorAll('.typo3-login-links a[href]');
     anchors.forEach((anchor) => {
         const href = anchor.getAttribute('href');
+        if (!href) {
+            return;
+        }
         const labelSpan = anchor.querySelector('span:not(.t3js-icon):not(.icon-markup)');
-        const label = ((labelSpan ? labelSpan.textContent : anchor.textContent) || '').trim();
-        if (!href || !label) {
+        const coreLabel = ((labelSpan ? labelSpan.textContent : anchor.textContent) || '').trim();
+        const label = switchText !== '' ? switchText : coreLabel;
+        if (!label) {
             return;
         }
         const link = document.createElement('a');

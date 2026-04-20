@@ -38,6 +38,7 @@ final readonly class InjectLoginHeadingsListener
             $request,
             'be_lastLoginProvider'
         );
+        $isWorkosProvider = $providerIdentifier === self::WORKOS_PROVIDER_IDENTIFIER;
 
         $this->pageRenderer->addCssInlineBlock(
             'workos-login-heading',
@@ -93,6 +94,13 @@ final readonly class InjectLoginHeadingsListener
                 border: 0 !important;
                 text-decoration: underline !important;
                 opacity: 1;
+            }
+            a.workos-login-heading__link::before {
+                content: "\203A\2009";
+                text-decoration: none;
+                display: inline-block;
+                margin-right: 0.05em;
+                opacity: 0.7;
             }
 
             /* The provider switcher link is moved INSIDE the heading box as a
@@ -151,14 +159,37 @@ final readonly class InjectLoginHeadingsListener
             JavaScriptModuleInstruction::create('@webconsulting/workos-auth/login-headings.js')
         );
 
-        if ($providerIdentifier === self::WORKOS_PROVIDER_IDENTIFIER) {
-            return;
-        }
-
         $beUser = $GLOBALS['BE_USER'] ?? null;
         $languageService = $this->languageServiceFactory->createFromUserPreferences(
             $beUser instanceof AbstractUserAuthentication ? $beUser : null
         );
+
+        // Pre-localise the switcher-link text for both directions so the JS
+        // does not need to know which provider is active — it just picks the
+        // one matching the URL it relocates into the heading.
+        $switchKey = $isWorkosProvider
+            ? 'backend.login.switch.toClassic'
+            : 'backend.login.switch.toWorkos';
+        $switchFallback = $isWorkosProvider
+            ? 'Switch to classic sign-in'
+            : 'Switch to WorkOS sign-in';
+        $switchText = $languageService->sL(
+            'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:' . $switchKey
+        );
+        if ($switchText === '') {
+            $switchText = $switchFallback;
+        }
+
+        if ($isWorkosProvider) {
+            // The WorkOS provider renders its own heading server-side, so we
+            // only need to hand over the switcher label.
+            $this->pageRenderer->addHeaderData(sprintf(
+                '<template data-workos-login-heading data-switch-text="%s"></template>',
+                htmlspecialchars($switchText, ENT_QUOTES | ENT_HTML5, 'UTF-8')
+            ));
+            return;
+        }
+
         $headingText = $languageService->sL(
             'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.heading.classic'
         );
@@ -168,8 +199,9 @@ final readonly class InjectLoginHeadingsListener
 
         // Plain-HTML data carrier (no script, so no CSP concerns).
         $this->pageRenderer->addHeaderData(sprintf(
-            '<template data-workos-login-heading data-text="%s"></template>',
-            htmlspecialchars($headingText, ENT_QUOTES | ENT_HTML5, 'UTF-8')
+            '<template data-workos-login-heading data-text="%s" data-switch-text="%s"></template>',
+            htmlspecialchars($headingText, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+            htmlspecialchars($switchText, ENT_QUOTES | ENT_HTML5, 'UTF-8')
         ));
     }
 }
