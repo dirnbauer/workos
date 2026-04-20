@@ -7,9 +7,13 @@ namespace WebConsulting\WorkosAuth\LoginProvider;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Security\RequestToken;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\View\ViewInterface;
 use TYPO3\CMS\Fluid\View\FluidViewAdapter;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
@@ -135,6 +139,8 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             'authError' => $authError,
             'authErrorDetails' => $authErrorDetails,
             'authNotice' => $authNotice,
+            'requestTokenName' => RequestToken::PARAM_NAME,
+            'requestTokenValue' => $this->provideRequestTokenJwt(),
         ]);
 
         return 'Login/WorkosLoginProvider';
@@ -204,5 +210,14 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             return (string)$value;
         }
         return '';
+    }
+
+    private function provideRequestTokenJwt(): string
+    {
+        $nonce = SecurityAspect::provideIn(
+            GeneralUtility::makeInstance(Context::class)
+        )->provideNonce();
+
+        return RequestToken::create('core/user-auth/be')->toHashSignedJwt($nonce);
     }
 }
