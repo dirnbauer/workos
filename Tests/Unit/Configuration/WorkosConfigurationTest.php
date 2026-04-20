@@ -39,19 +39,25 @@ final class WorkosConfigurationTest extends TestCase
     {
         $result = $this->configuration->normalizeInput([
             'apiKey' => '  sk_test_abc ',
+            'clientId' => '  client_abc ',
+            'cookiePassword' => '  12345678901234567890123456789012  ',
+            'frontendEnabled' => false,
             'frontendLoginPath' => 'workos-auth/login',
             'frontendCallbackPath' => '/workos-auth/callback/',
             'frontendLogoutPath' => '',
-            'frontendSuccessRedirect' => '',
+            'frontendSuccessRedirect' => '  /dashboard  ',
             'backendAllowedDomains' => '',
             'frontendStoragePid' => '-1',
         ]);
 
         self::assertSame('sk_test_abc', $result['apiKey']);
+        self::assertSame('client_abc', $result['clientId']);
+        self::assertSame('12345678901234567890123456789012', $result['cookiePassword']);
+        self::assertFalse($result['frontendEnabled']);
         self::assertSame('/workos-auth/login', $result['frontendLoginPath']);
         self::assertSame('/workos-auth/callback', $result['frontendCallbackPath']);
         self::assertSame('/', $result['frontendLogoutPath']);
-        self::assertSame('/', $result['frontendSuccessRedirect']);
+        self::assertSame('/dashboard', $result['frontendSuccessRedirect']);
         self::assertSame(0, $result['frontendStoragePid']);
     }
 
