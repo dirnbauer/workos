@@ -56,13 +56,15 @@ final class WorkosTeamService
 
         $response = $userManagement->listOrganizationMemberships(
             userId: $workosUserId,
-            statuses: [OrganizationMembershipStatus::Active],
             limit: 50,
         );
 
         $result = [];
         foreach ($response->data as $membership) {
             if (!$membership instanceof UserOrganizationMembership) {
+                continue;
+            }
+            if ($membership->status !== OrganizationMembershipStatus::Active) {
                 continue;
             }
             $organizationId = $membership->organizationId;
@@ -100,11 +102,11 @@ final class WorkosTeamService
         $response = $this->workosClientFactory->createUserManagement()->listOrganizationMemberships(
             userId: $workosUserId,
             organizationId: $organizationId,
-            statuses: [OrganizationMembershipStatus::Active],
             limit: 1,
         );
         foreach ($response->data as $membership) {
             if ($membership instanceof UserOrganizationMembership
+                && $membership->status === OrganizationMembershipStatus::Active
                 && $membership->userId === $workosUserId
                 && $membership->organizationId === $organizationId) {
                 return;

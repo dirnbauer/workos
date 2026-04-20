@@ -314,12 +314,14 @@ final class UserManagementController implements LoggerAwareInterface
             $userManagement = $this->workosClientFactory->createUserManagement();
             $result = $userManagement->listOrganizationMemberships(
                 userId: $workosUserId,
-                statuses: [OrganizationMembershipStatus::Active],
                 limit: 10,
             );
 
             foreach ($result->data as $membership) {
                 if ($membership instanceof UserOrganizationMembership) {
+                    if ($membership->status !== OrganizationMembershipStatus::Active) {
+                        continue;
+                    }
                     $organizationId = $membership->organizationId;
                     if ($organizationId !== '') {
                         return $organizationId;
