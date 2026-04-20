@@ -17,6 +17,7 @@ use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Middleware\RequestTokenMiddleware;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
@@ -38,6 +39,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         private WorkosAuthenticationService $workosAuthenticationService,
         private UserProvisioningService $userProvisioningService,
         private Typo3SessionService $typo3SessionService,
+        private Context $context,
         private LanguageServiceFactory $languageServiceFactory,
     ) {}
 
@@ -54,23 +56,38 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         }
 
         if ($this->pathMatches($requestPath, '/workos-auth/backend/password-auth') && $request->getMethod() === 'POST') {
-            return $this->handlePasswordAuth($request);
+            return $this->processWithBackendRequestToken(
+                $request,
+                fn(ServerRequestInterface $request): ResponseInterface => $this->handlePasswordAuth($request)
+            );
         }
 
         if ($this->pathMatches($requestPath, '/workos-auth/backend/magic-auth-send') && $request->getMethod() === 'POST') {
-            return $this->handleMagicAuthSend($request);
+            return $this->processWithBackendRequestToken(
+                $request,
+                fn(ServerRequestInterface $request): ResponseInterface => $this->handleMagicAuthSend($request)
+            );
         }
 
         if ($this->pathMatches($requestPath, '/workos-auth/backend/magic-auth-verify') && $request->getMethod() === 'POST') {
-            return $this->handleMagicAuthVerify($request);
+            return $this->processWithBackendRequestToken(
+                $request,
+                fn(ServerRequestInterface $request): ResponseInterface => $this->handleMagicAuthVerify($request)
+            );
         }
 
         if ($this->pathMatches($requestPath, '/workos-auth/backend/email-verify') && $request->getMethod() === 'POST') {
-            return $this->handleEmailVerify($request);
+            return $this->processWithBackendRequestToken(
+                $request,
+                fn(ServerRequestInterface $request): ResponseInterface => $this->handleEmailVerify($request)
+            );
         }
 
         if ($this->pathMatches($requestPath, '/workos-auth/backend/email-verify-resend') && $request->getMethod() === 'POST') {
-            return $this->handleEmailVerifyResend($request);
+            return $this->processWithBackendRequestToken(
+                $request,
+                fn(ServerRequestInterface $request): ResponseInterface => $this->handleEmailVerifyResend($request)
+            );
         }
 
         return $handler->handle($request);
@@ -422,6 +439,41 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         }
 
         return $response->withAddedHeader('Set-Cookie', $cookie->__toString());
+    }
+
+    /**
+     * @param callable(ServerRequestInterface): ResponseInterface $callback
+     */
+    private function processWithBackendRequestToken(
+        ServerRequestInterface $request,
+        callable $callback
+    ): ResponseInterface {
+        $requestTokenMiddleware = new RequestTokenMiddleware($this->context);
+        $handler = static function (ServerRequestInterface $request) use ($callback): ResponseInterface {
+            return $callback($request);
+        };
+
+        return $requestTokenMiddleware->process(
+            $request,
+            new class($handler) implements RequestHandlerInterface {
+                /** @var \Closure(ServerRequestInterface): ResponseInterface */
+                private readonly \Closure $handler;
+
+                /**
+                 * @param \Closure(ServerRequestInterface): ResponseInterface $handler
+                 */
+                public function __construct(
+                    \Closure $handler,
+                ) {
+                    $this->handler = $handler;
+                }
+
+                public function handle(ServerRequestInterface $request): ResponseInterface
+                {
+                    return ($this->handler)($request);
+                }
+            }
+        );
     }
 
     private function hasValidBackendRequestToken(): bool
