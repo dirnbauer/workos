@@ -23,42 +23,40 @@
     }
     .workos-hint {
         text-align: center;
-        margin: 1.5rem 0 1rem;
-        font-size: 0.8rem;
+        margin: 1rem 0 0.5rem;
+        font-size: 0.7rem;
         color: var(--typo3-text-color-base, #9ca3af);
-        opacity: 0.8;
+        opacity: 0.65;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        font-weight: 600;
+        letter-spacing: 0.08em;
+        font-weight: 500;
     }
-    .workos-social-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .workos-social-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
     .workos-social-btn {
-        flex: 1 1 calc(50% - 0.25rem);
+        flex: 1 1 calc(50% - 0.2rem);
         min-width: 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0.75rem;
-        padding: 0.65rem 0.75rem;
-        border: none;
-        border-radius: 8px;
-        font-size: 1rem;
-        font-weight: 700;
-        color: #111827 !important;
-        background: #ffffff !important;
+        gap: 0.5rem;
+        padding: 0.4rem 0.6rem;
+        border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: currentColor;
+        background: transparent;
         text-decoration: none;
-        transition: transform 0.15s, box-shadow 0.15s;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.15s ease, border-color 0.15s ease;
     }
     .workos-social-btn:hover, .workos-social-btn:focus {
-        background: #ffffff !important;
-        color: #000000 !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background: color-mix(in srgb, currentColor 8%, transparent);
+        border-color: color-mix(in srgb, currentColor 32%, transparent);
+        color: currentColor;
         text-decoration: none;
     }
     .workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .workos-social-btn__icon svg { display: block; }
+    .workos-social-btn__icon svg { display: block; width: 14px; height: 14px; }
     .workos-authkit-link {
         margin-top: 0.75rem;
         text-align: center;
