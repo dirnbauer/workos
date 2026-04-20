@@ -4,8 +4,14 @@
         <header/>
         <body>
             <!-- Plugin & provider -->
+            <trans-unit id="plugin.group.title">
+                <source>WorkOS</source>
+            </trans-unit>
             <trans-unit id="plugin.login.title">
                 <source>WorkOS Login</source>
+            </trans-unit>
+            <trans-unit id="plugin.login.description">
+                <source>Frontend login and sign-up form powered by WorkOS AuthKit.</source>
             </trans-unit>
             <trans-unit id="loginprovider.label">
                 <source>Login with WorkOS</source>
@@ -646,6 +652,9 @@
             <trans-unit id="plugin.account.title">
                 <source>WorkOS Account Center</source>
             </trans-unit>
+            <trans-unit id="plugin.account.description">
+                <source>Signed-in user dashboard: profile, password, MFA, and sessions.</source>
+            </trans-unit>
             <trans-unit id="account.greeting">
                 <source>Signed in as</source>
             </trans-unit>
@@ -846,6 +855,9 @@
             <!-- Team plugin -->
             <trans-unit id="plugin.team.title">
                 <source>WorkOS Team</source>
+            </trans-unit>
+            <trans-unit id="plugin.team.description">
+                <source>Team and organisation management for the signed-in WorkOS user.</source>
             </trans-unit>
             <trans-unit id="team.eyebrow">
                 <source>Workspace administration</source>
