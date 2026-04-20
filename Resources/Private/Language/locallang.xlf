@@ -349,7 +349,7 @@
                 <source>Join organization</source>
             </trans-unit>
             <trans-unit id="module.users.join.existing.single">
-                <source>You currently have access to one organization: %s.</source>
+                <source>One organization is available in this WorkOS account: %s.</source>
             </trans-unit>
             <trans-unit id="module.users.join.existing.singleSubmit">
                 <source>Join "%s"</source>

@@ -49,6 +49,7 @@ final class UserManagementController implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
+    private const SESSION_WORKOS_USER_ID = 'workos_auth_user_id';
     private const TOKEN_REQUEST_SCOPE = 'workos/backend/users/token';
     private const JOIN_REQUEST_SCOPE = 'workos/backend/users/join';
     private const CREATE_ORGANIZATION_REQUEST_SCOPE = 'workos/backend/users/create-organization';
@@ -274,14 +275,14 @@ final class UserManagementController implements LoggerAwareInterface
         }
 
         $identity = $this->identityService->findIdentityByLocalUser('backend', 'be_users', $beUserUid);
-        if ($identity === null || ($identity['workos_user_id'] ?? '') === '') {
+        $workosUserId = $this->resolveCurrentWorkosUserId($beUser, $identity);
+        if ($workosUserId === '') {
             return [
                 'canLoadWidget' => false,
                 'message' => $this->translate('module.users.error.noWorkosIdentity'),
             ];
         }
 
-        $workosUserId = self::stringFromMixed($identity['workos_user_id']);
         $email = self::stringFromMixed($identity['email'] ?? null);
         $organizationId = $this->resolveOrganizationId($workosUserId);
 
@@ -402,6 +403,21 @@ final class UserManagementController implements LoggerAwareInterface
     {
         $beUser = $GLOBALS['BE_USER'] ?? null;
         return $beUser instanceof BackendUserAuthentication && $beUser->isAdmin();
+    }
+
+    /**
+     * @param array<string, mixed>|null $identity
+     */
+    private function resolveCurrentWorkosUserId(?BackendUserAuthentication $beUser, ?array $identity): string
+    {
+        if ($beUser instanceof BackendUserAuthentication) {
+            $sessionWorkosUserId = self::stringFromMixed($beUser->getSessionData(self::SESSION_WORKOS_USER_ID));
+            if ($sessionWorkosUserId !== '') {
+                return $sessionWorkosUserId;
+            }
+        }
+
+        return self::stringFromMixed($identity['workos_user_id'] ?? null);
     }
 
     /**

@@ -459,8 +459,8 @@
                 <target>Organisation beitreten</target>
             </trans-unit>
             <trans-unit id="module.users.join.existing.single">
-                <source>You currently have access to one organization: %s.</source>
-                <target>Derzeit ist eine Organisation verfügbar: %s.</target>
+                <source>One organization is available in this WorkOS account: %s.</source>
+                <target>In diesem WorkOS-Konto ist eine Organisation verfügbar: %s.</target>
             </trans-unit>
             <trans-unit id="module.users.join.existing.singleSubmit">
                 <source>Join "%s"</source>

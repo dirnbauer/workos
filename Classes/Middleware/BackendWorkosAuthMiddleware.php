@@ -159,7 +159,8 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             return $this->typo3SessionService->createBackendLoginResponse(
                 $request,
                 $backendUser,
-                $authenticationResult['returnTo']
+                $authenticationResult['returnTo'],
+                $authenticationResult['workosUser']->id ?? null,
             );
         } catch (\Throwable $exception) {
             $this->logger?->error('WorkOS backend callback error: ' . SecretRedactor::redact($exception->getMessage()));
@@ -195,7 +196,12 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             $result = $this->workosAuthenticationService->authenticateWithPassword($request, $email, $password);
             $backendUser = $this->userProvisioningService->resolveBackendUser($result['workosUser']);
             $successPath = PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendSuccessPath());
-            return $this->typo3SessionService->createBackendLoginResponse($request, $backendUser, $successPath);
+            return $this->typo3SessionService->createBackendLoginResponse(
+                $request,
+                $backendUser,
+                $successPath,
+                $result['workosUser']->id ?? null,
+            );
         } catch (EmailVerificationRequiredException $e) {
             return $this->redirectToEmailVerification($backendBasePath, $e);
         } catch (\Throwable $e) {
@@ -263,7 +269,12 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             $result = $this->workosAuthenticationService->authenticateWithMagicAuth($request, $code, $userId);
             $backendUser = $this->userProvisioningService->resolveBackendUser($result['workosUser']);
             $successPath = PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendSuccessPath());
-            return $this->typo3SessionService->createBackendLoginResponse($request, $backendUser, $successPath);
+            return $this->typo3SessionService->createBackendLoginResponse(
+                $request,
+                $backendUser,
+                $successPath,
+                $result['workosUser']->id ?? null,
+            );
         } catch (EmailVerificationRequiredException $e) {
             return $this->redirectToEmailVerification($backendBasePath, $e);
         } catch (\Throwable $e) {
@@ -293,7 +304,12 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             $result = $this->workosAuthenticationService->authenticateWithEmailVerification($request, $code, $pendingToken);
             $backendUser = $this->userProvisioningService->resolveBackendUser($result['workosUser']);
             $successPath = PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendSuccessPath());
-            return $this->typo3SessionService->createBackendLoginResponse($request, $backendUser, $successPath);
+            return $this->typo3SessionService->createBackendLoginResponse(
+                $request,
+                $backendUser,
+                $successPath,
+                $result['workosUser']->id ?? null,
+            );
         } catch (EmailVerificationRequiredException $e) {
             return $this->redirectToEmailVerification($backendBasePath, $e);
         } catch (\Throwable $e) {

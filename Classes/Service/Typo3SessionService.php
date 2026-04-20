@@ -53,11 +53,19 @@ final class Typo3SessionService
     /**
      * @param array<string, mixed> $userRow
      */
-    public function createBackendLoginResponse(ServerRequestInterface $request, array $userRow, string $redirectUrl): ResponseInterface
+    public function createBackendLoginResponse(
+        ServerRequestInterface $request,
+        array $userRow,
+        string $redirectUrl,
+        ?string $workosUserId = null,
+    ): ResponseInterface
     {
         $backendUser = new WorkosBackendUserAuthentication();
         $backendUser->setLogger($this->logger);
         $backendUser->signIn($userRow, $request);
+        if (is_string($workosUserId) && $workosUserId !== '') {
+            $backendUser->setAndSaveSessionData('workos_auth_user_id', $workosUserId);
+        }
 
         $cookie = SetCookieService::create(BackendUserAuthentication::getCookieName(), 'BE')
             ->setSessionCookie($backendUser->getSession(), $this->getNormalizedParams($request));
