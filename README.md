@@ -17,8 +17,8 @@ Requirements: TYPO3 `^14.0`, PHP `^8.2`. Current release: **0.25.0**.
 | **WorkOS Login** plugin | Shows the current WorkOS profile (including custom metadata) when signed in |
 | **WorkOS Account Center** plugin | Self-service profile, password, MFA, sessions and organizations for signed-in users |
 | **WorkOS Team** plugin | Send/resend/revoke teammate invitations and launch one-time WorkOS Admin Portal sessions (SSO, SCIM, audit logs, …) |
-| Backend login | "Continue with WorkOS" button, email-code login, social sign-in |
-| Backend module | Setup assistant at `System > WorkOS Auth` (no PHP editing required) |
+| Backend login | "Continue with WorkOS" button, email-code login, social sign-in, email verification step |
+| Backend modules | Top-level **WorkOS** menu with **Setup Assistant** and **User Management** (no PHP editing required) |
 | Provisioning | Create or link TYPO3 users from WorkOS identities (frontend & backend) |
 | Storage | Identity mapping table `tx_workosauth_identity` (with full WorkOS profile JSON) |
 | Localization | English and German out of the box, XLIFF 1.2 with ICU MessageFormat |
@@ -30,7 +30,7 @@ composer require webconsulting/workos-auth
 ```
 
 1. Activate the extension in TYPO3.
-2. Open **System > WorkOS Auth** in the backend.
+2. Open **WorkOS → Setup Assistant** in the backend (the module is added next to **System** as a new top-level **WorkOS** menu).
 3. Enter your **API key**, **Client ID**, and a **cookie password** (≥ 32 characters).
 4. Copy all **Redirect URIs** from the setup assistant into the WorkOS Dashboard.
 5. In the WorkOS Dashboard, enable the authentication methods you need (Magic Auth, Email + Password, Social providers).
@@ -43,8 +43,9 @@ A detailed walk-through is in [`Documentation/Configuration.rst`](Documentation/
 Place the **WorkOS Login** plugin on a page and users get a ready-to-go card:
 
 - Email + password form
-- "Email me a login code" (magic auth, six-digit code)
+- "Email me a login code" (magic auth, six-digit code, dedicated code-entry step)
 - One-tap social buttons (Google, Microsoft, GitHub, Apple)
+- Inline **email verification** flow when WorkOS asks the user to confirm their address (with resend support)
 - Link to the native sign-up form
 
 Signed-in users see their WorkOS profile, including any **custom metadata**
@@ -109,9 +110,25 @@ TYPO3's backend login gains a WorkOS section with:
 - Social sign-in buttons
 - An email field that sends a six-digit magic-auth code
 - A visible code-entry step for verification
+- An inline **email verification** screen when WorkOS requires the user to confirm their address (with a one-click resend)
 
 Standard TYPO3 username + password login keeps working in parallel via
 the "Login with username and password" switcher.
+
+### Backend modules
+
+The extension installs a new top-level **WorkOS** menu in the backend
+with two entries:
+
+- **Setup Assistant** (`/module/workos/setup`, alias `system_workosauth`) — credentials,
+  redirect URIs, and feature toggles (admin only).
+- **User Management** (`/module/workos/users`) — embeds the official
+  WorkOS *User Management* widget so admins can invite teammates,
+  change roles, and remove users without leaving TYPO3 (admin only).
+  CSRF-protected and bound to the signed-in WorkOS session.
+
+Both modules register with `workspaces => 'live'` and only appear in
+the LIVE workspace.
 
 > **Heads-up — "This WorkOS account is not linked to a TYPO3 user":**
 > If a user authenticates successfully with WorkOS but no matching
@@ -145,7 +162,7 @@ the AuthKit experience without changing any TYPO3 configuration:
 | `provider` | `GoogleOAuth`, `MicrosoftOAuth`, `GitHubOAuth`, `AppleOAuth` | Jump directly to one social provider |
 | `login_hint` | Any email | Pre-fill the email field |
 | `organization` | WorkOS organization id | Scope the login to an organization |
-| `returnTo` | Target URL | Where to land after login |
+| `returnTo` | Relative path or same-host absolute URL | Where to land after login (sanitised; protocol-relative and cross-host values fall back to the default) |
 
 Example — open the hosted sign-up screen pre-filled with an email:
 
@@ -209,15 +226,20 @@ All third-sweep audit reports live under
 
 ## Quality
 
-- PHPStan **level max** (10 on 2.x) with
+- PHPStan **`level: max`** (PHPStan 2.x) with
   `saschaegerer/phpstan-typo3 ^3.0` — run `composer phpstan`.
-- **82 unit tests** (151 assertions), including regressions for
+- **83 unit tests** (166 assertions, 1 skipped pending a
+  `de.locallang_db.xlf` translation), including regressions for
   every security fix, a TCA contract guard on the identity table,
   and XLIFF parity between English and German — run
   `composer test:unit`.
 - Functional tests cover `IdentityService` round-trips (including
   under a workspace aspect) and `UserProvisioningService`
-  create-or-link flows via `typo3/testing-framework ^9.2`.
+  create-or-link flows via `typo3/testing-framework ^9.2` — run
+  `composer test:functional`.
+- Mutation testing via Infection — run `composer test:mutation`.
+- Architecture rules via `phpat` keep the
+  Controllers → Services → Security boundary intact.
 - Uniform entry point: `Build/Scripts/runTests.sh -s ci` runs
   PHPStan + unit tests with the same flags locally and in CI.
 

@@ -6,12 +6,22 @@
 Configuration
 =============
 
-All settings are configured in :guilabel:`System` -> :guilabel:`WorkOS Auth`
-in the TYPO3 backend. You never need to edit PHP arrays by hand.
+All settings are configured in :guilabel:`WorkOS` ->
+:guilabel:`Setup Assistant` in the TYPO3 backend (top-level **WorkOS**
+menu, registered next to :guilabel:`System`). You never need to edit
+PHP arrays by hand.
 
 Settings are stored in TYPO3 extension configuration under
 ``EXTENSIONS.workos_auth`` and end up in :file:`config/system/settings.php`
 in Composer-based projects.
+
+In addition to the Setup Assistant, the **WorkOS** menu exposes a
+second admin-only entry — :guilabel:`User Management` — that embeds
+the official WorkOS *User Management* widget for inviting teammates
+and managing roles. Both entries are limited to the LIVE workspace
+(``workspaces => 'live'``) because they operate on extension
+configuration and live identity data, not on versioned editorial
+content.
 
 ..  contents::
     :local:

@@ -34,8 +34,13 @@ The plugin renders a single card with:
     *   -   Email + password
         -   POST to ``passwordAuth`` → calls WorkOS ``authenticateWithPassword``
     *   -   "Email code" row
-        -   POST to ``magicAuthSend`` → shows a code-entry screen, POST
-            to ``magicAuthVerify``
+        -   POST to ``magicAuthSend`` → ``magicAuthCode`` (code-entry
+            screen) → POST to ``magicAuthVerify``
+    *   -   Email verification step
+        -   ``verifyEmail`` (renders the code form), POST to
+            ``verifyEmailSubmit``, POST to ``verifyEmailResend`` for
+            "didn't get the email?" — used when WorkOS reports
+            ``email_verification_required``
     *   -   Social buttons
         -   Link to AuthKit with ``?provider=GoogleOAuth`` etc.
     *   -   Sign-up link
@@ -114,6 +119,9 @@ core.
 Endpoints (HTTP POST)
 ---------------------
 
+All POST endpoints require a valid TYPO3 backend request token
+(``core/user-auth/be``) to defeat CSRF.
+
 ..  list-table::
     :header-rows: 1
 
@@ -125,17 +133,34 @@ Endpoints (HTTP POST)
         -   Start magic auth (sends the code)
     *   -   ``/workos-auth/backend/magic-auth-verify``
         -   Submit the six-digit code
+    *   -   ``/workos-auth/backend/email-verify``
+        -   Submit the email-verification code that WorkOS demands
+            after ``email_verification_required``
+    *   -   ``/workos-auth/backend/email-verify-resend``
+        -   Re-issue a fresh email-verification code
 
-..  _features-backend-setup-module:
+..  _features-backend-modules:
 
-Backend setup module
-====================
+Backend modules
+===============
 
-Route: ``/module/system/workos-auth`` (admin-only).
+The extension installs a top-level :guilabel:`WorkOS` menu in the
+TYPO3 backend (registered next to :guilabel:`System`) with two
+admin-only entries. Both modules are limited to the LIVE workspace
+via ``workspaces => 'live'``.
+
+Setup Assistant
+---------------
+
+-   Module identifier: ``workos_setup``
+-   Path: ``/module/workos/setup``
+-   Alias for upgrades from earlier versions: ``system_workosauth``
+-   Controller: ``SetupAssistantController`` (``indexAction``,
+    ``saveAction``)
 
 See :ref:`Configuration <configuration>` for the walk-through.
 
-Key features of the module:
+Key features:
 
 -   Shows every callback URL that must be registered in WorkOS.
 -   One-click :guilabel:`Copy all callback URLs` (via an ES module,
@@ -145,6 +170,97 @@ Key features of the module:
 -   Automatic cookie password generation on save.
 -   Flash messages indicate whether the setup is ready or still
     incomplete.
+
+User Management
+---------------
+
+-   Module identifier: ``workos_users``
+-   Path: ``/module/workos/users``
+-   Controller: ``UserManagementController`` (``indexAction``,
+    ``tokenAction``, ``joinAction``, ``createOrganizationAction``)
+
+Embeds the official **WorkOS User Management widget** so admins can
+invite teammates, change roles, and remove users without leaving
+TYPO3. The module is bound to the signed-in WorkOS session of the
+current backend user; if the user is not yet a member of any
+organization, the module offers a "join existing" or "create new"
+flow before mounting the widget.
+
+All POST routes (``token``, ``join``, ``createOrganization``) are
+protected by an explicit ``isCurrentBackendUserAdmin()`` check (in
+addition to the module's ``access => 'admin'`` gate) and validate a
+``FormProtectionFactory`` token before talking to WorkOS.
+
+..  _features-account-center:
+
+Account Center plugin
+=====================
+
+Add the :guilabel:`WorkOS Account Center` content element to a page
+that signed-in frontend users can reach (typically ``/my-account``).
+The plugin is implemented by ``AccountController`` and renders four
+cards backed by the WorkOS API:
+
+..  list-table::
+    :header-rows: 1
+
+    *   -   Card
+        -   Action(s)
+    *   -   Profile
+        -   ``updateProfile`` — first/last name, mirrored to WorkOS via
+            ``UserManagement::updateUser``
+    *   -   Password
+        -   ``changePassword`` — translates WorkOS errors for
+            too-short, too-weak, breached, or already-existing passwords
+    *   -   Two-factor authentication
+        -   ``startMfaEnrollment`` → ``verifyMfaEnrollment`` (TOTP),
+            ``cancelMfaEnrollment``, ``deleteFactor``
+    *   -   Active sessions
+        -   ``revokeSession`` per WorkOS session id
+
+A "directory sync" badge appears on organization memberships that
+are managed by an external IdP. Each card degrades gracefully: a
+single failed WorkOS call disables only that card and shows a
+translated message.
+
+All state-changing actions require a CSRF token issued per
+frontend session and scoped per plugin (mismatch shows
+``account.flash.csrfInvalid``).
+
+..  _features-team-plugin:
+
+Team plugin
+===========
+
+Add the :guilabel:`WorkOS Team` content element to a page reserved
+for organization admins. The plugin is implemented by
+``TeamController`` and exposes the WorkOS B2B feature set:
+
+..  list-table::
+    :header-rows: 1
+
+    *   -   Section
+        -   Action(s)
+    *   -   Organization switcher
+        -   ``dashboard`` — sticky session selection when the user
+            belongs to more than one active WorkOS organization
+    *   -   Send invitation
+        -   ``invite`` — email and optional role slug, dispatched via
+            WorkOS
+    *   -   Pending invitations
+        -   ``resendInvitation``, ``revokeInvitation``
+    *   -   Admin Portal launcher
+        -   ``launchPortal`` for one of the supported intents:
+            ``sso``, ``dsync``, ``audit_logs``, ``log_streams``,
+            ``domain_verification``, ``certificate_renewal``
+
+Every state-changing action verifies — via
+``WorkosTeamService::assertMemberOfOrganization()`` — that the
+signed-in WorkOS user is an active member of the target organization
+before calling the SDK. Cross-tenant invite, revoke, or
+Admin-Portal-link mints via crafted POST bodies are rejected with
+``team.flash.forbidden``. Each form additionally carries a CSRF
+token tied to the frontend session.
 
 ..  _features-user-provisioning:
 
@@ -194,8 +310,11 @@ accepts query parameters that are forwarded to AuthKit:
         -   WorkOS organization id (``org_...``)
         -   Scope the session to an organization
     *   -   ``returnTo``
-        -   Relative URL
-        -   Where to land after login (sanitised)
+        -   Relative path or same-host absolute URL
+        -   Where to land after login. Sanitised by
+            ``PathUtility::sanitizeReturnTo()``: protocol-relative
+            (``//evil.example``) and cross-host candidates fall back
+            to the configured default redirect
 
 Examples:
 
@@ -249,18 +368,8 @@ Localization
 ============
 
 The extension ships with English and German translations in
-:file:`Resources/Private/Language/`:
-
-..  code-block:: text
-    :caption: Translation file layout
-
-    locallang.xlf        # English source
-    de.locallang.xlf     # German translations
-    locallang_mod.xlf    # Module tab labels
-    de.locallang_mod.xlf # German module labels
-
-All files use XLIFF 1.2 and ICU MessageFormat for dynamic
-placeholders. For example:
+:file:`Resources/Private/Language/`. All files use XLIFF 1.2 and
+ICU MessageFormat for dynamic placeholders. For example:
 
 ..  code-block:: xml
     :caption: locallang.xlf
@@ -277,5 +386,24 @@ Called from Fluid as:
     <f:translate key="workos_auth.messages:frontend.login.signedInAs"
                  arguments="{name: displayName}" />
 
+Bundled XLIFF files:
+
+..  code-block:: text
+    :caption: Translation file inventory
+
+    locallang.xlf            # English source (frontend + backend)
+    de.locallang.xlf         # German translations
+    locallang_db.xlf         # Database labels (TCA)
+    locallang_mod.xlf        # WorkOS top-level module
+    de.locallang_mod.xlf     # German module label
+    locallang_mod_setup.xlf  # Setup Assistant module
+    de.locallang_mod_setup.xlf
+    locallang_mod_users.xlf  # User Management module
+    de.locallang_mod_users.xlf
+
 To add another language, create :file:`xx.locallang.xlf` alongside
 the English source — TYPO3 picks it up automatically.
+
+A unit test (``Tests/Unit/Configuration/XliffParityTest``) fails the
+build when an English translation key is missing its German
+counterpart (or vice versa).

@@ -51,7 +51,8 @@ Team management plugins for signed-in users.
     ..  card:: :ref:`Features <features>`
 
         Frontend and backend login flows, the Account Center and
-        Team plugins, profile display, and dynamic AuthKit query
+        Team plugins, the WorkOS backend modules, profile display,
+        the identity data model, and dynamic AuthKit query
         parameters.
 
     ..  card:: :ref:`WorkOS Dashboard <workos-dashboard>`

@@ -8,6 +8,64 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
+..  _changelog-unreleased:
+
+Unreleased
+==========
+
+Patch-level fixes and polish on top of 0.25.0. Will be cut as
+0.25.1 (or 0.26.0 if scope grows).
+
+..  rubric:: Fixes
+
+-   ``WorkosAuthenticationService::resolveCurrentWorkosUserId`` now
+    narrows ``$GLOBALS['BE_USER']`` defensively before reading the
+    user record, removing a PHPStan ``mixed`` warning.
+-   Backend WorkOS sign-in restored after a TYPO3 v14 request-token
+    regression: ``BackendWorkosAuthMiddleware`` now wraps every POST
+    endpoint (password, magic-auth send/verify, email-verify
+    send/resend) in a private ``RequestTokenMiddleware`` invocation
+    and revokes the consumed signing-secret so each token is
+    single-use.
+-   Backend identity rebinding: when a previously-linked WorkOS
+    identity returns under a different email/locale, the existing
+    ``be_users`` row is updated in place instead of producing a
+    duplicate identity row.
+-   User Management widget honours the active backend color scheme
+    (light / dark) and skips invalid WorkOS membership status
+    filters that the SDK now rejects.
+-   The User Management widget is bound to the authenticated WorkOS
+    session of the current backend user (not just the API-key
+    scope), so admins can only see organizations they actually
+    belong to.
+-   Frontend callback URLs are built absolute even when a TYPO3 site
+    base lacks a host; the WorkOS authorization URL was previously
+    rejected for such sites.
+-   Backend WorkOS callback bounces through a small HTML page so the
+    TYPO3 session cookie survives ``SameSite=Strict``.
+
+..  rubric:: UI
+
+-   Social login buttons (frontend plugin and backend login) get a
+    cleaner card style: white background, bold label, soft drop
+    shadow, and a subtle lift on hover. The "Or sign in with"
+    divider gets matching uppercase styling.
+-   Backend login labels rewritten to be concise and use the formal
+    German "Sie"-Form. The provider switcher is rendered as a
+    chevron next to the heading.
+-   Custom-metadata table layout in the signed-in profile panel
+    tightened.
+-   Frontend content elements grouped under a dedicated **WorkOS**
+    group in the new content element wizard.
+
+..  rubric:: Testing
+
+-   Additional unit coverage for ``WorkosConfiguration``
+    normalization branches that Infection flagged. CI is opted into
+    Node 24 to silence upcoming GitHub Actions runtime warnings.
+-   Unit suite: 83 tests / 166 assertions / 1 skipped (the skipped
+    test waits for a German ``de.locallang_db.xlf`` to land).
+
 ..  _changelog-0-25-0:
 
 0.25.0 — Authorization + workspaces polish
@@ -17,7 +75,7 @@ Follow-up to 0.24.0. Third conformance / security / docs sweep.
 
 ..  rubric:: Security
 
--   **High:** close an authorization gap in the three Team plugin
+-   **High:** close an authorization gap in the four Team plugin
     actions that accept ``organizationId`` / ``invitationId`` from
     POST bodies (``inviteAction``, ``resendInvitationAction``,
     ``revokeInvitationAction``, ``launchPortalAction``). Before this
@@ -75,7 +133,9 @@ Follow-up to 0.24.0. Third conformance / security / docs sweep.
 -   New ``Tests/Unit/Configuration/XliffParityTest`` fails when any
     translation key added to ``locallang.xlf`` forgets its German
     counterpart (or vice versa).
--   Unit suite moves from 77 tests / 139 assertions to 82 / 151.
+-   Unit suite moves from 77 tests / 139 assertions to 82 / 151
+    (further uplifted to 83 / 166 in the post-0.25.0 mutation-
+    coverage work — see :ref:`Unreleased <changelog-unreleased>`).
 
 ..  rubric:: Quality
 

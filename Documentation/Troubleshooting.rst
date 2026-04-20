@@ -16,8 +16,8 @@ Troubleshooting
 ==============================================
 
 Shown by the frontend plugin when the extension is active but not
-configured. Open :guilabel:`System` -> :guilabel:`WorkOS Auth` and
-fill in API key, Client ID and cookie password. See
+configured. Open :guilabel:`WorkOS` -> :guilabel:`Setup Assistant`
+and fill in API key, Client ID and cookie password. See
 :ref:`Configuration <configuration>`.
 
 ..  _troubleshooting-backend-not-configured:
@@ -159,10 +159,10 @@ Fix — choose one
     :guilabel:`E-Mail` field to exactly the address shown in the
     error card (e.g. ``dirnbauer@me.com``).
 #.  Save and try the WorkOS sign-in again. As long as
-    ``backendLinkByEmail`` is enabled in :guilabel:`System` ->
-    :guilabel:`WorkOS Auth` -> :guilabel:`Backend login`, the next
-    successful WorkOS login will write the identity mapping into
-    ``tx_workosauth_identity`` automatically.
+    ``backendLinkByEmail`` is enabled in :guilabel:`WorkOS` ->
+    :guilabel:`Setup Assistant` -> :guilabel:`Backend login`, the
+    next successful WorkOS login will write the identity mapping
+    into ``tx_workosauth_identity`` automatically.
 
 **B. Enable automatic backend provisioning**
 
@@ -193,21 +193,27 @@ then in :guilabel:`Backend login`:
 **C. Manually insert the identity mapping**
 
 If you want to keep auto-create off and link by id instead of by
-e-mail, insert a row directly:
+e-mail, insert a row directly. The schema matches the TCA in
+:file:`Configuration/TCA/tx_workosauth_identity.php`:
 
 ..  code-block:: sql
     :caption: Manual backup link
 
     INSERT INTO tx_workosauth_identity
-        (be_user, workos_user_id, email, created, updated)
+        (login_context, workos_user_id, email,
+         user_table, user_uid,
+         workos_profile_json, crdate, tstamp)
     VALUES
-        (<be_user_uid>, 'user_01KPCXE067SSBQV010XGP2A5R4',
-         'dirnbauer@me.com', UNIX_TIMESTAMP(), UNIX_TIMESTAMP());
+        ('backend', 'user_01KPCXE067SSBQV010XGP2A5R4',
+         'dirnbauer@me.com',
+         'be_users', <be_user_uid>,
+         '{}', UNIX_TIMESTAMP(), UNIX_TIMESTAMP());
 
 Replace ``<be_user_uid>`` with the ``uid`` of the backend user
-that should own that WorkOS account. After this, future WorkOS
-logins for that id will resolve directly without depending on the
-e-mail field.
+that should own that WorkOS account. The next successful WorkOS
+sign-in refreshes ``workos_profile_json`` automatically, so the
+``'{}'`` placeholder is fine. For frontend identities use
+``login_context = 'frontend'`` and ``user_table = 'fe_users'``.
 
 ..  _troubleshooting-not-linked-verify:
 
@@ -220,9 +226,11 @@ be visible:
 ..  code-block:: sql
     :caption: Verify the identity mapping
 
-    SELECT be_user, workos_user_id, email
+    SELECT login_context, user_table, user_uid,
+           workos_user_id, email
       FROM tx_workosauth_identity
-     WHERE workos_user_id = 'user_01KPCXE067SSBQV010XGP2A5R4';
+     WHERE login_context = 'backend'
+       AND workos_user_id = 'user_01KPCXE067SSBQV010XGP2A5R4';
 
 If a row exists, the next sign-in goes straight through and the
 error stops appearing.
