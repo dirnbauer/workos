@@ -71,6 +71,8 @@ final class LoginController extends ActionController implements LoggerAwareInter
             }
         }
 
+        $avatarUrl = $this->resolveAvatarUrl($workosProfile, $frontendUser);
+
         $loginPath = PathUtility::joinBaseAndPath($siteBasePath, $this->configuration->getFrontendLoginPath());
         $logoutPath = PathUtility::joinBaseAndPath($siteBasePath, $this->configuration->getFrontendLogoutPath());
         $returnParam = ['returnTo' => $currentUrl];
@@ -89,10 +91,49 @@ final class LoginController extends ActionController implements LoggerAwareInter
                 ['key' => 'AppleOAuth', 'label' => $this->translate('provider.apple'), 'url' => PathUtility::appendQueryParameters($loginPath, array_merge($returnParam, ['provider' => 'AppleOAuth']))],
             ],
             'workosProfile' => $workosProfile,
+            'avatarUrl' => $avatarUrl,
             'authError' => $authError,
         ]);
 
         return $this->htmlResponse();
+    }
+
+    /**
+     * Resolve an avatar URL with sensible fallbacks: prefer the WorkOS
+     * profile picture, otherwise build a Gravatar URL from the user's
+     * email (WorkOS profile email first, then the local fe_users record).
+     * Returns null when no email is available.
+     *
+     * @param array<string, mixed>|null $workosProfile
+     */
+    private function resolveAvatarUrl(?array $workosProfile, mixed $frontendUser): ?string
+    {
+        if (is_array($workosProfile)) {
+            $picture = $workosProfile['profilePictureUrl'] ?? null;
+            if (is_string($picture) && $picture !== '') {
+                return $picture;
+            }
+        }
+
+        $email = '';
+        if (is_array($workosProfile) && isset($workosProfile['email']) && is_string($workosProfile['email'])) {
+            $email = $workosProfile['email'];
+        }
+        if ($email === '' && $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user)) {
+            $candidate = $frontendUser->user['email'] ?? null;
+            if (is_string($candidate)) {
+                $email = $candidate;
+            }
+        }
+
+        $email = strtolower(trim($email));
+        if ($email === '') {
+            return null;
+        }
+
+        // Gravatar SHA-256 hash; identicon gives a stable per-email
+        // geometric fallback when the address is not registered.
+        return 'https://www.gravatar.com/avatar/' . hash('sha256', $email) . '?d=identicon&s=128';
     }
 
     public function signUpAction(): ResponseInterface
