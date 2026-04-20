@@ -159,11 +159,27 @@ function resolveWidgetAppearance(mountEl) {
     );
 }
 
+function applyAppearanceAttributes(element, appearance) {
+    if (!element) {
+        return;
+    }
+
+    element.style.colorScheme = appearance;
+    element.setAttribute('data-color-scheme', appearance);
+    element.setAttribute('data-theme', appearance);
+    element.classList.toggle('dark', appearance === 'dark');
+    element.classList.toggle('light', appearance === 'light');
+    element.classList.toggle('dark-theme', appearance === 'dark');
+    element.classList.toggle('light-theme', appearance === 'light');
+}
+
 function observeAppearanceChanges(mountEl, onChange) {
     let currentAppearance = resolveWidgetAppearance(mountEl);
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    let frameId = null;
 
     const handleChange = () => {
+        frameId = null;
         const nextAppearance = resolveWidgetAppearance(mountEl);
         if (nextAppearance === currentAppearance) {
             return;
@@ -173,8 +189,21 @@ function observeAppearanceChanges(mountEl, onChange) {
         onChange(nextAppearance);
     };
 
-    const observer = new MutationObserver(handleChange);
-    for (const element of [document.documentElement, document.body]) {
+    const scheduleHandleChange = () => {
+        if (frameId !== null) {
+            return;
+        }
+
+        frameId = window.requestAnimationFrame(handleChange);
+    };
+
+    const observer = new MutationObserver(scheduleHandleChange);
+    for (const element of [
+        document.documentElement,
+        document.body,
+        mountEl.closest('.module-body'),
+        mountEl.closest('.card'),
+    ]) {
         if (!element) {
             continue;
         }
@@ -185,18 +214,31 @@ function observeAppearanceChanges(mountEl, onChange) {
         });
     }
 
+    if (document.head) {
+        observer.observe(document.head, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+            attributeFilter: ['class', 'disabled', 'href', 'media', 'rel', 'style'],
+        });
+    }
+
     if (typeof mediaQuery.addEventListener === 'function') {
-        mediaQuery.addEventListener('change', handleChange);
+        mediaQuery.addEventListener('change', scheduleHandleChange);
     } else if (typeof mediaQuery.addListener === 'function') {
-        mediaQuery.addListener(handleChange);
+        mediaQuery.addListener(scheduleHandleChange);
     }
 
     return () => {
         observer.disconnect();
+        if (frameId !== null) {
+            window.cancelAnimationFrame(frameId);
+            frameId = null;
+        }
         if (typeof mediaQuery.removeEventListener === 'function') {
-            mediaQuery.removeEventListener('change', handleChange);
+            mediaQuery.removeEventListener('change', scheduleHandleChange);
         } else if (typeof mediaQuery.removeListener === 'function') {
-            mediaQuery.removeListener(handleChange);
+            mediaQuery.removeListener(scheduleHandleChange);
         }
     };
 }
@@ -229,7 +271,7 @@ async function bootstrap() {
         let widgetHandle = null;
         const renderWidget = (appearance = resolveWidgetAppearance(mountEl)) => {
             widgetHandle?.unmount?.();
-            container.style.colorScheme = appearance;
+            applyAppearanceAttributes(container, appearance);
             widgetHandle = mountWorkosWidget({ container, authToken: token, appearance });
         };
 
