@@ -23,12 +23,13 @@
     }
     .workos-hint {
         text-align: center;
-        margin: 0.25rem 0 0.5rem;
+        margin: 1.5rem 0 1rem;
         font-size: 0.8rem;
-        color: var(--typo3-text-color-base, #6b7280);
-        opacity: 0.7;
+        color: var(--typo3-text-color-base, #9ca3af);
+        opacity: 0.8;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.1em;
+        font-weight: 600;
     }
     .workos-social-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
     .workos-social-btn {
@@ -37,21 +38,23 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0.5rem;
-        padding: var(--typo3-btn-padding-y, 0.55rem) var(--typo3-btn-padding-x, 0.75rem);
-        border: var(--typo3-btn-border-width, 1px) solid var(--typo3-btn-border-color, #d1d5db);
-        border-radius: var(--typo3-btn-border-radius, 6px);
-        font-size: var(--typo3-btn-font-size, 0.9rem);
-        font-weight: 500;
-        color: var(--typo3-btn-color, #1f2937);
-        background: var(--typo3-btn-bg, #fff);
+        gap: 0.75rem;
+        padding: 0.65rem 0.75rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827 !important;
+        background: #ffffff !important;
         text-decoration: none;
-        transition: var(--typo3-btn-transition, background 0.15s, border-color 0.15s);
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
     .workos-social-btn:hover, .workos-social-btn:focus {
-        background: var(--typo3-btn-hover-bg, #f9fafb);
-        border-color: var(--typo3-btn-hover-border-color, #9ca3af);
-        color: var(--typo3-btn-hover-color, #111827);
+        background: #ffffff !important;
+        color: #000000 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         text-decoration: none;
     }
     .workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
