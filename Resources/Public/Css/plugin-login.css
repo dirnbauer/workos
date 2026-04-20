@@ -29,6 +29,39 @@
 .workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .workos-social-btn__icon svg { display: block; }
 
+.workos-profile-debug__section-title {
+    margin: 0.75rem 0 0.25rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.workos-profile-debug__metadata-table {
+    width: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.workos-profile-debug__metadata-key,
+.workos-profile-debug__metadata-value {
+    padding: 0.3rem 0.5rem;
+    vertical-align: top;
+}
+
+.workos-profile-debug__metadata-key {
+    padding-left: 0;
+    padding-right: 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #666;
+}
+
+.workos-profile-debug__metadata-value {
+    padding-left: 0;
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 480px) {
     .workos-social-row { gap: 0.4rem; }
     .workos-social-btn { flex: 1; min-width: 0; padding: 0.55rem; }

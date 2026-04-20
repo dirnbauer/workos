@@ -57,12 +57,12 @@
                             </f:if>
                         </table>
                         <f:if condition="{workosProfile.metadata}">
-                            <p style="margin:0.75rem 0 0.25rem; font-weight:600; font-size:0.85rem; color:#666;"><f:translate key="workos_auth.messages:frontend.login.customMetadata" /></p>
-                            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                            <p class="workos-profile-debug__section-title"><f:translate key="workos_auth.messages:frontend.login.customMetadata" /></p>
+                            <table class="workos-profile-debug__metadata-table">
                                 <f:for each="{workosProfile.metadata}" as="value" key="key">
                                     <tr>
-                                        <td style="padding:0.3rem 0.5rem; font-weight:600; white-space:nowrap; color:#666;">{key}</td>
-                                        <td style="padding:0.3rem 0.5rem;">{value}</td>
+                                        <td class="workos-profile-debug__metadata-key">{key}</td>
+                                        <td class="workos-profile-debug__metadata-value">{value}</td>
                                     </tr>
                                 </f:for>
                             </table>
