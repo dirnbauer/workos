@@ -14,7 +14,7 @@
                 <div class="card-body p-0">
                     <div data-workos-user-management-mount
                          data-token-uri="{tokenUri}"
-                         data-csrf-token="{csrfToken}"
+                         data-request-token="{tokenRequestTokenValue}"
                          style="min-height:600px;">
                         <div class="p-4 text-muted">
                             <f:translate key="workos_auth.messages:module.users.loading" />
@@ -45,7 +45,7 @@
                             </div>
                             <div class="card-body">
                                 <form method="post" action="{joinUri}">
-                                    <input type="hidden" name="csrfToken" value="{csrfToken}" />
+                                    <input type="hidden" name="{requestTokenName}" value="{joinRequestTokenValue}" />
                                     <f:if condition="{availableOrganizations -> f:count()} > 1">
                                         <f:then>
                                             <div class="mb-3">
@@ -88,7 +88,7 @@
                                 <f:translate key="workos_auth.messages:module.users.create.intro" />
                             </p>
                             <form method="post" action="{createOrgUri}">
-                                <input type="hidden" name="csrfToken" value="{csrfToken}" />
+                                <input type="hidden" name="{requestTokenName}" value="{createOrganizationRequestTokenValue}" />
                                 <div class="mb-3">
                                     <label for="workos-org-name" class="form-label">
                                         <f:translate key="workos_auth.messages:module.users.create.label" />

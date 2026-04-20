@@ -11,14 +11,14 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Security\FrontendCsrfService;
 use WebConsulting\WorkosAuth\Security\MixedCaster;
+use WebConsulting\WorkosAuth\Security\RequestTokenService;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosAccountService;
 use WorkOS\Resource\Organization;
-use WorkOS\Resource\OrganizationMembership;
-use WorkOS\Resource\Session;
+use WorkOS\Resource\UserOrganizationMembership;
+use WorkOS\Resource\UserSessionsListItem;
 use WebConsulting\WorkosAuth\Security\SecretRedactor;
 
 /**
@@ -30,13 +30,13 @@ final class AccountController extends ActionController implements LoggerAwareInt
 {
     use LoggerAwareTrait;
 
-    private const CSRF_SCOPE = 'account';
+    private const REQUEST_TOKEN_SCOPE = 'workos/frontend/account';
 
     public function __construct(
         private readonly WorkosConfiguration $configuration,
         private readonly IdentityService $identityService,
         private readonly WorkosAccountService $accountService,
-        private readonly FrontendCsrfService $csrfService,
+        private readonly RequestTokenService $requestTokenService,
     ) {}
 
     public function dashboardAction(): ResponseInterface
@@ -92,7 +92,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             'pendingEnrollment' => $pendingEnrollment,
             'flash' => $flash,
             'sectionErrors' => $errors,
-            'csrfToken' => $this->csrfService->issue($this->getFrontendUser(), self::CSRF_SCOPE),
+            'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
 
         return $this->htmlResponse();
@@ -106,7 +106,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
             return $this->redirect('dashboard');
         }
@@ -136,7 +136,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
             return $this->redirect('dashboard');
         }
@@ -174,7 +174,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $context['response'];
         }
 
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, RequestBody::fromRequest($this->request)->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
             return $this->redirect('dashboard');
         }
@@ -187,20 +187,20 @@ final class AccountController extends ActionController implements LoggerAwareInt
             $enrollment = $this->accountService->enrollTotpFactor($workosUserId, $issuer, $accountName);
 
             $factor = $enrollment->authenticationFactor;
-            if ($factor === null) {
-                throw new \RuntimeException('WorkOS did not return an MFA factor.', 1744277950);
-            }
-            $factorId = $factor->id ?? '';
+            $factorId = $factor->id;
             if ($factorId === '') {
                 throw new \RuntimeException('WorkOS did not return an MFA factor.', 1744277950);
             }
 
-            $totp = $factor->totp ?? [];
+            $totp = $factor->totp;
+            if ($totp === null) {
+                throw new \RuntimeException('WorkOS did not return TOTP enrollment data.', 1744277951);
+            }
             $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', [
                 'factorId' => $factorId,
-                'qrCode' => $this->stringFromMixed($totp['qr_code'] ?? null),
-                'uri' => $this->stringFromMixed($totp['uri'] ?? null),
-                'secret' => $this->stringFromMixed($totp['secret'] ?? null),
+                'qrCode' => $totp->qrCode,
+                'uri' => $totp->uri,
+                'secret' => $totp->secret,
                 'createdAt' => time(),
             ]);
         } catch (\Throwable $e) {
@@ -225,7 +225,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
             return $this->redirect('dashboard');
         }
@@ -249,7 +249,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $context['response'];
         }
 
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, RequestBody::fromRequest($this->request)->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
             return $this->redirect('dashboard');
         }
@@ -276,7 +276,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
             return $this->redirect('dashboard');
         }
@@ -304,7 +304,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
             return $this->redirect('dashboard');
         }
@@ -373,28 +373,28 @@ final class AccountController extends ActionController implements LoggerAwareInt
     /**
      * @return array<string, mixed>
      */
-    private function prepareSessionRow(Session $session): array
+    private function prepareSessionRow(UserSessionsListItem $session): array
     {
         $userAgent = $session->userAgent ?? '';
-        $status = $session->status ?? '';
+        $status = $session->status->value;
 
         return [
-            'id' => $session->id ?? '',
+            'id' => $session->id,
             'ipAddress' => $session->ipAddress ?? '',
             'userAgent' => $userAgent,
             'organizationId' => $session->organizationId ?? '',
-            'authenticationMethod' => $session->authenticationMethod ?? '',
+            'authenticationMethod' => $session->authMethod->value,
             'status' => $status,
-            'expiresAt' => $session->expiresAt ?? '',
-            'createdAt' => $session->createdAt ?? '',
-            'updatedAt' => $session->updatedAt ?? '',
+            'expiresAt' => $this->formatDateTime($session->expiresAt),
+            'createdAt' => $this->formatDateTime($session->createdAt),
+            'updatedAt' => $this->formatDateTime($session->updatedAt),
             'deviceLabel' => $this->summarizeUserAgent($userAgent),
             'isActive' => strtolower($status) === 'active',
         ];
     }
 
     /**
-     * @param array{membership: OrganizationMembership, organization: ?Organization} $entry
+     * @param array{membership: UserOrganizationMembership, organization: ?Organization} $entry
      * @return array<string, mixed>
      */
     private function prepareMembershipRow(array $entry): array
@@ -402,26 +402,27 @@ final class AccountController extends ActionController implements LoggerAwareInt
         $membership = $entry['membership'];
         $organization = $entry['organization'];
 
-        $roleSlugs = [];
-        foreach ($membership->roles ?? [] as $role) {
-            $slug = is_array($role) ? ($role['slug'] ?? '') : '';
-            if (is_string($slug) && $slug !== '') {
-                $roleSlugs[] = $slug;
-            }
-        }
-        if ($roleSlugs === [] && is_string($membership->role) && $membership->role !== '') {
-            $roleSlugs[] = $membership->role;
-        }
+        $roleSlugs = $membership->role->slug !== '' ? [$membership->role->slug] : [];
 
         return [
-            'id' => $membership->id ?? '',
-            'organizationId' => $membership->organizationId ?? '',
-            'organizationName' => $organization !== null ? ($organization->name ?? '') : '',
-            'status' => $membership->status ?? '',
+            'id' => $membership->id,
+            'organizationId' => $membership->organizationId,
+            'organizationName' => $organization !== null ? $organization->name : ($membership->organizationName ?? ''),
+            'status' => $membership->status->value,
             'roleSlugs' => $roleSlugs,
-            'directoryManaged' => $membership->directoryManaged ?? false,
-            'createdAt' => $membership->createdAt ?? '',
+            'directoryManaged' => $membership->directoryManaged,
+            'createdAt' => $this->formatDateTime($membership->createdAt),
         ];
+    }
+
+    private function hasValidRequestToken(): bool
+    {
+        return $this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE);
+    }
+
+    private function formatDateTime(\DateTimeImmutable $value): string
+    {
+        return $value->format('Y-m-d H:i');
     }
 
     private function summarizeUserAgent(string $userAgent): string

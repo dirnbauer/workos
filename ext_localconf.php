@@ -7,6 +7,28 @@ defined('TYPO3') or die();
 use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
 
 (static function (): void {
+    /** @var array<string, mixed> $confVars */
+    $confVars = is_array($GLOBALS['TYPO3_CONF_VARS'] ?? null) ? $GLOBALS['TYPO3_CONF_VARS'] : [];
+    $sys = is_array($confVars['SYS'] ?? null) ? $confVars['SYS'] : [];
+    $caching = is_array($sys['caching'] ?? null) ? $sys['caching'] : [];
+    $cacheConfigurations = is_array($caching['cacheConfigurations'] ?? null) ? $caching['cacheConfigurations'] : [];
+
+    if (!isset($cacheConfigurations['workos_auth_state'])) {
+        $cacheConfigurations['workos_auth_state'] = [
+            'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
+            'backend' => \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend::class,
+            'groups' => ['system'],
+            'options' => [
+                'defaultLifetime' => 600,
+            ],
+        ];
+
+        $caching['cacheConfigurations'] = $cacheConfigurations;
+        $sys['caching'] = $caching;
+        $confVars['SYS'] = $sys;
+        $GLOBALS['TYPO3_CONF_VARS'] = $confVars;
+    }
+
     ExtensionUtility::configurePlugin(
         'WorkosAuth',
         'Login',

@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace WebConsulting\WorkosAuth\Service;
 
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WorkOS\Resource\AuthenticationFactorAndChallengeTotp;
+use WorkOS\Resource\AuthenticationFactor;
+use WorkOS\Resource\AuthenticationFactorsCreateRequestType;
 use WorkOS\Resource\AuthenticationFactorTotp;
-use WorkOS\Resource\OrganizationMembership;
 use WorkOS\Resource\Organization;
-use WorkOS\Resource\Session;
+use WorkOS\Resource\UserAuthenticationFactorEnrollResponse;
+use WorkOS\Resource\UserOrganizationMembership;
+use WorkOS\Resource\UserSessionsListItem;
 use WorkOS\Resource\User;
-use WorkOS\Resource\UserAuthenticationFactorTotp;
 
 /**
  * High-level facade around the WorkOS UserManagement endpoints used by
@@ -35,7 +36,7 @@ final class WorkosAccountService
     {
         $this->assertConfigured();
         return $this->workosClientFactory->createUserManagement()->updateUser(
-            userId: $workosUserId,
+            id: $workosUserId,
             firstName: $firstName,
             lastName: $lastName,
         );
@@ -48,7 +49,7 @@ final class WorkosAccountService
             throw new \RuntimeException('password_too_short', 1744277901);
         }
         return $this->workosClientFactory->createUserManagement()->updateUser(
-            userId: $workosUserId,
+            id: $workosUserId,
             password: $newPassword,
         );
     }
@@ -57,12 +58,12 @@ final class WorkosAccountService
      * Enroll a brand-new TOTP factor. Returns the factor and a
      * scannable QR code (data URI) plus a URI for manual entry.
      */
-    public function enrollTotpFactor(string $workosUserId, string $issuer, string $accountName): AuthenticationFactorAndChallengeTotp
+    public function enrollTotpFactor(string $workosUserId, string $issuer, string $accountName): UserAuthenticationFactorEnrollResponse
     {
         $this->assertConfigured();
-        return $this->workosClientFactory->createUserManagement()->enrollAuthFactor(
-            userId: $workosUserId,
-            type: 'totp',
+        return $this->workosClientFactory->createMultiFactorAuth()->createUserAuthFactor(
+            userlandUserId: $workosUserId,
+            type: AuthenticationFactorsCreateRequestType::Totp->value,
             totpIssuer: $issuer,
             totpUser: $accountName,
         );
@@ -81,13 +82,9 @@ final class WorkosAccountService
             throw new \RuntimeException('invalid_code_format', 1744277902);
         }
 
-        $this->workosClientFactory->createUserManagement();
-        $mfa = new \WorkOS\MFA();
-        $challenge = $mfa->challengeFactor(authenticationFactorId: $factorId);
-        $challengeId = '';
-        if ($challenge instanceof \WorkOS\Resource\AuthenticationChallengeTotp) {
-            $challengeId = $challenge->id ?? '';
-        }
+        $mfa = $this->workosClientFactory->createMultiFactorAuth();
+        $challenge = $mfa->challengeFactor(id: $factorId);
+        $challengeId = $challenge->id;
         if ($challengeId === '') {
             throw new \RuntimeException('challenge_failed', 1744277903);
         }
@@ -99,35 +96,46 @@ final class WorkosAccountService
     }
 
     /**
-     * @return AuthenticationFactorTotp[]|UserAuthenticationFactorTotp[]
+     * @return AuthenticationFactor[]
      */
     public function listTotpFactors(string $workosUserId): array
     {
         $this->assertConfigured();
-        return $this->workosClientFactory->createUserManagement()->listAuthFactors($workosUserId);
+        $paginated = $this->workosClientFactory->createMultiFactorAuth()->listUserAuthFactors(
+            userlandUserId: $workosUserId,
+            limit: 50,
+        );
+
+        $factors = [];
+        foreach ($paginated->data as $factor) {
+            if ($factor instanceof AuthenticationFactor && $factor->totp instanceof AuthenticationFactorTotp) {
+                $factors[] = $factor;
+            }
+        }
+
+        return $factors;
     }
 
     public function deleteFactor(string $factorId): void
     {
         $this->assertConfigured();
-        $this->workosClientFactory->createUserManagement();
-        (new \WorkOS\MFA())->deleteFactor($factorId);
+        $this->workosClientFactory->createMultiFactorAuth()->deleteFactor($factorId);
     }
 
     /**
-     * @return Session[]
+     * @return UserSessionsListItem[]
      */
     public function listSessions(string $workosUserId, int $limit = 25): array
     {
         $this->assertConfigured();
         $paginated = $this->workosClientFactory->createUserManagement()->listSessions(
-            userId: $workosUserId,
-            options: ['limit' => $limit, 'order' => 'desc'],
+            id: $workosUserId,
+            limit: $limit,
         );
 
         $sessions = [];
         foreach ($paginated->data as $session) {
-            if ($session instanceof Session) {
+            if ($session instanceof UserSessionsListItem) {
                 $sessions[] = $session;
             }
         }
@@ -141,7 +149,7 @@ final class WorkosAccountService
     }
 
     /**
-     * @return array<int, array{membership: OrganizationMembership, organization: ?Organization}>
+     * @return array<int, array{membership: UserOrganizationMembership, organization: ?Organization}>
      */
     public function listOrganizationMemberships(string $workosUserId): array
     {
@@ -156,13 +164,13 @@ final class WorkosAccountService
         $organizations = $this->workosClientFactory->createOrganizations();
         $memberships = [];
         foreach ($response->data as $membership) {
-            if (!$membership instanceof OrganizationMembership) {
+            if (!$membership instanceof UserOrganizationMembership) {
                 continue;
             }
 
             $organization = null;
             try {
-                $organization = $organizations->getOrganization((string)$membership->organizationId);
+                $organization = $organizations->getOrganization($membership->organizationId);
             } catch (\Throwable) {
                 // Organization may have been removed; degrade gracefully.
             }

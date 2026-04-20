@@ -41,8 +41,8 @@ final class UserProvisioningService
      */
     private function resolveUser(User $workosUser, string $context, string $table): array
     {
-        $workosUserId = trim((string)$workosUser->id);
-        $email = strtolower(trim((string)$workosUser->email));
+        $workosUserId = trim($workosUser->id);
+        $email = strtolower(trim($workosUser->email));
         if ($workosUserId === '' || $email === '') {
             throw new \RuntimeException('The WorkOS user response is missing an id or email address.', 1744277601);
         }
@@ -90,8 +90,8 @@ final class UserProvisioningService
         if (!$this->configuration->shouldAutoCreateFrontendUsers()) {
             throw new \RuntimeException(sprintf(
                 'No frontend user matched the WorkOS account (email "%s", id "%s") and automatic frontend provisioning is disabled.',
-                (string)$workosUser->email,
-                (string)$workosUser->id
+                $workosUser->email,
+                $workosUser->id
             ), 1744277602);
         }
 
@@ -100,19 +100,19 @@ final class UserProvisioningService
             throw new \RuntimeException('Automatic frontend provisioning requires a storage PID.', 1744277603);
         }
 
-        $email = strtolower(trim((string)$workosUser->email));
+        $email = strtolower(trim($workosUser->email));
         $connection = $this->connectionPool->getConnectionForTable('fe_users');
         $connection->insert('fe_users', [
             'pid' => $storagePid,
             'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
             'crdate' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
             'disable' => 0,
-            'username' => $this->generateUniqueUsername('fe_users', 'fe', (string)$workosUser->id),
+            'username' => $this->generateUniqueUsername('fe_users', 'fe', $workosUser->id),
             'password' => $this->hashRandomPassword('FE'),
             'email' => $email,
             'name' => $this->buildDisplayName($workosUser),
-            'first_name' => trim((string)($workosUser->firstName ?? '')),
-            'last_name' => trim((string)($workosUser->lastName ?? '')),
+            'first_name' => trim($workosUser->firstName ?? ''),
+            'last_name' => trim($workosUser->lastName ?? ''),
             'usergroup' => $this->configuration->getFrontendDefaultGroupCsv(),
         ]);
 
@@ -128,12 +128,12 @@ final class UserProvisioningService
         if (!$this->configuration->shouldAutoCreateBackendUsers()) {
             throw new \RuntimeException(sprintf(
                 'No backend user matched the WorkOS account (email "%s", id "%s") and automatic backend provisioning is disabled.',
-                (string)$workosUser->email,
-                (string)$workosUser->id
+                $workosUser->email,
+                $workosUser->id
             ), 1744277605);
         }
 
-        $this->assertBackendDomainAllowed((string)$workosUser->email);
+        $this->assertBackendDomainAllowed($workosUser->email);
 
         $connection = $this->connectionPool->getConnectionForTable('be_users');
         $connection->insert('be_users', [
@@ -142,9 +142,9 @@ final class UserProvisioningService
             'crdate' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
             'disable' => 0,
             'admin' => 0,
-            'username' => $this->generateUniqueUsername('be_users', 'be', (string)$workosUser->id),
+            'username' => $this->generateUniqueUsername('be_users', 'be', $workosUser->id),
             'password' => $this->hashRandomPassword('BE'),
-            'email' => strtolower(trim((string)$workosUser->email)),
+            'email' => strtolower(trim($workosUser->email)),
             'realName' => $this->buildDisplayName($workosUser),
             'usergroup' => $this->configuration->getBackendDefaultGroupCsv(),
         ]);
@@ -162,10 +162,10 @@ final class UserProvisioningService
         $connection = $this->connectionPool->getConnectionForTable('fe_users');
         $connection->update('fe_users', [
             'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
-            'email' => strtolower(trim((string)$workosUser->email)),
+            'email' => strtolower(trim($workosUser->email)),
             'name' => $this->buildDisplayName($workosUser),
-            'first_name' => trim((string)($workosUser->firstName ?? '')),
-            'last_name' => trim((string)($workosUser->lastName ?? '')),
+            'first_name' => trim($workosUser->firstName ?? ''),
+            'last_name' => trim($workosUser->lastName ?? ''),
         ], [
             'uid' => MixedCaster::int($user['uid']),
         ]);
@@ -182,7 +182,7 @@ final class UserProvisioningService
         $connection = $this->connectionPool->getConnectionForTable('be_users');
         $connection->update('be_users', [
             'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
-            'email' => strtolower(trim((string)$workosUser->email)),
+            'email' => strtolower(trim($workosUser->email)),
             'realName' => $this->buildDisplayName($workosUser),
         ], [
             'uid' => MixedCaster::int($user['uid']),
@@ -280,12 +280,12 @@ final class UserProvisioningService
 
     private function buildDisplayName(User $workosUser): string
     {
-        $displayName = trim(trim((string)($workosUser->firstName ?? '')) . ' ' . trim((string)($workosUser->lastName ?? '')));
+        $displayName = trim(trim($workosUser->firstName ?? '') . ' ' . trim($workosUser->lastName ?? ''));
         if ($displayName !== '') {
             return $displayName;
         }
 
-        return (string)$workosUser->email;
+        return $workosUser->email;
     }
 
     private function assertBackendDomainAllowed(string $email): void
@@ -308,11 +308,8 @@ final class UserProvisioningService
     private function extractProfile(User $workosUser): array
     {
         $profile = [];
-        foreach (User::RESOURCE_ATTRIBUTES as $attribute) {
-            $value = $workosUser->$attribute ?? null;
-            if ($value !== null) {
-                $profile[$attribute] = $value;
-            }
+        foreach ($workosUser->toArray() as $key => $value) {
+            $profile[(string)$key] = $value;
         }
         return $profile;
     }

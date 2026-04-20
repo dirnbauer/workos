@@ -10,6 +10,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
@@ -86,17 +87,18 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface, LoggerA
 
             $loginHint = trim(MixedCaster::string($queryParams['login_hint'] ?? null));
             $organizationId = trim(MixedCaster::string($queryParams['organization'] ?? null));
+            $authorizationRequest = $this->workosAuthenticationService->buildFrontendAuthorizationUrl(
+                $request,
+                $returnTo,
+                $screenHint,
+                $provider,
+                $loginHint !== '' ? $loginHint : null,
+                $organizationId !== '' ? $organizationId : null,
+            );
 
-            return new RedirectResponse(
-                $this->workosAuthenticationService->buildFrontendAuthorizationUrl(
-                    $request,
-                    $returnTo,
-                    $screenHint,
-                    $provider,
-                    $loginHint !== '' ? $loginHint : null,
-                    $organizationId !== '' ? $organizationId : null,
-                ),
-                302
+            return $this->appendCookie(
+                new RedirectResponse((string)$authorizationRequest['url'], 302),
+                $authorizationRequest['cookie'] ?? null,
             );
         } catch (\Throwable $exception) {
             $this->logger?->error('WorkOS frontend login error: ' . SecretRedactor::redact($exception->getMessage()));
@@ -149,5 +151,14 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface, LoggerA
             $beUser instanceof AbstractUserAuthentication ? $beUser : null
         );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
+    }
+
+    private function appendCookie(ResponseInterface $response, mixed $cookie): ResponseInterface
+    {
+        if (!$cookie instanceof Cookie) {
+            return $response;
+        }
+
+        return $response->withAddedHeader('Set-Cookie', $cookie->__toString());
     }
 }

@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace WebConsulting\WorkosAuth\Service;
 
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WorkOS\Resource\EventsOrder;
+use WorkOS\Resource\GenerateLinkIntent;
 use WorkOS\Resource\Invitation;
 use WorkOS\Resource\Organization;
-use WorkOS\Resource\OrganizationMembership;
-use WorkOS\Resource\PortalLink;
+use WorkOS\Resource\OrganizationMembershipStatus;
+use WorkOS\Resource\PortalLinkResponse;
+use WorkOS\Resource\UserOrganizationMembership;
+use WorkOS\Resource\UserInvite;
 
 /**
  * Backs the "WorkOS Team" frontend plugin: manages organization
@@ -52,25 +56,23 @@ final class WorkosTeamService
 
         $response = $userManagement->listOrganizationMemberships(
             userId: $workosUserId,
-            statuses: ['active'],
+            statuses: [OrganizationMembershipStatus::Active],
             limit: 50,
         );
 
         $result = [];
         foreach ($response->data as $membership) {
-            if (!$membership instanceof OrganizationMembership) {
+            if (!$membership instanceof UserOrganizationMembership) {
                 continue;
             }
-            $organizationId = $membership->organizationId ?? '';
+            $organizationId = $membership->organizationId;
             if ($organizationId === '' || isset($result[$organizationId])) {
                 continue;
             }
 
             try {
                 $organization = $organizations->getOrganization($organizationId);
-                if ($organization instanceof Organization) {
-                    $result[$organizationId] = $organization;
-                }
+                $result[$organizationId] = $organization;
             } catch (\Throwable) {
                 // Skip organizations the API key can no longer load.
             }
@@ -98,13 +100,13 @@ final class WorkosTeamService
         $response = $this->workosClientFactory->createUserManagement()->listOrganizationMemberships(
             userId: $workosUserId,
             organizationId: $organizationId,
-            statuses: ['active'],
+            statuses: [OrganizationMembershipStatus::Active],
             limit: 1,
         );
         foreach ($response->data as $membership) {
-            if ($membership instanceof OrganizationMembership
-                && ($membership->userId ?? '') === $workosUserId
-                && ($membership->organizationId ?? '') === $organizationId) {
+            if ($membership instanceof UserOrganizationMembership
+                && $membership->userId === $workosUserId
+                && $membership->organizationId === $organizationId) {
                 return;
             }
         }
@@ -116,7 +118,7 @@ final class WorkosTeamService
      * organization id it belongs to before running authorization
      * checks. Returns null when the invitation cannot be loaded.
      */
-    public function findInvitation(string $invitationId): ?Invitation
+    public function findInvitation(string $invitationId): ?UserInvite
     {
         if ($invitationId === '') {
             return null;
@@ -127,11 +129,11 @@ final class WorkosTeamService
         } catch (\Throwable) {
             return null;
         }
-        return $invitation instanceof Invitation ? $invitation : null;
+        return $invitation;
     }
 
     /**
-     * @return Invitation[]
+     * @return UserInvite[]
      */
     public function listInvitations(string $organizationId, int $limit = 25): array
     {
@@ -139,16 +141,12 @@ final class WorkosTeamService
         $response = $this->workosClientFactory->createUserManagement()->listInvitations(
             organizationId: $organizationId,
             limit: $limit,
-            order: 'desc',
+            order: EventsOrder::Desc,
         );
-
-        $invitations = [];
-        foreach ($response->data as $invitation) {
-            if ($invitation instanceof Invitation) {
-                $invitations[] = $invitation;
-            }
-        }
-        return $invitations;
+        return array_values(array_filter(
+            $response->data,
+            static fn (mixed $invitation): bool => $invitation instanceof UserInvite
+        ));
     }
 
     public function sendInvitation(
@@ -157,7 +155,7 @@ final class WorkosTeamService
         ?string $inviterUserId = null,
         ?string $roleSlug = null,
         ?int $expiresInDays = null,
-    ): Invitation {
+    ): UserInvite {
         $this->assertConfigured();
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             throw new \RuntimeException('invalid_email', 1744278001);
@@ -175,7 +173,7 @@ final class WorkosTeamService
         );
     }
 
-    public function resendInvitation(string $invitationId): Invitation
+    public function resendInvitation(string $invitationId): UserInvite
     {
         $this->assertConfigured();
         return $this->workosClientFactory->createUserManagement()->resendInvitation($invitationId);
@@ -191,14 +189,14 @@ final class WorkosTeamService
         string $organizationId,
         string $intent,
         ?string $returnUrl = null,
-    ): PortalLink {
+    ): PortalLinkResponse {
         $this->assertConfigured();
         if (!array_key_exists($intent, self::PORTAL_INTENTS)) {
             throw new \RuntimeException('invalid_intent', 1744278003);
         }
         return $this->workosClientFactory->createPortal()->generateLink(
             organization: $organizationId,
-            intent: $intent,
+            intent: GenerateLinkIntent::from($intent),
             returnUrl: $returnUrl !== null && $returnUrl !== '' ? $returnUrl : null,
         );
     }

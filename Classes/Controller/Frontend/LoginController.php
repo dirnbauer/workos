@@ -203,7 +203,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         try {
             $magicAuth = $this->workosAuthenticationService->sendMagicAuthCode($email);
             $this->getFrontendUser()->setAndSaveSessionData('workos_magic_auth', [
-                'userId' => $magicAuth['userId'],
+                'userId' => $magicAuth['email'],
                 'email' => $email,
                 'returnTo' => $returnTo,
             ]);

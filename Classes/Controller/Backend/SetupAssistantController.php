@@ -11,7 +11,6 @@ use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -20,16 +19,19 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\RequestTokenService;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 
 final class SetupAssistantController
 {
+    private const REQUEST_TOKEN_SCOPE = 'workos/backend/setup';
+
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
         private readonly WorkosConfiguration $configuration,
         private readonly ExtensionConfiguration $extensionConfiguration,
         private readonly SiteFinder $siteFinder,
-        private readonly FormProtectionFactory $formProtectionFactory,
+        private readonly RequestTokenService $requestTokenService,
         private readonly UriBuilder $uriBuilder,
         private readonly FlashMessageService $flashMessageService,
         private readonly CacheManager $cacheManager,
@@ -85,7 +87,8 @@ final class SetupAssistantController
 
         $moduleTemplate->assignMultiple([
             'formValues' => $formValues,
-            'csrfToken' => $this->generateToken(),
+            'requestTokenName' => \TYPO3\CMS\Core\Security\RequestToken::PARAM_NAME,
+            'requestTokenValue' => $this->requestTokenService->createHashed(self::REQUEST_TOKEN_SCOPE),
             'saveUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_setup.save'),
             'backendUrls' => $backendUrls,
             'frontendSites' => $frontendSites,
@@ -120,8 +123,7 @@ final class SetupAssistantController
             $formValues['cookiePassword'] = $this->generateCookiePassword();
         }
 
-        $csrfToken = $payload['csrfToken'] ?? '';
-        if (!$this->isValidToken(is_string($csrfToken) ? $csrfToken : '')) {
+        if (!$this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE)) {
             $this->enqueueFlashMessage(
                 $this->translate('error.csrfTokenInvalid'),
                 ContextualFeedbackSeverity::ERROR,
@@ -181,17 +183,4 @@ final class SetupAssistantController
         return rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
     }
 
-    private function generateToken(): string
-    {
-        return $this->formProtectionFactory
-            ->createForType('backend')
-            ->generateToken('workosAuth', 'saveConfiguration');
-    }
-
-    private function isValidToken(string $token): bool
-    {
-        return $this->formProtectionFactory
-            ->createForType('backend')
-            ->validateToken($token, 'workosAuth', 'saveConfiguration');
-    }
 }

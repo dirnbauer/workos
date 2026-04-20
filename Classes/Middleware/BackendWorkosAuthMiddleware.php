@@ -10,10 +10,15 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Security\RequestToken;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
 use WebConsulting\WorkosAuth\Security\MixedCaster;
@@ -104,16 +109,18 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         $organizationId = trim(MixedCaster::string($queryParams['organization'] ?? null));
 
         try {
-            return new RedirectResponse(
-                $this->workosAuthenticationService->buildBackendAuthorizationUrl(
-                    $request,
-                    $backendBasePath,
-                    $returnTo,
-                    $loginHint !== '' ? $loginHint : null,
-                    $provider,
-                    $organizationId !== '' ? $organizationId : null,
-                ),
-                302
+            $authorizationRequest = $this->workosAuthenticationService->buildBackendAuthorizationUrl(
+                $request,
+                $backendBasePath,
+                $returnTo,
+                $loginHint !== '' ? $loginHint : null,
+                $provider,
+                $organizationId !== '' ? $organizationId : null,
+            );
+
+            return $this->appendCookie(
+                new RedirectResponse((string)$authorizationRequest['url'], 302),
+                $authorizationRequest['cookie'] ?? null,
             );
         } catch (\Throwable $exception) {
             $this->logger?->error('WorkOS backend login error: ' . SecretRedactor::redact($exception->getMessage()));
@@ -163,6 +170,9 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         if ($email === '' || $password === '') {
             return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.enterEmailAndPassword'));
         }
+        if (!$this->hasValidBackendRequestToken()) {
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.csrfTokenInvalid'));
+        }
 
         try {
             $result = $this->workosAuthenticationService->authenticateWithPassword($request, $email, $password);
@@ -189,11 +199,14 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         if ($email === '') {
             return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.enterEmail'));
         }
+        if (!$this->hasValidBackendRequestToken()) {
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.csrfTokenInvalid'));
+        }
 
         try {
             $magicAuth = $this->workosAuthenticationService->sendMagicAuthCode($email);
             $magicAuthJson = json_encode([
-                'userId' => $magicAuth['userId'],
+                'userId' => $magicAuth['email'],
                 'email' => $email,
             ], JSON_THROW_ON_ERROR);
             $state = base64_encode($magicAuthJson);
@@ -225,6 +238,9 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         if ($code === '' || $userId === '') {
             return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.invalidMagicAuthSession'));
         }
+        if (!$this->hasValidBackendRequestToken()) {
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.csrfTokenInvalid'));
+        }
 
         try {
             $result = $this->workosAuthenticationService->authenticateWithMagicAuth($request, $code, $userId);
@@ -251,6 +267,9 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
         if ($code === '' || $pendingToken === '') {
             return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.verificationSessionExpired'));
+        }
+        if (!$this->hasValidBackendRequestToken()) {
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.csrfTokenInvalid'));
         }
 
         try {
@@ -294,6 +313,9 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
         if ($userId === '' || $pendingToken === '') {
             return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.verificationSessionExpired'));
+        }
+        if (!$this->hasValidBackendRequestToken()) {
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.csrfTokenInvalid'));
         }
 
         $params = [
@@ -391,5 +413,33 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             $beUser instanceof AbstractUserAuthentication ? $beUser : null
         );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
+    }
+
+    private function appendCookie(ResponseInterface $response, mixed $cookie): ResponseInterface
+    {
+        if (!$cookie instanceof Cookie) {
+            return $response;
+        }
+
+        return $response->withAddedHeader('Set-Cookie', $cookie->__toString());
+    }
+
+    private function hasValidBackendRequestToken(): bool
+    {
+        $context = GeneralUtility::makeInstance(Context::class);
+        $securityAspect = SecurityAspect::provideIn($context);
+        $requestToken = $securityAspect->getReceivedRequestToken();
+
+        if (!$requestToken instanceof RequestToken || $requestToken->scope !== 'core/user-auth/be') {
+            return false;
+        }
+
+        if ($requestToken->getSigningSecretIdentifier() !== null) {
+            $securityAspect->getSigningSecretResolver()->revokeIdentifier(
+                $requestToken->getSigningSecretIdentifier()
+            );
+        }
+
+        return true;
     }
 }

@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace WebConsulting\WorkosAuth\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
 use WebConsulting\WorkosAuth\Security\StateService;
 use WorkOS\Resource\User;
-use WorkOS\UserManagement;
+use WorkOS\Resource\UserManagementAuthenticationProvider;
+use WorkOS\Resource\UserManagementAuthenticationScreenHint;
+use WorkOS\Service\UserManagement;
 
 final class WorkosAuthenticationService
 {
@@ -20,6 +23,9 @@ final class WorkosAuthenticationService
         private StateService $stateService,
     ) {}
 
+    /**
+     * @return array{url:string,cookie:Cookie|null}
+     */
     public function buildFrontendAuthorizationUrl(
         ServerRequestInterface $request,
         string $returnTo,
@@ -27,7 +33,7 @@ final class WorkosAuthenticationService
         ?string $provider = null,
         ?string $loginHint = null,
         ?string $organizationId = null,
-    ): string {
+    ): array {
         $site = $request->getAttribute('site');
         $sitePath = $site instanceof Site ? $site->getBase()->getPath() : '';
         $callbackPath = PathUtility::getPathRelativeToSiteBase(
@@ -36,7 +42,9 @@ final class WorkosAuthenticationService
         );
 
         return $this->buildAuthorizationUrl(
+            request: $request,
             callbackUrl: PathUtility::buildAbsoluteUrlFromRequest($request, $callbackPath),
+            cookiePath: $sitePath,
             context: 'frontend',
             returnTo: $returnTo,
             screenHint: $screenHint,
@@ -46,6 +54,9 @@ final class WorkosAuthenticationService
         );
     }
 
+    /**
+     * @return array{url:string,cookie:Cookie|null}
+     */
     public function buildBackendAuthorizationUrl(
         ServerRequestInterface $request,
         string $backendBasePath,
@@ -53,12 +64,14 @@ final class WorkosAuthenticationService
         ?string $loginHint = null,
         ?string $provider = null,
         ?string $organizationId = null,
-    ): string {
+    ): array {
         return $this->buildAuthorizationUrl(
+            request: $request,
             callbackUrl: PathUtility::buildAbsoluteUrlFromRequest(
                 $request,
                 PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendCallbackPath())
             ),
+            cookiePath: $backendBasePath,
             context: 'backend',
             returnTo: $returnTo,
             provider: $provider,
@@ -79,22 +92,14 @@ final class WorkosAuthenticationService
         }
 
         $stateToken = $this->stateService->extractTokenFromCallbackState(self::stringFromMixed($queryParameters['state'] ?? null));
-        $payload = $this->stateService->consume($stateToken);
-        if (($payload['context'] ?? '') !== $expectedContext) {
-            throw new \RuntimeException('The WorkOS callback context did not match the login flow.', 1744277802);
-        }
+        $payload = $this->stateService->consume($request, $expectedContext, $stateToken);
 
         $userManagement = $this->workosClientFactory->createUserManagement();
         $authenticationResponse = $userManagement->authenticateWithCode(
-            $this->configuration->getClientId(),
-            $code,
-            $this->getRemoteAddress($request),
-            $this->getUserAgent($request),
+            code: $code,
+            ipAddress: $this->getRemoteAddress($request),
+            userAgent: $this->getUserAgent($request),
         );
-
-        if (!$authenticationResponse->user instanceof User) {
-            throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277803);
-        }
 
         return [
             'workosUser' => $this->enrichUser($userManagement, $authenticationResponse->user),
@@ -102,43 +107,71 @@ final class WorkosAuthenticationService
         ];
     }
 
+    /**
+     * @return array{url:string,cookie:Cookie|null}
+     */
     private function buildAuthorizationUrl(
+        ServerRequestInterface $request,
         string $callbackUrl,
+        string $cookiePath,
         string $context,
         string $returnTo,
         string $screenHint = 'sign-in',
         ?string $provider = null,
         ?string $loginHint = null,
         ?string $organizationId = null,
-    ): string {
+    ): array {
         $this->assertBaseConfiguration();
 
         $userManagement = $this->workosClientFactory->createUserManagement();
-        $stateToken = $this->stateService->issue([
+        $issuedState = $this->stateService->issue($request, $context, $cookiePath, [
             'context' => $context,
             'returnTo' => $returnTo,
         ]);
 
-        $effectiveProvider = $provider ?? UserManagement::AUTHORIZATION_PROVIDER_AUTHKIT;
+        $effectiveProvider = $this->resolveProvider($provider);
         $effectiveOrgId = $organizationId !== null && $organizationId !== ''
             ? $organizationId
             : self::nullIfEmpty($this->configuration->getAuthkitOrganizationId());
 
-        return $userManagement->getAuthorizationUrl(
-            $callbackUrl,
-            ['token' => $stateToken],
-            $effectiveProvider,
-            self::nullIfEmpty($this->configuration->getAuthkitConnectionId()),
-            $effectiveOrgId,
-            self::nullIfEmpty($this->configuration->getAuthkitDomainHint()),
-            $loginHint,
-            $provider === null ? $screenHint : null,
-        );
+        return [
+            'url' => $userManagement->getAuthorizationUrl(
+                redirectUri: $callbackUrl,
+                domainHint: self::nullIfEmpty($this->configuration->getAuthkitDomainHint()),
+                connectionId: self::nullIfEmpty($this->configuration->getAuthkitConnectionId()),
+                screenHint: $provider === null
+                    ? $this->resolveScreenHint($screenHint)
+                    : null,
+                loginHint: $loginHint,
+                provider: $effectiveProvider,
+                state: json_encode(['token' => $issuedState['token']], JSON_THROW_ON_ERROR),
+                organizationId: $effectiveOrgId,
+            ),
+            'cookie' => $issuedState['cookie'] instanceof Cookie ? $issuedState['cookie'] : null,
+        ];
     }
 
     private static function nullIfEmpty(?string $value): ?string
     {
         return $value !== null && $value !== '' ? $value : null;
+    }
+
+    private function resolveProvider(?string $provider): UserManagementAuthenticationProvider
+    {
+        return match ($provider) {
+            'AppleOAuth' => UserManagementAuthenticationProvider::AppleOAuth,
+            'GitHubOAuth' => UserManagementAuthenticationProvider::GitHubOAuth,
+            'GoogleOAuth' => UserManagementAuthenticationProvider::GoogleOAuth,
+            'MicrosoftOAuth' => UserManagementAuthenticationProvider::MicrosoftOAuth,
+            default => UserManagementAuthenticationProvider::Authkit,
+        };
+    }
+
+    private function resolveScreenHint(string $screenHint): UserManagementAuthenticationScreenHint
+    {
+        return $screenHint === UserManagementAuthenticationScreenHint::SignUp->value
+            ? UserManagementAuthenticationScreenHint::SignUp
+            : UserManagementAuthenticationScreenHint::SignIn;
     }
 
     /**
@@ -151,19 +184,14 @@ final class WorkosAuthenticationService
 
         try {
             $response = $userManagement->authenticateWithPassword(
-                $this->configuration->getClientId(),
-                $email,
-                $password,
-                $this->getRemoteAddress($request),
-                $this->getUserAgent($request),
+                email: $email,
+                password: $password,
+                ipAddress: $this->getRemoteAddress($request),
+                userAgent: $this->getUserAgent($request),
             );
         } catch (\Throwable $exception) {
             $this->rethrowEmailVerificationException($exception, $email);
             throw $exception;
-        }
-
-        if (!$response->user instanceof User) {
-            throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277810);
         }
 
         return ['workosUser' => $this->enrichUser($userManagement, $response->user)];
@@ -182,16 +210,11 @@ final class WorkosAuthenticationService
         $this->assertBaseConfiguration();
         $userManagement = $this->workosClientFactory->createUserManagement();
         $response = $userManagement->authenticateWithEmailVerification(
-            $this->configuration->getClientId(),
-            $code,
-            $pendingAuthenticationToken,
-            $this->getRemoteAddress($request),
-            $this->getUserAgent($request),
+            code: $code,
+            pendingAuthenticationToken: $pendingAuthenticationToken,
+            ipAddress: $this->getRemoteAddress($request),
+            userAgent: $this->getUserAgent($request),
         );
-
-        if (!$response->user instanceof User) {
-            throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277812);
-        }
 
         return ['workosUser' => $this->enrichUser($userManagement, $response->user)];
     }
@@ -268,8 +291,8 @@ final class WorkosAuthenticationService
         $magicAuth = $userManagement->createMagicAuth($email);
 
         return [
-            'magicAuthId' => $magicAuth->id ?? '',
-            'userId' => $magicAuth->userId ?? '',
+            'magicAuthId' => $magicAuth->id,
+            'userId' => $magicAuth->userId,
             'email' => $email,
         ];
     }
@@ -283,19 +306,14 @@ final class WorkosAuthenticationService
         $userManagement = $this->workosClientFactory->createUserManagement();
         try {
             $response = $userManagement->authenticateWithMagicAuth(
-                $this->configuration->getClientId(),
-                $code,
-                $userId,
-                $this->getRemoteAddress($request),
-                $this->getUserAgent($request),
+                code: $code,
+                email: $userId,
+                ipAddress: $this->getRemoteAddress($request),
+                userAgent: $this->getUserAgent($request),
             );
         } catch (\Throwable $exception) {
             $this->rethrowEmailVerificationException($exception, '');
             throw $exception;
-        }
-
-        if (!$response->user instanceof User) {
-            throw new \RuntimeException('WorkOS did not return a valid user object.', 1744277811);
         }
 
         return ['workosUser' => $this->enrichUser($userManagement, $response->user)];
@@ -317,7 +335,7 @@ final class WorkosAuthenticationService
     private function enrichUser(UserManagement $userManagement, User $user): User
     {
         try {
-            return $userManagement->getUser($user->id ?? '');
+            return $userManagement->getUser($user->id);
         } catch (\Throwable) {
             return $user;
         }

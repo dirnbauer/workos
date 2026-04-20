@@ -11,8 +11,8 @@ use WorkOS\Resource\User;
 
 /**
  * End-to-end coverage for fe_users / be_users provisioning. Fakes the
- * WorkOS user via the SDK's `constructFromResponse()` factory so we can
- * drive the service against a real database.
+ * WorkOS user via the SDK's typed `fromArray()` factory so we can drive
+ * the service against a real database.
  */
 final class UserProvisioningServiceTest extends FunctionalTestCase
 {
@@ -48,12 +48,12 @@ final class UserProvisioningServiceTest extends FunctionalTestCase
         self::assertInstanceOf(UserProvisioningService::class, $provisioning);
         self::assertInstanceOf(IdentityService::class, $identity);
 
-        $workosUser = User::constructFromResponse([
-            'id' => 'user_05',
-            'email' => 'new@example.com',
-            'first_name' => 'New',
-            'last_name' => 'User',
-        ]);
+        $workosUser = $this->createWorkosUser(
+            id: 'user_05',
+            email: 'new@example.com',
+            firstName: 'New',
+            lastName: 'User',
+        );
 
         $result = $provisioning->resolveFrontendUser($workosUser);
         self::assertSame('new@example.com', $result['email']);
@@ -80,14 +80,62 @@ final class UserProvisioningServiceTest extends FunctionalTestCase
             'deleted' => 0,
         ]);
 
-        $workosUser = User::constructFromResponse([
-            'id' => 'user_06',
-            'email' => 'existing@example.com',
-            'first_name' => 'Existing',
-            'last_name' => 'Person',
-        ]);
+        $workosUser = $this->createWorkosUser(
+            id: 'user_06',
+            email: 'existing@example.com',
+            firstName: 'Existing',
+            lastName: 'Person',
+        );
 
         $result = $provisioning->resolveFrontendUser($workosUser);
         self::assertSame('preexisting', $result['username'], 'must link instead of creating a new record');
+    }
+
+    public function testResolveFrontendUserStoresTypedWorkosProfilePayload(): void
+    {
+        $provisioning = $this->get(UserProvisioningService::class);
+        $identity = $this->get(IdentityService::class);
+        self::assertInstanceOf(UserProvisioningService::class, $provisioning);
+        self::assertInstanceOf(IdentityService::class, $identity);
+
+        $workosUser = $this->createWorkosUser(
+            id: 'user_07',
+            email: 'profile@example.com',
+            firstName: 'Profile',
+            lastName: 'Carrier',
+        );
+
+        $provisioning->resolveFrontendUser($workosUser);
+
+        $mapping = $identity->findIdentity('frontend', 'user_07');
+        self::assertIsArray($mapping);
+
+        $profile = $identity->findProfileByLocalUser(
+            'frontend',
+            'fe_users',
+            is_numeric($mapping['user_uid']) ? (int)$mapping['user_uid'] : 0
+        );
+        self::assertIsArray($profile);
+        self::assertSame('user', $profile['object']);
+        self::assertSame('user_07', $profile['id']);
+        self::assertSame('profile@example.com', $profile['email']);
+        self::assertSame('Profile', $profile['first_name']);
+        self::assertSame('Carrier', $profile['last_name']);
+        self::assertArrayHasKey('created_at', $profile);
+        self::assertArrayHasKey('updated_at', $profile);
+    }
+
+    private function createWorkosUser(string $id, string $email, string $firstName, string $lastName): User
+    {
+        return User::fromArray([
+            'object' => 'user',
+            'id' => $id,
+            'email' => $email,
+            'email_verified' => true,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'created_at' => '2026-04-20T00:00:00+00:00',
+            'updated_at' => '2026-04-20T00:00:00+00:00',
+        ]);
     }
 }

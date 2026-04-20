@@ -12,13 +12,13 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Security\FrontendCsrfService;
 use WebConsulting\WorkosAuth\Security\MixedCaster;
+use WebConsulting\WorkosAuth\Security\RequestTokenService;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosTeamService;
-use WorkOS\Resource\Invitation;
 use WorkOS\Resource\Organization;
+use WorkOS\Resource\UserInvite;
 use WebConsulting\WorkosAuth\Security\SecretRedactor;
 
 /**
@@ -32,13 +32,13 @@ final class TeamController extends ActionController implements LoggerAwareInterf
 
     private const SESSION_FLASH = 'workos_team_flash';
     private const SESSION_ORG = 'workos_team_org';
-    private const CSRF_SCOPE = 'team';
+    private const REQUEST_TOKEN_SCOPE = 'workos/frontend/team';
 
     public function __construct(
         private readonly WorkosConfiguration $configuration,
         private readonly IdentityService $identityService,
         private readonly WorkosTeamService $teamService,
-        private readonly FrontendCsrfService $csrfService,
+        private readonly RequestTokenService $requestTokenService,
     ) {}
 
     public function dashboardAction(?string $organizationId = null): ResponseInterface
@@ -96,14 +96,14 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             'workosUserId' => $workosUserId,
             'organizations' => $this->prepareOrganizations($organizations, $selectedOrgId),
             'selectedOrganization' => $selectedOrg !== null ? [
-                'id' => $selectedOrg->id ?? '',
-                'name' => $selectedOrg->name ?? '',
+                'id' => $selectedOrg->id,
+                'name' => $selectedOrg->name,
             ] : null,
-            'invitations' => array_map(fn (Invitation $i) => $this->prepareInvitationRow($i), $invitations),
+            'invitations' => array_map(fn (UserInvite $i) => $this->prepareInvitationRow($i), $invitations),
             'portalIntents' => $portalIntents,
             'flash' => $this->consumeFlash(),
             'sectionErrors' => $sectionErrors,
-            'csrfToken' => $this->csrfService->issue($this->getFrontendUser(), self::CSRF_SCOPE),
+            'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
 
         return $this->htmlResponse();
@@ -117,7 +117,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
             return $this->redirectToDashboard($body->trimmedString('organizationId'));
         }
@@ -155,7 +155,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
             return $this->redirectToDashboard($body->trimmedString('organizationId'));
         }
@@ -165,7 +165,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         if ($invitationId !== '') {
             try {
                 $invitation = $this->teamService->findInvitation($invitationId);
-                $invitationOrgId = $invitation === null ? '' : (string)($invitation->organizationId ?? '');
+                $invitationOrgId = $invitation === null ? '' : $invitation->organizationId ?? '';
                 $this->teamService->assertMemberOfOrganization($context['workosUserId'], $invitationOrgId);
                 $this->teamService->resendInvitation($invitationId);
                 $this->setFlash('success', $this->translate('team.flash.inviteResent'));
@@ -186,7 +186,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
             return $this->redirectToDashboard($body->trimmedString('organizationId'));
         }
@@ -196,7 +196,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         if ($invitationId !== '') {
             try {
                 $invitation = $this->teamService->findInvitation($invitationId);
-                $invitationOrgId = $invitation === null ? '' : (string)($invitation->organizationId ?? '');
+                $invitationOrgId = $invitation === null ? '' : $invitation->organizationId ?? '';
                 $this->teamService->assertMemberOfOrganization($context['workosUserId'], $invitationOrgId);
                 $this->teamService->revokeInvitation($invitationId);
                 $this->setFlash('success', $this->translate('team.flash.inviteRevoked'));
@@ -217,7 +217,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->csrfService->validate($this->getFrontendUser(), self::CSRF_SCOPE, $body->string('csrfToken'))) {
+        if (!$this->hasValidRequestToken()) {
             $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
             return $this->redirectToDashboard($body->trimmedString('organizationId'));
         }
@@ -238,7 +238,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
                 intent: $intent,
                 returnUrl: $returnUrl !== '' ? $returnUrl : null,
             );
-            $link = $portalLink->link ?? '';
+            $link = $portalLink->link;
             if ($link === '') {
                 throw new \RuntimeException('Empty portal link returned.', 1744278050);
             }
@@ -270,10 +270,10 @@ final class TeamController extends ActionController implements LoggerAwareInterf
                 }
                 $domains = implode(', ', $names);
             }
-            $orgId = $organization->id ?? '';
+            $orgId = $organization->id;
             $rows[] = [
                 'id' => $orgId,
-                'name' => $organization->name ?? '',
+                'name' => $organization->name,
                 'domains' => $domains,
                 'selected' => $orgId === $selectedOrgId,
             ];
@@ -284,17 +284,17 @@ final class TeamController extends ActionController implements LoggerAwareInterf
     /**
      * @return array<string, mixed>
      */
-    private function prepareInvitationRow(Invitation $invitation): array
+    private function prepareInvitationRow(UserInvite $invitation): array
     {
-        $state = strtolower($invitation->state ?? '');
+        $state = strtolower($invitation->state->value);
 
         return [
-            'id' => $invitation->id ?? '',
-            'email' => $invitation->email ?? '',
+            'id' => $invitation->id,
+            'email' => $invitation->email,
             'state' => $state,
-            'expiresAt' => $invitation->expiresAt ?? '',
-            'createdAt' => $invitation->createdAt ?? '',
-            'acceptUrl' => $invitation->acceptInvitationUrl ?? '',
+            'expiresAt' => $this->formatDateTime($invitation->expiresAt),
+            'createdAt' => $this->formatDateTime($invitation->createdAt),
+            'acceptUrl' => $invitation->acceptInvitationUrl,
             'isPending' => $state === 'pending',
         ];
     }
@@ -408,6 +408,16 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             return $this->translate('team.flash.inviteInvalidEmail');
         }
         return $this->translate('team.flash.inviteFailed');
+    }
+
+    private function hasValidRequestToken(): bool
+    {
+        return $this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE);
+    }
+
+    private function formatDateTime(\DateTimeImmutable $value): string
+    {
+        return $value->format('Y-m-d H:i');
     }
 
     /**

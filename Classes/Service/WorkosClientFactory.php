@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace WebConsulting\WorkosAuth\Service;
 
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WorkOS\Organizations;
-use WorkOS\Portal;
-use WorkOS\UserManagement;
-use WorkOS\Widgets;
+use WorkOS\Service\AdminPortal;
+use WorkOS\Service\MultiFactorAuth;
+use WorkOS\Service\Organizations;
+use WorkOS\Service\UserManagement;
+use WorkOS\Service\Widgets;
 use WorkOS\WorkOS;
 
 final class WorkosClientFactory
@@ -17,33 +18,36 @@ final class WorkosClientFactory
         private WorkosConfiguration $configuration,
     ) {}
 
+    public function createClient(): WorkOS
+    {
+        return new WorkOS(
+            apiKey: $this->configuration->getApiKey(),
+            clientId: $this->configuration->getClientId(),
+        );
+    }
+
     public function createUserManagement(): UserManagement
     {
-        $this->primeClient();
-        return new UserManagement();
+        return $this->createClient()->userManagement();
+    }
+
+    public function createMultiFactorAuth(): MultiFactorAuth
+    {
+        return $this->createClient()->multiFactorAuth();
     }
 
     public function createWidgets(): Widgets
     {
-        $this->primeClient();
-        return new Widgets();
+        return $this->createClient()->widgets();
     }
 
     public function createOrganizations(): Organizations
     {
-        $this->primeClient();
-        return new Organizations();
+        return $this->createClient()->organizations();
     }
 
-    public function createPortal(): Portal
+    public function createPortal(): AdminPortal
     {
-        $this->primeClient();
-        return new Portal();
-    }
-
-    private function primeClient(): void
-    {
-        WorkOS::setApiKey($this->configuration->getApiKey());
-        WorkOS::setClientId($this->configuration->getClientId());
+        return $this->createClient()->adminPortal();
     }
 }

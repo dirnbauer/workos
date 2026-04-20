@@ -17,10 +17,10 @@ function ensureStylesheet(href, id) {
     document.head.appendChild(link);
 }
 
-async function fetchWidgetToken(tokenUri, csrfToken) {
+async function fetchWidgetToken(tokenUri, requestToken) {
     const body = new URLSearchParams();
-    if (csrfToken) {
-        body.append('csrfToken', csrfToken);
+    if (requestToken) {
+        body.append('__RequestToken', requestToken);
     }
     const response = await fetch(tokenUri, {
         method: 'POST',
@@ -253,13 +253,13 @@ async function bootstrap() {
         renderError(mountEl, 'Missing token endpoint.');
         return;
     }
-    const csrfToken = mountEl.getAttribute('data-csrf-token') || '';
+    const requestToken = mountEl.getAttribute('data-request-token') || '';
 
     try {
         ensureStylesheet(resolveAsset('radix-themes.css'), 'workos-radix-theme-css');
         ensureStylesheet(resolveAsset('user-management-widget.bundle.css'), 'workos-widgets-css');
 
-        const token = await fetchWidgetToken(tokenUri, csrfToken);
+        const token = await fetchWidgetToken(tokenUri, requestToken);
 
         const container = document.createElement('div');
         container.style.display = 'block';

@@ -188,6 +188,7 @@
          data-workos-magic-send-url="{magicSendUrl}"
          data-workos-magic-verify-url="{magicVerifyUrl}"
          data-workos-email-verify-url="{emailVerifyUrl}">
+        <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
         <h2 class="workos-login-heading">
             <f:format.raw><f:translate key="workos_auth.messages:backend.login.heading.workos" /></f:format.raw>
         </h2>
@@ -264,6 +265,7 @@
                                 </button>
                                 <f:if condition="{emailVerificationUserId}">
                                     <form action="{emailVerifyResendUrl}" method="post" style="margin:0 0 0.5rem;">
+                                        <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
                                         <input type="hidden" name="pendingToken" value="{emailVerificationPendingToken}" />
                                         <input type="hidden" name="email" value="{emailVerificationEmail}" />
                                         <input type="hidden" name="userId" value="{emailVerificationUserId}" />
