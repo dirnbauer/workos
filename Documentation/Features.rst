@@ -114,6 +114,61 @@ Standard TYPO3 username + password login remains available via the
 :guilabel:`Login with username and password` link provided by TYPO3
 core.
 
+..  _features-auth-service-bridge:
+
+TYPO3 auth service bridge
+-------------------------
+
+After WorkOS completes a login, the extension does not keep session
+creation in custom code only. Instead it hands the resolved TYPO3 user
+record back into TYPO3's own FE/BE authentication lifecycle through a
+registered auth service.
+
+The registration in :file:`ext_localconf.php` looks like this:
+
+..  code-block:: php
+    :caption: ext_localconf.php
+
+    ExtensionManagementUtility::addService(
+        'workos_auth',
+        'auth',
+        \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+        [
+            'title' => 'WorkOS TYPO3 Authentication Bridge',
+            'description' => 'Authenticates TYPO3 FE and BE users after a successful WorkOS login flow.',
+            'subtype' => 'getUserBE,getUserFE,authUserBE,authUserFE,processLoginDataBE,processLoginDataFE',
+            'available' => true,
+            'priority' => 85,
+            'quality' => 80,
+            'os' => '',
+            'exec' => '',
+            'className' => \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+        ]
+    );
+
+Why six hooks? TYPO3 runs its auth services in three phases, and each
+phase exists once for frontend users and once for backend users:
+
+-   ``processLoginDataFE`` / ``processLoginDataBE``
+-   ``getUserFE`` / ``getUserBE``
+-   ``authUserFE`` / ``authUserBE``
+
+They have distinct jobs in this extension:
+
+-   ``processLoginData*`` injects placeholder login data so TYPO3
+    treats the hand-off request as an active login.
+-   ``getUser*`` returns the already-resolved local ``fe_users`` or
+    ``be_users`` row that was linked or provisioned from the WorkOS
+    identity.
+-   ``authUser*`` confirms that this row is the user TYPO3 should
+    authenticate.
+
+Registering all six lets TYPO3 create the real FE/BE session itself
+instead of bypassing its normal login flow. That keeps TYPO3 core
+behaviour intact, including session fixation protection, login
+logging/events, and backend MFA evaluation when TYPO3 MFA providers are
+enabled.
+
 ..  _features-backend-endpoints:
 
 Endpoints (HTTP POST)

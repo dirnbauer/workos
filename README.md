@@ -115,6 +115,44 @@ TYPO3's backend login gains a WorkOS section with:
 Standard TYPO3 username + password login keeps working in parallel via
 the "Login with username and password" switcher.
 
+### TYPO3 auth service bridge
+
+The backend and frontend hand-off does not stop at the custom WorkOS
+middleware. After WorkOS has authenticated the user, the extension
+hands the resolved TYPO3 user record back into TYPO3's native auth
+chain through a registered auth service:
+
+```php
+ExtensionManagementUtility::addService(
+    'workos_auth',
+    'auth',
+    \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+    [
+        'title' => 'WorkOS TYPO3 Authentication Bridge',
+        'description' => 'Authenticates TYPO3 FE and BE users after a successful WorkOS login flow.',
+        'subtype' => 'getUserBE,getUserFE,authUserBE,authUserFE,processLoginDataBE,processLoginDataFE',
+        'available' => true,
+        'priority' => 85,
+        'quality' => 80,
+        'os' => '',
+        'exec' => '',
+        'className' => \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+    ]
+);
+```
+
+Why six hooks? TYPO3 authentication is split into three phases for each
+context:
+
+- `processLoginDataFE` / `processLoginDataBE` prepare the request so TYPO3 treats it as an active login.
+- `getUserFE` / `getUserBE` return the already-resolved local `fe_users` / `be_users` record.
+- `authUserFE` / `authUserBE` confirm that this candidate is the user TYPO3 should log in.
+
+That lets TYPO3 create the FE/BE session itself, run its normal login
+events, and continue into backend MFA if TYPO3 MFA is enabled.
+
+Full details: [`Documentation/Features.rst`](Documentation/Features.rst).
+
 ### Backend modules
 
 The extension installs a new top-level **WorkOS** menu in the backend

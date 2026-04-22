@@ -64,6 +64,7 @@ final class Typo3SessionService
     {
         $backendUser = new BackendUserAuthentication();
         $backendUser->setLogger($this->logger);
+        $GLOBALS['BE_USER'] = $backendUser;
         $loginRequest = $this->createPendingLoginRequest($request, 'backend', 'login_status', $userRow);
         $backendUser->start($loginRequest);
         $authenticatedUser = $this->normalizeUserRow(is_array($backendUser->user ?? null) ? $backendUser->user : null);
