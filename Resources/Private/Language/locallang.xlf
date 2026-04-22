@@ -838,6 +838,9 @@
             <trans-unit id="account.flash.csrfInvalid">
                 <source>Security check failed. Please reload the page and try again.</source>
             </trans-unit>
+            <trans-unit id="account.flash.forbidden">
+                <source>You are not allowed to manage that WorkOS resource.</source>
+            </trans-unit>
 
             <trans-unit id="account.error.loadProfile">
                 <source>Your WorkOS profile could not be loaded.</source>

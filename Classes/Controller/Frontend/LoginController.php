@@ -12,6 +12,7 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use WebConsulting\WorkosAuth\Security\RequestTokenService;
 use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\PathUtility;
@@ -23,12 +24,16 @@ use WebConsulting\WorkosAuth\Service\WorkosAuthenticationService;
 final class LoginController extends ActionController implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
+
+    private const REQUEST_TOKEN_SCOPE = 'workos/frontend/login';
+
     public function __construct(
         private readonly WorkosConfiguration $configuration,
         private readonly IdentityService $identityService,
         private readonly WorkosAuthenticationService $workosAuthenticationService,
         private readonly UserProvisioningService $userProvisioningService,
         private readonly Typo3SessionService $typo3SessionService,
+        private readonly RequestTokenService $requestTokenService,
     ) {}
 
     public function showAction(): ResponseInterface
@@ -36,6 +41,11 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $site = $this->request->getAttribute('site');
         $siteBasePath = $site instanceof \TYPO3\CMS\Core\Site\Entity\Site ? $site->getBase()->getPath() : '';
         $currentUrl = (string)$this->request->getUri();
+        $queryParams = $this->request->getQueryParams();
+        $returnToUrl = $this->sanitizeReturnTo(
+            $this->stringFromMixed($queryParams['returnTo'] ?? null),
+            $currentUrl
+        );
 
         $frontendUser = $this->request->getAttribute('frontend.user');
         $isLoggedIn = $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user ?? null);
@@ -75,7 +85,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
 
         $loginPath = PathUtility::joinBaseAndPath($siteBasePath, $this->configuration->getFrontendLoginPath());
         $logoutPath = PathUtility::joinBaseAndPath($siteBasePath, $this->configuration->getFrontendLogoutPath());
-        $returnParam = ['returnTo' => $currentUrl];
+        $returnParam = ['returnTo' => $returnToUrl];
 
         $this->view->assignMultiple([
             'configured' => $this->configuration->isFrontendReady(),
@@ -93,6 +103,8 @@ final class LoginController extends ActionController implements LoggerAwareInter
             'workosProfile' => $workosProfile,
             'avatarUrl' => $avatarUrl,
             'authError' => $authError,
+            'returnToUrl' => $returnToUrl,
+            'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
 
         return $this->htmlResponse();
@@ -144,6 +156,8 @@ final class LoginController extends ActionController implements LoggerAwareInter
             return $this->redirect('show');
         }
 
+        $currentUrl = (string)$this->request->getUri();
+        $queryParams = $this->request->getQueryParams();
         $authError = null;
         $savedForm = [];
         if ($frontendUser instanceof FrontendUserAuthentication) {
@@ -162,12 +176,20 @@ final class LoginController extends ActionController implements LoggerAwareInter
             }
         }
 
+        $savedReturnTo = $this->stringFromMixed($savedForm['returnTo'] ?? null);
+        $returnToUrl = $this->sanitizeReturnTo(
+            $savedReturnTo !== '' ? $savedReturnTo : $this->stringFromMixed($queryParams['returnTo'] ?? null),
+            $currentUrl
+        );
+
         $this->view->assignMultiple([
             'configured' => $this->configuration->isFrontendReady(),
             'authError' => $authError,
             'savedEmail' => $this->stringFromMixed($savedForm['email'] ?? null),
             'savedFirstName' => $this->stringFromMixed($savedForm['firstName'] ?? null),
             'savedLastName' => $this->stringFromMixed($savedForm['lastName'] ?? null),
+            'returnToUrl' => $returnToUrl,
+            'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
 
         return $this->htmlResponse();
@@ -181,8 +203,16 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $passwordConfirm = $body->string('passwordConfirm');
         $firstName = $body->trimmedString('firstName');
         $lastName = $body->trimmedString('lastName');
+        $returnTo = $this->sanitizeReturnTo(
+            $body->string('returnTo'),
+            $this->configuration->getFrontendSuccessRedirect()
+        );
 
-        $formData = ['email' => $email, 'firstName' => $firstName, 'lastName' => $lastName];
+        $formData = ['email' => $email, 'firstName' => $firstName, 'lastName' => $lastName, 'returnTo' => $returnTo];
+
+        if (!$this->hasValidRequestToken()) {
+            return $this->redirectToSignUpWithError($this->translate('error.csrfTokenInvalid'), $formData);
+        }
 
         if ($email === '' || $password === '') {
             return $this->redirectToSignUpWithError($this->translate('error.fillEmailAndPassword'), $formData);
@@ -196,7 +226,6 @@ final class LoginController extends ActionController implements LoggerAwareInter
             return $this->redirectToSignUpWithError($this->translate('error.passwordTooShortClient'), $formData);
         }
 
-        $returnTo = $body->string('returnTo', '/');
         try {
             $this->workosAuthenticationService->createUser($email, $password, $firstName, $lastName);
             $result = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
@@ -214,7 +243,14 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $body = RequestBody::fromRequest($this->request);
         $email = $body->trimmedString('email');
         $password = $body->string('password');
-        $returnTo = $body->string('returnTo', '/');
+        $returnTo = $this->sanitizeReturnTo(
+            $body->string('returnTo'),
+            $this->configuration->getFrontendSuccessRedirect()
+        );
+
+        if (!$this->hasValidRequestToken()) {
+            return $this->redirectToShowWithError($this->translate('error.csrfTokenInvalid'));
+        }
 
         if ($email === '' || $password === '') {
             return $this->redirectToShowWithError($this->translate('error.enterEmailAndPassword'));
@@ -235,7 +271,14 @@ final class LoginController extends ActionController implements LoggerAwareInter
     {
         $body = RequestBody::fromRequest($this->request);
         $email = $body->trimmedString('email');
-        $returnTo = $body->string('returnTo', '/');
+        $returnTo = $this->sanitizeReturnTo(
+            $body->string('returnTo'),
+            $this->configuration->getFrontendSuccessRedirect()
+        );
+
+        if (!$this->hasValidRequestToken()) {
+            return $this->redirectToShowWithError($this->translate('error.csrfTokenInvalid'));
+        }
 
         if ($email === '') {
             return $this->redirectToShowWithError($this->translate('error.enterEmail'));
@@ -265,6 +308,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $this->view->assignMultiple([
             'configured' => $this->configuration->isFrontendReady(),
             'magicAuthEmail' => $sessionData['email'],
+            'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
 
         return $this->htmlResponse();
@@ -277,6 +321,10 @@ final class LoginController extends ActionController implements LoggerAwareInter
 
         if (!is_array($sessionData) || !isset($sessionData['userId']) || $sessionData['userId'] === '') {
             return $this->redirectToShowWithError($this->translate('error.magicAuthSessionExpired'));
+        }
+
+        if (!$this->hasValidRequestToken()) {
+            return $this->redirectToShowWithError($this->translate('error.csrfTokenInvalid'));
         }
 
         if ($code === '') {
@@ -325,6 +373,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
             'canResend' => $this->stringFromMixed($sessionData['userId'] ?? null) !== '',
             'authError' => $authError,
             'notice' => $resendNotice,
+            'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
 
         return $this->htmlResponse();
@@ -337,6 +386,14 @@ final class LoginController extends ActionController implements LoggerAwareInter
 
         if (!is_array($sessionData) || !isset($sessionData['pendingToken']) || $sessionData['pendingToken'] === '') {
             return $this->redirectToShowWithError($this->translate('error.verificationSessionExpired'));
+        }
+
+        if (!$this->hasValidRequestToken()) {
+            $this->getFrontendUser()->setAndSaveSessionData(
+                'workos_auth_error',
+                $this->translate('error.csrfTokenInvalid')
+            );
+            return $this->redirect('verifyEmail');
         }
 
         if ($code === '') {
@@ -367,6 +424,14 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $sessionData = $this->getFrontendUser()->getSessionData('workos_email_verification');
         if (!is_array($sessionData) || !isset($sessionData['userId']) || $sessionData['userId'] === '') {
             return $this->redirectToShowWithError($this->translate('error.verificationSessionExpired'));
+        }
+
+        if (!$this->hasValidRequestToken()) {
+            $this->getFrontendUser()->setAndSaveSessionData(
+                'workos_auth_error',
+                $this->translate('error.csrfTokenInvalid')
+            );
+            return $this->redirect('verifyEmail');
         }
 
         try {
@@ -412,7 +477,26 @@ final class LoginController extends ActionController implements LoggerAwareInter
         if ($formData !== []) {
             $fe->setAndSaveSessionData('workos_signup_form', $formData);
         }
-        return $this->redirect('signUp');
+        $arguments = [];
+        $returnTo = $this->stringFromMixed($formData['returnTo'] ?? null);
+        if ($returnTo !== '') {
+            $arguments['returnTo'] = $returnTo;
+        }
+        return $this->redirect('signUp', null, null, $arguments);
+    }
+
+    private function hasValidRequestToken(): bool
+    {
+        return $this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE);
+    }
+
+    private function sanitizeReturnTo(string $candidate, string $fallback): string
+    {
+        return PathUtility::sanitizeReturnTo(
+            $this->request,
+            $candidate !== '' ? $candidate : null,
+            $fallback
+        );
     }
 
     private function stringFromMixed(mixed $value): string

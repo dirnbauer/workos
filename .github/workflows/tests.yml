@@ -15,7 +15,7 @@ env:
 
 jobs:
     static-analysis:
-        name: Static analysis (PHP ${{ matrix.php }})
+        name: Coding standards + static analysis (PHP ${{ matrix.php }})
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
@@ -41,8 +41,11 @@ jobs:
             - name: Install dependencies
               run: composer install --no-interaction --no-progress --prefer-dist
 
-            - name: PHPStan (level max + phpat)
-              run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=github
+            - name: TYPO3 coding standards
+              run: composer cs:check --no-interaction
+
+            - name: PHPStan (level 9 + phpat)
+              run: composer phpstan --no-interaction -- --no-progress --error-format=github
 
     unit-tests:
         name: Unit tests (PHP ${{ matrix.php }})

@@ -53,6 +53,11 @@ Failed login attempts stay on the page and display a human-friendly
 error (e.g. "Magic Auth is not enabled" when it is disabled in the
 WorkOS Dashboard).
 
+All state-changing frontend auth forms (sign-up, password sign-in,
+magic-auth send/verify, email verification submit/resend) require a
+request token and sanitize ``returnTo`` through
+``PathUtility::sanitizeReturnTo()`` before a TYPO3 session is created.
+
 ..  _features-sign-up:
 
 Sign-up form
@@ -281,6 +286,9 @@ translated message.
 All state-changing actions require a CSRF token issued per
 frontend session and scoped per plugin (mismatch shows
 ``account.flash.csrfInvalid``).
+``deleteFactor`` and ``revokeSession`` additionally verify that the
+posted WorkOS factor/session id belongs to the currently linked
+WorkOS user before calling the API.
 
 ..  _features-team-plugin:
 
@@ -311,10 +319,11 @@ for organization admins. The plugin is implemented by
 
 Every state-changing action verifies — via
 ``WorkosTeamService::assertMemberOfOrganization()`` — that the
-signed-in WorkOS user is an active member of the target organization
-before calling the SDK. Cross-tenant invite, revoke, or
-Admin-Portal-link mints via crafted POST bodies are rejected with
-``team.flash.forbidden``. Each form additionally carries a CSRF
+signed-in WorkOS user is an active organization admin/owner of the
+target organization before calling the SDK. Cross-tenant invite,
+revoke, or Admin-Portal-link mints via crafted POST bodies are
+rejected with ``team.flash.forbidden``; regular members cannot use
+the admin workflow either. Each form additionally carries a CSRF
 token tied to the frontend session.
 
 ..  _features-user-provisioning:

@@ -9,7 +9,7 @@
                         <f:translate key="workos_auth.messages:frontend.magicauth.codeSent" arguments="{email: magicAuthEmail}" />
                     </p>
                 </div>
-                <f:form action="magicAuthVerify" method="post">
+                <f:form action="magicAuthVerify" method="post" requestToken="{requestToken}">
                     <div style="margin-bottom:1rem;">
                         <input type="text" name="code" required autofocus autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000"
                                style="width:100%; padding:0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:1.5rem; text-align:center; letter-spacing:0.5em; box-sizing:border-box; font-family:monospace;" />

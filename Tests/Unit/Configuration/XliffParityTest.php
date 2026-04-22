@@ -22,11 +22,11 @@ final class XliffParityTest extends TestCase
     {
         $languageDir = dirname(__DIR__, 3) . '/Resources/Private/Language';
         return [
-            ['source' => $languageDir . '/locallang.xlf',          'target' => $languageDir . '/de.locallang.xlf'],
-            ['source' => $languageDir . '/locallang_db.xlf',       'target' => $languageDir . '/de.locallang_db.xlf'],
-            ['source' => $languageDir . '/locallang_mod.xlf',      'target' => $languageDir . '/de.locallang_mod.xlf'],
-            ['source' => $languageDir . '/locallang_mod_users.xlf','target' => $languageDir . '/de.locallang_mod_users.xlf'],
-            ['source' => $languageDir . '/locallang_mod_setup.xlf','target' => $languageDir . '/de.locallang_mod_setup.xlf'],
+            ['source' => $languageDir . '/locallang.xlf', 'target' => $languageDir . '/de.locallang.xlf'],
+            ['source' => $languageDir . '/locallang_db.xlf', 'target' => $languageDir . '/de.locallang_db.xlf'],
+            ['source' => $languageDir . '/locallang_mod.xlf', 'target' => $languageDir . '/de.locallang_mod.xlf'],
+            ['source' => $languageDir . '/locallang_mod_users.xlf', 'target' => $languageDir . '/de.locallang_mod_users.xlf'],
+            ['source' => $languageDir . '/locallang_mod_setup.xlf', 'target' => $languageDir . '/de.locallang_mod_setup.xlf'],
         ];
     }
 
@@ -43,7 +43,8 @@ final class XliffParityTest extends TestCase
         self::assertSame(
             [],
             array_values(array_diff($sourceKeys, $targetKeys)),
-            sprintf('German file %s is missing trans-units: %s',
+            sprintf(
+                'German file %s is missing trans-units: %s',
                 basename($target),
                 implode(', ', array_diff($sourceKeys, $targetKeys))
             )

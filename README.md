@@ -5,7 +5,7 @@ TYPO3 **frontend** and the TYPO3 **backend**. It supports the full WorkOS
 AuthKit feature set: email + password, passwordless magic auth, and
 social sign-in with Google, Microsoft, GitHub, and Apple.
 
-Requirements: TYPO3 `^14.0`, PHP `^8.2`. Current release: **0.25.0**.
+Requirements: TYPO3 `^14.0`, PHP `^8.2`. Current release: **0.26.0**.
 
 ---
 
@@ -225,22 +225,26 @@ The full list of keys is in
 - [WorkOS Dashboard](Documentation/WorkosDashboard.rst) – Redirect URIs and enabling auth methods
 - [Troubleshooting](Documentation/Troubleshooting.rst) – Common errors and fixes
 - [Changelog](Documentation/Changelog.rst) – Release notes
-- [Audit reports](Documentation/Reports/) – Workspaces, upgrade, conformance, security, testing, docs
+- [Current audit reports](docs/audits/) – v14 upgrade, conformance, security, testing, docs
 
 ## Security
 
 The extension takes an auth-first stance. Notable guarantees:
 
 - **Authorization on Team actions**: every Team plugin action
-  verifies the signed-in WorkOS user is an active member of the
-  organization the POST references before calling the SDK. Stops
-  cross-tenant invite / revoke / Admin-Portal-link mints via crafted
-  POST bodies.
+  verifies the signed-in WorkOS user is an active organization
+  admin/owner before calling the SDK. Stops cross-tenant invite /
+  revoke / Admin-Portal-link mints via crafted POST bodies and keeps
+  regular members out of admin features.
 - **CSRF tokens** are enforced on every state-changing action of the
   Account Center and Team plugins (password change, MFA, session
-  revoke, invitations, Admin Portal launch) and on the backend
-  User Management module's widget-token, join, and
+  revoke, invitations, Admin Portal launch), on every frontend auth
+  POST flow (password, sign-up, magic auth, email verification), and
+  on the backend User Management module's widget-token, join, and
   create-organization routes.
+- **Object ownership checks**: Account Center factor deletion and
+  session revocation first confirm that the posted WorkOS id belongs
+  to the currently linked WorkOS user before using the API key.
 - **Admin guard** is asserted inside the backend
   `UserManagementController` in addition to the module's
   `access => 'admin'` gate — defence in depth if the module is ever
@@ -259,14 +263,19 @@ The extension takes an auth-first stance. Notable guarantees:
   WorkOS backend modules are registered with `workspaces => 'live'`
   and only appear in the LIVE workspace.
 
-All third-sweep audit reports live under
-[`Documentation/Reports/`](Documentation/Reports/).
+The current audit snapshots live under [`docs/audits/`](docs/audits/).
 
 ## Quality
 
-- PHPStan **`level: max`** (PHPStan 2.x) with
-  `saschaegerer/phpstan-typo3 ^3.0` — run `composer phpstan`.
-- **83 unit tests** (166 assertions, 1 skipped pending a
+- PHPStan **level 9** (PHPStan 2.x) with
+  `saschaegerer/phpstan-typo3 ^3.0`, plus request-attribute and
+  container metadata tuned for TYPO3 14 — run `composer phpstan`.
+- Official TYPO3 coding standards via
+  `typo3/coding-standards ^0.8` and PHP-CS-Fixer 3.x — run
+  `composer cs:check` or `composer cs:fix`.
+- `composer ci` runs TYPO3 coding standards, PHPStan, unit tests,
+  and functional tests in one command.
+- **88 unit tests** (176 assertions, 1 skipped pending a
   `de.locallang_db.xlf` translation), including regressions for
   every security fix, a TCA contract guard on the identity table,
   and XLIFF parity between English and German — run

@@ -9,10 +9,10 @@ use WorkOS\Resource\AuthenticationFactor;
 use WorkOS\Resource\AuthenticationFactorsCreateRequestType;
 use WorkOS\Resource\AuthenticationFactorTotp;
 use WorkOS\Resource\Organization;
+use WorkOS\Resource\User;
 use WorkOS\Resource\UserAuthenticationFactorEnrollResponse;
 use WorkOS\Resource\UserOrganizationMembership;
 use WorkOS\Resource\UserSessionsListItem;
-use WorkOS\Resource\User;
 
 /**
  * High-level facade around the WorkOS UserManagement endpoints used by

@@ -6,11 +6,12 @@
 #
 # Usage:
 #   Build/Scripts/runTests.sh                    # unit tests
+#   Build/Scripts/runTests.sh -s cs              # TYPO3 coding standards
 #   Build/Scripts/runTests.sh -s phpstan         # static analysis
 #   Build/Scripts/runTests.sh -s unit            # PHPUnit unit suite
 #   Build/Scripts/runTests.sh -s functional      # PHPUnit functional suite
 #   Build/Scripts/runTests.sh -s mutation        # Infection mutation testing
-#   Build/Scripts/runTests.sh -s ci              # phpstan + unit (CI shorthand)
+#   Build/Scripts/runTests.sh -s ci              # cs + phpstan + unit + functional
 #
 # Environment variables picked up from typo3/testing-framework
 # (typo3DatabaseHost, typo3DatabaseName, ...) are forwarded to PHPUnit.
@@ -44,6 +45,10 @@ require_vendor() {
 }
 
 case "$suite" in
+    cs)
+        require_vendor php-cs-fixer
+        exec vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no
+        ;;
     phpstan)
         require_vendor phpstan
         exec vendor/bin/phpstan analyse --memory-limit=1G --no-progress
@@ -61,13 +66,16 @@ case "$suite" in
         exec vendor/bin/infection --threads=4 --no-progress
         ;;
     ci)
+        require_vendor php-cs-fixer
         require_vendor phpstan
         require_vendor phpunit
+        vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no
         vendor/bin/phpstan analyse --memory-limit=1G --no-progress
-        exec vendor/bin/phpunit -c Build/phpunit/UnitTests.xml
+        vendor/bin/phpunit -c Build/phpunit/UnitTests.xml
+        exec vendor/bin/phpunit -c Build/phpunit/FunctionalTests.xml
         ;;
     *)
-        echo "Unknown suite: $suite (valid: phpstan, unit, functional, mutation, ci)" >&2
+        echo "Unknown suite: $suite (valid: cs, phpstan, unit, functional, mutation, ci)" >&2
         exit 2
         ;;
 esac

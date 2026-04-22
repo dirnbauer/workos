@@ -471,7 +471,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
 
         return $requestTokenMiddleware->process(
             $request,
-            new class($handler) implements RequestHandlerInterface {
+            new class ($handler) implements RequestHandlerInterface {
                 /** @var \Closure(ServerRequestInterface): ResponseInterface */
                 private readonly \Closure $handler;
 

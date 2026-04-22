@@ -13,20 +13,61 @@ All notable changes to this extension are documented in this file.
 Unreleased
 ==========
 
-Patch-level fixes and polish on top of 0.25.0. Will be cut as
-0.25.1 (or 0.26.0 if scope grows).
+Nothing yet.
 
-..  rubric:: Fixes
+..  _changelog-0-26-0:
 
--   ``WorkosAuthenticationService::resolveCurrentWorkosUserId`` now
-    narrows ``$GLOBALS['BE_USER']`` defensively before reading the
-    user record, removing a PHPStan ``mixed`` warning.
+0.26.0 — TYPO3 14 tooling + auth hardening
+==========================================
+
+Follow-up to 0.25.0. Keeps the extension TYPO3-14-only, hardens the
+frontend auth/account flows, and aligns the quality tooling with the
+official TYPO3 coding standards package.
+
+..  rubric:: Security
+
+-   The Team plugin now requires an active WorkOS role slug of
+    ``admin`` or ``owner`` before invitation management and Admin
+    Portal actions are allowed. Plain organization membership is no
+    longer enough.
+-   ``AccountController::deleteFactorAction()`` and
+    ``revokeSessionAction()`` now verify that the submitted
+    WorkOS factor/session id belongs to the currently linked WorkOS
+    user before the API key is used.
+-   All frontend auth POST flows now require a request token:
+    password sign-in, native sign-up, magic-auth send/verify, email
+    verification submit, and email-verification resend.
+-   ``returnTo`` is sanitized consistently across the frontend auth
+    flows before TYPO3 creates the session, closing the remaining
+    open-redirect path in credential-based logins.
 -   Backend WorkOS sign-in restored after a TYPO3 v14 request-token
     regression: ``BackendWorkosAuthMiddleware`` now wraps every POST
     endpoint (password, magic-auth send/verify, email-verify
     send/resend) in a private ``RequestTokenMiddleware`` invocation
     and revokes the consumed signing-secret so each token is
     single-use.
+
+..  rubric:: Quality
+
+-   PHPStan now runs at ``level: 9`` with
+    ``saschaegerer/phpstan-typo3 ^3.0`` as the TYPO3-specific
+    framework plugin. Request-attribute mappings and the generated
+    TYPO3 container XML are configured explicitly in
+    :file:`phpstan.neon`.
+-   Official TYPO3 coding standards are now enforced via
+    ``typo3/coding-standards ^0.8``. The repository ships a generated
+    :file:`.php-cs-fixer.dist.php` and exposes ``composer cs:check`` /
+    ``composer cs:fix``.
+-   New ``composer ci`` script runs TYPO3 coding standards, PHPStan,
+    unit tests, and functional tests in one command.
+-   GitHub Actions static analysis now checks TYPO3 coding standards
+    in addition to PHPStan.
+
+..  rubric:: Fixes
+
+-   ``WorkosAuthenticationService::resolveCurrentWorkosUserId`` now
+    narrows ``$GLOBALS['BE_USER']`` defensively before reading the
+    user record, removing a PHPStan ``mixed`` warning.
 -   Backend identity rebinding: when a previously-linked WorkOS
     identity returns under a different email/locale, the existing
     ``be_users`` row is updated in place instead of producing a
@@ -63,7 +104,7 @@ Patch-level fixes and polish on top of 0.25.0. Will be cut as
 -   Additional unit coverage for ``WorkosConfiguration``
     normalization branches that Infection flagged. CI is opted into
     Node 24 to silence upcoming GitHub Actions runtime warnings.
--   Unit suite: 83 tests / 166 assertions / 1 skipped (the skipped
+-   Unit suite: 88 tests / 176 assertions / 1 skipped (the skipped
     test waits for a German ``de.locallang_db.xlf`` to land).
 
 ..  _changelog-0-25-0:

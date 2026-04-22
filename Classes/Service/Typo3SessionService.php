@@ -60,8 +60,7 @@ final class Typo3SessionService
         array $userRow,
         string $redirectUrl,
         ?string $workosUserId = null,
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         $backendUser = new BackendUserAuthentication();
         $backendUser->setLogger($this->logger);
         $GLOBALS['BE_USER'] = $backendUser;
@@ -126,8 +125,7 @@ final class Typo3SessionService
         string $context,
         string $statusField,
         array $userRow,
-    ): ServerRequestInterface
-    {
+    ): ServerRequestInterface {
         $parsedBody = $request->getParsedBody();
         $body = is_array($parsedBody) ? $parsedBody : [];
         $body[$statusField] = 'login';

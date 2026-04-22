@@ -13,8 +13,8 @@
                     <div class="alert alert-danger" style="font-size:0.9rem; margin-bottom:1rem; padding:0.75rem 1rem; border-radius:8px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b;">{authError}</div>
                 </f:if>
 
-                <f:form action="signUpSubmit" method="post" style="margin-bottom:0;">
-                    <f:form.hidden name="returnTo" value="/" />
+                <f:form action="signUpSubmit" method="post" style="margin-bottom:0;" requestToken="{requestToken}">
+                    <f:form.hidden name="returnTo" value="{returnToUrl}" />
 
                     <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
                         <div style="flex:1;">
@@ -57,7 +57,7 @@
 
                 <div style="text-align:center; margin-top:1.25rem; font-size:0.85rem; color:#6b7280;">
                     <f:translate key="workos_auth.messages:frontend.signup.hasAccount" />
-                    <f:link.action action="show" style="color:#4f46e5; font-weight:600; text-decoration:none;"><f:translate key="workos_auth.messages:frontend.signup.signIn" /></f:link.action>
+                    <f:link.action action="show" arguments="{returnTo: returnToUrl}" style="color:#4f46e5; font-weight:600; text-decoration:none;"><f:translate key="workos_auth.messages:frontend.signup.signIn" /></f:link.action>
                 </div>
             </div>
         </f:then>

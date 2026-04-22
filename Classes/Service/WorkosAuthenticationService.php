@@ -392,11 +392,11 @@ final class WorkosAuthenticationService
         if (!property_exists($exception, 'response')) {
             return null;
         }
-        $response = (static fn (\Throwable $e) => $e->{'response'} ?? null)($exception);
+        $response = (static fn(\Throwable $e) => $e->{'response'} ?? null)($exception);
         if (!is_object($response) || !property_exists($response, 'body')) {
             return null;
         }
-        $body = (static fn (object $r) => $r->{'body'} ?? null)($response);
+        $body = (static fn(object $r) => $r->{'body'} ?? null)($response);
         if (!is_string($body) || $body === '') {
             return null;
         }

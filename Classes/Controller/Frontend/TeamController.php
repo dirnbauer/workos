@@ -14,12 +14,12 @@ use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Security\RequestTokenService;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosTeamService;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\UserInvite;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
 
 /**
  * "WorkOS Team" plugin: lets a signed-in admin manage organization
@@ -83,7 +83,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         }
 
         $portalIntents = array_map(
-            fn (array $intent) => [
+            fn(array $intent) => [
                 'slug' => $intent['slug'],
                 'label' => $this->translate($intent['labelKey']),
             ],
@@ -99,7 +99,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
                 'id' => $selectedOrg->id,
                 'name' => $selectedOrg->name,
             ] : null,
-            'invitations' => array_map(fn (UserInvite $i) => $this->prepareInvitationRow($i), $invitations),
+            'invitations' => array_map(fn(UserInvite $i) => $this->prepareInvitationRow($i), $invitations),
             'portalIntents' => $portalIntents,
             'flash' => $this->consumeFlash(),
             'sectionErrors' => $sectionErrors,

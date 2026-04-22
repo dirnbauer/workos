@@ -22,15 +22,14 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Security\RequestTokenService;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosClientFactory;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\OrganizationMembershipStatus;
 use WorkOS\Resource\UserOrganizationMembership;
-use WorkOS\Resource\WidgetSessionTokenResponse;
 use WorkOS\Resource\WidgetSessionTokenScopes;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
 
 /**
  * Backend module that embeds the WorkOS "User Management" Widget.

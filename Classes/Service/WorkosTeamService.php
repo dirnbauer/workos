@@ -11,8 +11,8 @@ use WorkOS\Resource\Invitation;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\OrganizationMembershipStatus;
 use WorkOS\Resource\PortalLinkResponse;
-use WorkOS\Resource\UserOrganizationMembership;
 use WorkOS\Resource\UserInvite;
+use WorkOS\Resource\UserOrganizationMembership;
 
 /**
  * Backs the "WorkOS Team" frontend plugin: manages organization
@@ -22,6 +22,14 @@ use WorkOS\Resource\UserInvite;
  */
 final class WorkosTeamService
 {
+    /**
+     * The Team plugin exposes invitation + Admin Portal management
+     * features, so only organization-level admin roles may use it.
+     *
+     * @var list<string>
+     */
+    private const MANAGEMENT_ROLE_SLUGS = ['admin', 'owner'];
+
     /**
      * Intent => translation key. Order matters for the dashboard.
      *
@@ -64,7 +72,7 @@ final class WorkosTeamService
             if (!$membership instanceof UserOrganizationMembership) {
                 continue;
             }
-            if ($membership->status !== OrganizationMembershipStatus::Active) {
+            if (!$this->canManageMembership($membership)) {
                 continue;
             }
             $organizationId = $membership->organizationId;
@@ -106,7 +114,7 @@ final class WorkosTeamService
         );
         foreach ($response->data as $membership) {
             if ($membership instanceof UserOrganizationMembership
-                && $membership->status === OrganizationMembershipStatus::Active
+                && $this->canManageMembership($membership)
                 && $membership->userId === $workosUserId
                 && $membership->organizationId === $organizationId) {
                 return;
@@ -147,7 +155,7 @@ final class WorkosTeamService
         );
         return array_values(array_filter(
             $response->data,
-            static fn (mixed $invitation): bool => $invitation instanceof UserInvite
+            static fn(mixed $invitation): bool => $invitation instanceof UserInvite
         ));
     }
 
@@ -220,5 +228,15 @@ final class WorkosTeamService
         if ($this->configuration->getApiKey() === '' || $this->configuration->getClientId() === '') {
             throw new \RuntimeException('WorkOS API key and client ID must be configured.', 1744278000);
         }
+    }
+
+    private function canManageMembership(UserOrganizationMembership $membership): bool
+    {
+        if ($membership->status !== OrganizationMembershipStatus::Active) {
+            return false;
+        }
+
+        $roleSlug = strtolower(trim($membership->role->slug));
+        return $roleSlug !== '' && in_array($roleSlug, self::MANAGEMENT_ROLE_SLUGS, true);
     }
 }

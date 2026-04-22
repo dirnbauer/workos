@@ -3,8 +3,8 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://www.phpdoc.org/guides packages/guides-cli/resources/schema/guides.xsd">
     <project title="WorkOS Auth"
-             release="0.25.0"
-             version="0.25.0"
+             release="0.26.0"
+             version="0.26.0"
              copyright="since 2026 by webconsulting. Licensed under GPL-2.0-or-later."/>
 
     <extension class="\T3Docs\Typo3DocsTheme\DependencyInjection\Typo3DocsThemeExtension"

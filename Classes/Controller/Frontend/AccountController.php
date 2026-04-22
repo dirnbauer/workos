@@ -13,13 +13,13 @@ use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Security\RequestTokenService;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosAccountService;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\UserOrganizationMembership;
 use WorkOS\Resource\UserSessionsListItem;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
 
 /**
  * "WorkOS Account Center" plugin: lets a signed-in frontend user manage
@@ -87,8 +87,8 @@ final class AccountController extends ActionController implements LoggerAwareInt
         $this->view->assignMultiple([
             'workosUser' => $workosUser,
             'factors' => $factors,
-            'sessions' => array_map(fn ($s) => $this->prepareSessionRow($s), $sessions),
-            'memberships' => array_map(fn ($m) => $this->prepareMembershipRow($m), $memberships),
+            'sessions' => array_map(fn($s) => $this->prepareSessionRow($s), $sessions),
+            'memberships' => array_map(fn($m) => $this->prepareMembershipRow($m), $memberships),
             'pendingEnrollment' => $pendingEnrollment,
             'flash' => $flash,
             'sectionErrors' => $errors,
@@ -285,6 +285,11 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $this->redirect('dashboard');
         }
 
+        if (!$this->currentUserOwnsFactor($context['workosUserId'], $factorId)) {
+            $this->setFlash('danger', $this->translate('account.flash.forbidden'));
+            return $this->redirect('dashboard');
+        }
+
         try {
             $this->accountService->deleteFactor($factorId);
             $this->setFlash('success', $this->translate('account.flash.mfaRemoved'));
@@ -310,6 +315,11 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
         $sessionId = $body->trimmedString('sessionId');
         if ($sessionId === '') {
+            return $this->redirect('dashboard');
+        }
+
+        if (!$this->currentUserOwnsSession($context['workosUserId'], $sessionId)) {
+            $this->setFlash('danger', $this->translate('account.flash.forbidden'));
             return $this->redirect('dashboard');
         }
 
@@ -490,6 +500,28 @@ final class AccountController extends ActionController implements LoggerAwareInt
             $keyed[(string)$key] = $value;
         }
         return $keyed;
+    }
+
+    private function currentUserOwnsFactor(string $workosUserId, string $factorId): bool
+    {
+        foreach ($this->accountService->listTotpFactors($workosUserId) as $factor) {
+            if ($factor->id === $factorId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function currentUserOwnsSession(string $workosUserId, string $sessionId): bool
+    {
+        foreach ($this->accountService->listSessions($workosUserId, 100) as $session) {
+            if ($session->id === $sessionId) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function setFlash(string $type, string $message): void

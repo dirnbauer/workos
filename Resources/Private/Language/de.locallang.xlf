@@ -1034,6 +1034,10 @@
                 <source>Security check failed. Please reload the page and try again.</source>
                 <target>Sicherheitsprüfung fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.</target>
             </trans-unit>
+            <trans-unit id="account.flash.forbidden">
+                <source>You are not allowed to manage that WorkOS resource.</source>
+                <target>Sie dürfen diese WorkOS-Ressource nicht verwalten.</target>
+            </trans-unit>
             <trans-unit id="account.flash.profileUpdated">
                 <source>Profile updated.</source>
                 <target>Profil aktualisiert.</target>
