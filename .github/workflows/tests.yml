@@ -140,10 +140,9 @@ jobs:
               run: composer audit
 
     mutation:
-        name: Mutation testing
+        name: Mutation testing (informational)
         runs-on: ubuntu-latest
         needs: [unit-tests]
-        continue-on-error: true
         steps:
             - uses: actions/checkout@v4
 
@@ -158,6 +157,18 @@ jobs:
               run: composer install --no-interaction --no-progress --prefer-dist
 
             - name: Infection
+              id: infection
+              continue-on-error: true
               env:
                   STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
               run: Build/Scripts/runTests.sh -s mutation
+
+            - name: Infection summary
+              if: always()
+              run: |
+                  if [ -f var/log/infection-summary.log ]; then
+                      cat var/log/infection-summary.log
+                  fi
+                  if [ "${{ steps.infection.outcome }}" = "failure" ]; then
+                      echo "::warning::Mutation testing is informational and did not meet the configured MSI threshold."
+                  fi
