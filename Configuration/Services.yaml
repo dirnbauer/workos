@@ -25,6 +25,9 @@ services:
   WebConsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider:
     public: true
 
+  WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService:
+    public: true
+
   WebConsulting\WorkosAuth\Middleware\FrontendWorkosAuthMiddleware:
     public: true
 

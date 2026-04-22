@@ -7,15 +7,12 @@ namespace WebConsulting\WorkosAuth\Service;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Http\SetCookieService;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
-use WebConsulting\WorkosAuth\Authentication\WorkosBackendUserAuthentication;
-use WebConsulting\WorkosAuth\Authentication\WorkosFrontendUserAuthentication;
+use WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
 
 final class Typo3SessionService
 {
@@ -28,26 +25,31 @@ final class Typo3SessionService
      */
     public function createFrontendLoginResponse(ServerRequestInterface $request, array $userRow, string $redirectUrl): ResponseInterface
     {
-        $frontendUser = new WorkosFrontendUserAuthentication();
+        $frontendUser = new FrontendUserAuthentication();
         $frontendUser->setLogger($this->logger);
-        $frontendUser->signIn($userRow, $request);
+        $loginRequest = $this->createPendingLoginRequest($request, 'frontend', 'logintype', $userRow);
+        $frontendUser->start($loginRequest);
+        $authenticatedUser = $this->normalizeUserRow(is_array($frontendUser->user ?? null) ? $frontendUser->user : null);
+        $this->assertAuthenticatedUser($authenticatedUser, $userRow, 'frontend');
+        $frontendUser->fetchGroupData($loginRequest);
 
-        $cookie = SetCookieService::create(FrontendUserAuthentication::getCookieName(), 'FE')
-            ->setSessionCookie($frontendUser->getSession(), $this->getNormalizedParams($request));
-
-        return $this->appendCookie(new RedirectResponse($redirectUrl, 303), $cookie);
+        return $frontendUser->appendCookieToResponse(
+            new RedirectResponse($redirectUrl, 303),
+            $this->getNormalizedParams($request)
+        );
     }
 
     public function createFrontendLogoutResponse(ServerRequestInterface $request, string $redirectUrl): ResponseInterface
     {
-        $frontendUser = new WorkosFrontendUserAuthentication();
+        $frontendUser = new FrontendUserAuthentication();
         $frontendUser->setLogger($this->logger);
-        $frontendUser->signOut($request);
+        $frontendUser->start($request);
+        $frontendUser->logoff();
 
-        $cookie = SetCookieService::create(FrontendUserAuthentication::getCookieName(), 'FE')
-            ->removeCookie($this->getNormalizedParams($request));
-
-        return $this->appendCookie(new RedirectResponse($redirectUrl, 303), $cookie);
+        return $frontendUser->appendCookieToResponse(
+            new RedirectResponse($redirectUrl, 303),
+            $this->getNormalizedParams($request)
+        );
     }
 
     /**
@@ -60,15 +62,16 @@ final class Typo3SessionService
         ?string $workosUserId = null,
     ): ResponseInterface
     {
-        $backendUser = new WorkosBackendUserAuthentication();
+        $backendUser = new BackendUserAuthentication();
         $backendUser->setLogger($this->logger);
-        $backendUser->signIn($userRow, $request);
+        $loginRequest = $this->createPendingLoginRequest($request, 'backend', 'login_status', $userRow);
+        $backendUser->start($loginRequest);
+        $authenticatedUser = $this->normalizeUserRow(is_array($backendUser->user ?? null) ? $backendUser->user : null);
+        $this->assertAuthenticatedUser($authenticatedUser, $userRow, 'backend');
+        $backendUser->initializeBackendLogin($loginRequest);
         if (is_string($workosUserId) && $workosUserId !== '') {
             $backendUser->setAndSaveSessionData('workos_auth_user_id', $workosUserId);
         }
-
-        $cookie = SetCookieService::create(BackendUserAuthentication::getCookieName(), 'BE')
-            ->setSessionCookie($backendUser->getSession(), $this->getNormalizedParams($request));
 
         // TYPO3's BE session cookie defaults to SameSite=Strict. A WorkOS
         // flow routes the browser through workos.com / provider.com, so a
@@ -78,7 +81,10 @@ final class Typo3SessionService
         // Instead we render a tiny same-origin HTML page that scripts a
         // click on its own anchor, which starts a fresh same-site
         // navigation where Strict cookies are included as expected.
-        return $this->appendCookie($this->buildBackendBounceResponse($redirectUrl), $cookie);
+        return $backendUser->appendCookieToResponse(
+            $this->buildBackendBounceResponse($redirectUrl),
+            $this->getNormalizedParams($request)
+        );
     }
 
     private function buildBackendBounceResponse(string $redirectUrl): ResponseInterface
@@ -111,12 +117,67 @@ final class Typo3SessionService
         return NormalizedParams::createFromRequest($request);
     }
 
-    private function appendCookie(ResponseInterface $response, ?Cookie $cookie): ResponseInterface
+    /**
+     * @param array<string, mixed> $userRow
+     */
+    private function createPendingLoginRequest(
+        ServerRequestInterface $request,
+        string $context,
+        string $statusField,
+        array $userRow,
+    ): ServerRequestInterface
     {
-        if ($cookie === null) {
-            return $response;
+        $parsedBody = $request->getParsedBody();
+        $body = is_array($parsedBody) ? $parsedBody : [];
+        $body[$statusField] = 'login';
+
+        return $request
+            ->withParsedBody($body)
+            ->withAttribute(WorkosTypo3AuthenticationService::PENDING_LOGIN_ATTRIBUTE, [
+                'context' => $context,
+                'user' => $userRow,
+            ]);
+    }
+
+    /**
+     * @param array<string, mixed>|null $authenticatedUser
+     * @param array<string, mixed> $expectedUser
+     */
+    private function assertAuthenticatedUser(?array $authenticatedUser, array $expectedUser, string $context): void
+    {
+        $authenticatedUid = $this->intFromMixed($authenticatedUser['uid'] ?? null);
+        $expectedUid = $this->intFromMixed($expectedUser['uid'] ?? null);
+
+        if ($authenticatedUid > 0 && $authenticatedUid === $expectedUid) {
+            return;
         }
 
-        return $response->withAddedHeader('Set-Cookie', $cookie->__toString());
+        throw new \RuntimeException(sprintf(
+            'The TYPO3 %s authentication service did not authenticate the expected user.',
+            $context
+        ), 1745329201);
+    }
+
+    private function intFromMixed(mixed $value): int
+    {
+        return is_numeric($value) ? (int)$value : 0;
+    }
+
+    /**
+     * @param array<mixed, mixed>|null $userRow
+     * @return array<string, mixed>|null
+     */
+    private function normalizeUserRow(?array $userRow): ?array
+    {
+        if ($userRow === null) {
+            return null;
+        }
+
+        $narrowed = [];
+        foreach ($userRow as $key => $value) {
+            $narrowed[(string)$key] = $value;
+        }
+
+        return $narrowed;
     }
 }

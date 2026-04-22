@@ -5,6 +5,7 @@ declare(strict_types=1);
 defined('TYPO3') or die();
 
 use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 (static function (): void {
     /** @var array<string, mixed> $confVars */
@@ -59,6 +60,23 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
         ],
         [
             \WebConsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'invite,resendInvitation,revokeInvitation,launchPortal',
+        ]
+    );
+
+    ExtensionManagementUtility::addService(
+        'workos_auth',
+        'auth',
+        \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+        [
+            'title' => 'WorkOS TYPO3 Authentication Bridge',
+            'description' => 'Authenticates TYPO3 FE and BE users after a successful WorkOS login flow.',
+            'subtype' => 'getUserBE,getUserFE,authUserBE,authUserFE,processLoginDataBE,processLoginDataFE',
+            'available' => true,
+            'priority' => 85,
+            'quality' => 80,
+            'os' => '',
+            'exec' => '',
+            'className' => \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
         ]
     );
 
