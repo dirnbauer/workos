@@ -8,9 +8,12 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\RedirectResponse;
+use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
 
@@ -18,6 +21,7 @@ final class Typo3SessionService
 {
     public function __construct(
         private readonly LoggerInterface $logger,
+        private readonly Context $context,
     ) {}
 
     /**
@@ -28,7 +32,9 @@ final class Typo3SessionService
         $frontendUser = new FrontendUserAuthentication();
         $frontendUser->setLogger($this->logger);
         $loginRequest = $this->createPendingLoginRequest($request, 'frontend', 'logintype', $userRow);
-        $frontendUser->start($loginRequest);
+        $this->runWithCoreLoginRequestToken('core/user-auth/fe', static function () use ($frontendUser, $loginRequest): void {
+            $frontendUser->start($loginRequest);
+        });
         $authenticatedUser = $this->normalizeUserRow(is_array($frontendUser->user ?? null) ? $frontendUser->user : null);
         $this->assertAuthenticatedUser($authenticatedUser, $userRow, 'frontend');
         $frontendUser->fetchGroupData($loginRequest);
@@ -65,7 +71,9 @@ final class Typo3SessionService
         $backendUser->setLogger($this->logger);
         $GLOBALS['BE_USER'] = $backendUser;
         $loginRequest = $this->createPendingLoginRequest($request, 'backend', 'login_status', $userRow);
-        $backendUser->start($loginRequest);
+        $this->runWithCoreLoginRequestToken('core/user-auth/be', static function () use ($backendUser, $loginRequest): void {
+            $backendUser->start($loginRequest);
+        });
         $authenticatedUser = $this->normalizeUserRow(is_array($backendUser->user ?? null) ? $backendUser->user : null);
         $this->assertAuthenticatedUser($authenticatedUser, $userRow, 'backend');
         $backendUser->initializeBackendLogin($loginRequest);
@@ -178,5 +186,25 @@ final class Typo3SessionService
         }
 
         return $narrowed;
+    }
+
+    /**
+     * TYPO3 only treats the synthetic login as an active login when the
+     * current security aspect contains the matching core request-token scope.
+     * WorkOS frontend/backend flows validate their own tokens before they get
+     * here, so we temporarily swap in TYPO3's expected scope for the internal
+     * handoff to the auth service.
+     */
+    private function runWithCoreLoginRequestToken(string $scope, callable $callback): void
+    {
+        $securityAspect = SecurityAspect::provideIn($this->context);
+        $previousRequestToken = $securityAspect->getReceivedRequestToken();
+        $securityAspect->setReceivedRequestToken(RequestToken::create($scope));
+
+        try {
+            $callback();
+        } finally {
+            $securityAspect->setReceivedRequestToken($previousRequestToken);
+        }
     }
 }
