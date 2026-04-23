@@ -36,12 +36,16 @@ final class Typo3SessionServiceTest extends TestCase
         $this->invokeRunWithCoreLoginRequestToken(
             'core/user-auth/fe',
             function () use (&$scopes): void {
-                $scopes[] = $this->securityAspect->getReceivedRequestToken()?->scope;
+                $activeRequestToken = $this->securityAspect->getReceivedRequestToken();
+                self::assertInstanceOf(RequestToken::class, $activeRequestToken);
+                $scopes[] = $activeRequestToken->scope;
             }
         );
 
         self::assertSame(['core/user-auth/fe'], $scopes);
-        self::assertSame('workos/frontend/login', $this->securityAspect->getReceivedRequestToken()?->scope);
+        $restoredRequestToken = $this->securityAspect->getReceivedRequestToken();
+        self::assertInstanceOf(RequestToken::class, $restoredRequestToken);
+        self::assertSame('workos/frontend/login', $restoredRequestToken->scope);
     }
 
     public function testRunWithCoreLoginRequestTokenRestoresNullTokenAfterException(): void

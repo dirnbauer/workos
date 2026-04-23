@@ -86,10 +86,9 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
         self::assertSame(303, $response->getStatusCode());
         self::assertSame('/welcome', $response->getHeaderLine('Location'));
         self::assertNotSame('', $response->getHeaderLine('Set-Cookie'));
-        self::assertSame(
-            'workos/frontend/login',
-            SecurityAspect::provideIn($context)->getReceivedRequestToken()?->scope
-        );
+        $restoredFrontendToken = SecurityAspect::provideIn($context)->getReceivedRequestToken();
+        self::assertInstanceOf(RequestToken::class, $restoredFrontendToken);
+        self::assertSame('workos/frontend/login', $restoredFrontendToken->scope);
     }
 
     public function testCreateBackendLoginResponseUsesTypo3AuthService(): void
@@ -160,10 +159,9 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
         self::assertSame(200, $response->getStatusCode());
         self::assertNotSame('', $response->getHeaderLine('Set-Cookie'));
         self::assertStringContainsString('Continue to the TYPO3 backend', (string)$response->getBody());
-        self::assertSame(
-            'workos/frontend/login',
-            SecurityAspect::provideIn($context)->getReceivedRequestToken()?->scope
-        );
+        $restoredBackendToken = SecurityAspect::provideIn($context)->getReceivedRequestToken();
+        self::assertInstanceOf(RequestToken::class, $restoredBackendToken);
+        self::assertSame('workos/frontend/login', $restoredBackendToken->scope);
     }
 
     private function createRequest(string $uri): ServerRequestInterface
