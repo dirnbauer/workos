@@ -431,8 +431,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         ServerRequestInterface $request,
         string $backendBasePath,
         EmailVerificationRequiredException $exception
-    ): ResponseInterface
-    {
+    ): ResponseInterface {
         $issuedState = $this->stateService->issue(
             $request,
             self::EMAIL_VERIFICATION_CONTEXT,
