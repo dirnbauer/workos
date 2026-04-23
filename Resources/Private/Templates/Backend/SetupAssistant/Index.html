@@ -196,6 +196,23 @@
                     </small>
                 </div>
 
+                <f:if condition="{formValues.backendEnabled}">
+                    <f:if condition="{backendCookieSameSiteCompatible}">
+                        <f:then>
+                            <div class="alert alert-success mb-3">
+                                <f:translate key="workos_auth.messages:setup.backend.cookieSameSiteCompatible"
+                                             arguments="{0: backendCookieSameSite}" />
+                            </div>
+                        </f:then>
+                        <f:else>
+                            <div class="alert alert-warning mb-3">
+                                <f:translate key="workos_auth.messages:setup.backend.cookieSameSiteUnsupported"
+                                             arguments="{0: backendCookieSameSite}" />
+                            </div>
+                        </f:else>
+                    </f:if>
+                </f:if>
+
                 <div class="form-check mb-3">
                     <input type="hidden" name="configuration[backendAutoCreateUsers]" value="0">
                     <input id="backendAutoCreateUsers" class="form-check-input" type="checkbox" name="configuration[backendAutoCreateUsers]" value="1" <f:if condition="{formValues.backendAutoCreateUsers}">checked</f:if>>

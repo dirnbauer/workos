@@ -174,6 +174,13 @@ final class WorkosConfiguration
             $errors['backendDefaultGroupUids'] = $this->translate('validation.backendGroupUidsRequired');
         }
 
+        if ($backendEnabled && !$this->isBackendCookieSameSiteCompatible()) {
+            $errors['backendCookieSameSite'] = $this->translate(
+                'validation.backendCookieSameSiteUnsupported',
+                [$this->getBackendCookieSameSite()]
+            );
+        }
+
         return $errors;
     }
 
@@ -268,8 +275,23 @@ final class WorkosConfiguration
             return false;
         }
 
-        return !$configuration['backendAutoCreateUsers']
-            || trim($configuration['backendDefaultGroupUids']) !== '';
+        return $this->isBackendCookieSameSiteCompatible()
+            && (!$configuration['backendAutoCreateUsers']
+            || trim($configuration['backendDefaultGroupUids']) !== '');
+    }
+
+    public function getBackendCookieSameSite(): string
+    {
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $stringKeyedConfVars = is_array($confVars) ? $confVars : [];
+        $beConfiguration = is_array($stringKeyedConfVars['BE'] ?? null) ? $stringKeyedConfVars['BE'] : [];
+        $value = strtolower(trim(self::toString($beConfiguration['cookieSameSite'] ?? 'strict')));
+        return $value !== '' ? $value : 'strict';
+    }
+
+    public function isBackendCookieSameSiteCompatible(): bool
+    {
+        return in_array($this->getBackendCookieSameSite(), ['lax', 'none'], true);
     }
 
     public function shouldAutoCreateBackendUsers(): bool

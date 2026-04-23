@@ -63,43 +63,28 @@ final class StateService
      */
     public function consume(ServerRequestInterface $request, string $expectedContext, string $token): array
     {
+        return $this->resolve($request, $expectedContext, $token, true);
+    }
+
+    /**
+     * Resolve a state token without consuming it so follow-up screens can
+     * re-render the flow while keeping server-side integrity guarantees.
+     *
+     * @return array<string, mixed>
+     */
+    public function peek(ServerRequestInterface $request, string $expectedContext, string $token): array
+    {
+        return $this->resolve($request, $expectedContext, $token, false);
+    }
+
+    public function remove(string $token): void
+    {
+        $token = trim($token);
         if ($token === '') {
-            throw new \RuntimeException('Invalid WorkOS state token format.', 1744277401);
+            return;
         }
 
-        $cache = $this->cacheManager->getCache(self::CACHE_IDENTIFIER);
-        $entry = $cache->get($token);
-        if (!is_array($entry)) {
-            throw new \RuntimeException('The WorkOS state token could not be verified.', 1744277402);
-        }
-
-        $context = $entry['context'] ?? null;
-        $bindingHash = $entry['bindingHash'] ?? null;
-        $payload = $entry['payload'] ?? null;
-
-        if (!is_string($context) || !is_string($bindingHash) || !is_array($payload)) {
-            throw new \RuntimeException('The WorkOS state payload is invalid.', 1744277403);
-        }
-
-        if ($context !== $expectedContext) {
-            throw new \RuntimeException('The WorkOS callback context did not match the login flow.', 1744277407);
-        }
-
-        $bindingCookieName = self::COOKIE_PREFIX . $expectedContext;
-        $receivedBindingCookieValue = $request->getCookieParams()[$bindingCookieName] ?? null;
-        $receivedBindingSecret = is_scalar($receivedBindingCookieValue) ? trim((string)$receivedBindingCookieValue) : '';
-        if ($receivedBindingSecret === '' || !hash_equals($bindingHash, hash('sha256', $receivedBindingSecret))) {
-            throw new \RuntimeException('The WorkOS state token has expired.', 1744277404);
-        }
-
-        $cache->remove($token);
-
-        $narrowed = [];
-        foreach ($payload as $key => $value) {
-            $narrowed[(string)$key] = $value;
-        }
-
-        return $narrowed;
+        $this->cacheManager->getCache(self::CACHE_IDENTIFIER)->remove($token);
     }
 
     public function extractTokenFromCallbackState(string $rawState): string
@@ -129,5 +114,51 @@ final class StateService
             return '/';
         }
         return '/' . trim($cookiePath, '/');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolve(ServerRequestInterface $request, string $expectedContext, string $token, bool $consume): array
+    {
+        if ($token === '') {
+            throw new \RuntimeException('Invalid WorkOS state token format.', 1744277401);
+        }
+
+        $cache = $this->cacheManager->getCache(self::CACHE_IDENTIFIER);
+        $entry = $cache->get($token);
+        if (!is_array($entry)) {
+            throw new \RuntimeException('The WorkOS state token could not be verified.', 1744277402);
+        }
+
+        $context = $entry['context'] ?? null;
+        $bindingHash = $entry['bindingHash'] ?? null;
+        $payload = $entry['payload'] ?? null;
+
+        if (!is_string($context) || !is_string($bindingHash) || !is_array($payload)) {
+            throw new \RuntimeException('The WorkOS state payload is invalid.', 1744277403);
+        }
+
+        if ($context !== $expectedContext) {
+            throw new \RuntimeException('The WorkOS callback context did not match the login flow.', 1744277407);
+        }
+
+        $bindingCookieName = self::COOKIE_PREFIX . $expectedContext;
+        $receivedBindingCookieValue = $request->getCookieParams()[$bindingCookieName] ?? null;
+        $receivedBindingSecret = is_scalar($receivedBindingCookieValue) ? trim((string)$receivedBindingCookieValue) : '';
+        if ($receivedBindingSecret === '' || !hash_equals($bindingHash, hash('sha256', $receivedBindingSecret))) {
+            throw new \RuntimeException('The WorkOS state token has expired.', 1744277404);
+        }
+
+        if ($consume) {
+            $cache->remove($token);
+        }
+
+        $narrowed = [];
+        foreach ($payload as $key => $value) {
+            $narrowed[(string)$key] = $value;
+        }
+
+        return $narrowed;
     }
 }

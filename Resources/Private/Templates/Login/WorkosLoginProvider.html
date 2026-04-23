@@ -256,20 +256,16 @@
                                            class="form-control"
                                            required="required" />
                                 </div>
-                                <input type="hidden" id="workos-email-pending-token" name="pendingToken" value="{emailVerificationPendingToken}" />
-                                <input type="hidden" id="workos-email-verify-email" name="email" value="{emailVerificationEmail}" />
-                                <input type="hidden" id="workos-email-verify-userid" name="userId" value="{emailVerificationUserId}" />
+                                <input type="hidden" name="emailVerificationState" value="{emailVerificationState}" />
                                 <button type="button"
                                         id="workos-email-verify-submit"
                                         class="btn btn-login workos-primary-btn">
                                     <f:translate key="workos_auth.messages:backend.login.verifyEmail.submit" />
                                 </button>
-                                <f:if condition="{emailVerificationUserId}">
+                                <f:if condition="{emailVerificationCanResend}">
                                     <form action="{emailVerifyResendUrl}" method="post" style="margin:0 0 0.5rem;">
                                         <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
-                                        <input type="hidden" name="pendingToken" value="{emailVerificationPendingToken}" />
-                                        <input type="hidden" name="email" value="{emailVerificationEmail}" />
-                                        <input type="hidden" name="userId" value="{emailVerificationUserId}" />
+                                        <input type="hidden" name="emailVerificationState" value="{emailVerificationState}" />
                                         <button type="submit" class="btn workos-secondary-btn">
                                             <f:translate key="workos_auth.messages:backend.login.verifyEmail.resend" />
                                         </button>
@@ -298,7 +294,7 @@
                                            class="form-control"
                                            required="required" />
                                 </div>
-                                <input type="hidden" id="workos-magic-userid" name="userId" value="{magicAuthUserId}" />
+                                <input type="hidden" name="magicAuthState" value="{magicAuthState}" />
                                 <button type="button"
                                         id="workos-magic-verify-submit"
                                         class="btn btn-login workos-primary-btn">
@@ -368,7 +364,15 @@
                     </f:then>
                     <f:else>
                         <div class="alert alert-warning">
-                            <f:translate key="workos_auth.messages:backend.login.notConfigured" />
+                            <f:if condition="{backendCookieSameSiteCompatible}">
+                                <f:then>
+                                    <f:translate key="workos_auth.messages:backend.login.notConfigured" />
+                                </f:then>
+                                <f:else>
+                                    <f:translate key="workos_auth.messages:backend.login.cookieSameSiteUnsupported"
+                                                 arguments="{0: backendCookieSameSite}" />
+                                </f:else>
+                            </f:if>
                             <a href="{setupUrl}"><f:translate key="workos_auth.messages:backend.login.openSetup" /></a>.
                         </div>
                     </f:else>

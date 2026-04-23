@@ -12,10 +12,13 @@ use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 final class WorkosConfigurationTest extends TestCase
 {
     private WorkosConfiguration $configuration;
+    private string|null $originalBackendCookieSameSite;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->originalBackendCookieSameSite = $this->readBackendCookieSameSite();
 
         $extensionConfiguration = self::createStub(ExtensionConfiguration::class);
         $extensionConfiguration->method('get')->willReturn([]);
@@ -24,6 +27,17 @@ final class WorkosConfigurationTest extends TestCase
             $extensionConfiguration,
             self::createStub(LanguageServiceFactory::class),
         );
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->originalBackendCookieSameSite === null) {
+            $this->removeBackendCookieSameSite();
+        } else {
+            $this->writeBackendCookieSameSite($this->originalBackendCookieSameSite);
+        }
+
+        parent::tearDown();
     }
 
     public function testSupportedSocialProvidersContainsExpectedSet(): void
@@ -96,5 +110,76 @@ final class WorkosConfigurationTest extends TestCase
         ]);
 
         self::assertArrayHasKey('cookiePassword', $errors);
+    }
+
+    public function testBackendCookieSameSiteCompatibilityRequiresLaxOrNone(): void
+    {
+        $this->writeBackendCookieSameSite('strict');
+        self::assertFalse($this->configuration->isBackendCookieSameSiteCompatible());
+
+        $this->writeBackendCookieSameSite('lax');
+        self::assertTrue($this->configuration->isBackendCookieSameSiteCompatible());
+
+        $this->writeBackendCookieSameSite('none');
+        self::assertTrue($this->configuration->isBackendCookieSameSiteCompatible());
+    }
+
+    public function testValidateReportsBackendCookieSameSiteMismatch(): void
+    {
+        $this->writeBackendCookieSameSite('strict');
+
+        $errors = $this->configuration->validate([
+            'frontendEnabled' => false,
+            'backendEnabled' => true,
+            'apiKey' => 'sk_test_abc',
+            'clientId' => 'client_abc',
+            'cookiePassword' => str_repeat('x', 32),
+            'backendAutoCreateUsers' => false,
+        ]);
+
+        self::assertArrayHasKey('backendCookieSameSite', $errors);
+    }
+
+    private function readBackendCookieSameSite(): string|null
+    {
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        if (!is_array($confVars)) {
+            return null;
+        }
+
+        $beConfiguration = $confVars['BE'] ?? null;
+        if (!is_array($beConfiguration)) {
+            return null;
+        }
+
+        $cookieSameSite = $beConfiguration['cookieSameSite'] ?? null;
+        return is_string($cookieSameSite) ? $cookieSameSite : null;
+    }
+
+    private function writeBackendCookieSameSite(string $value): void
+    {
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $stringKeyedConfVars = is_array($confVars) ? $confVars : [];
+        $beConfiguration = is_array($stringKeyedConfVars['BE'] ?? null) ? $stringKeyedConfVars['BE'] : [];
+        $beConfiguration['cookieSameSite'] = $value;
+        $stringKeyedConfVars['BE'] = $beConfiguration;
+        $GLOBALS['TYPO3_CONF_VARS'] = $stringKeyedConfVars;
+    }
+
+    private function removeBackendCookieSameSite(): void
+    {
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        if (!is_array($confVars)) {
+            return;
+        }
+
+        $beConfiguration = $confVars['BE'] ?? null;
+        if (!is_array($beConfiguration)) {
+            return;
+        }
+
+        unset($beConfiguration['cookieSameSite']);
+        $confVars['BE'] = $beConfiguration;
+        $GLOBALS['TYPO3_CONF_VARS'] = $confVars;
     }
 }

@@ -43,6 +43,7 @@ final class SetupAssistantController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $formValues = $this->configuration->all();
+        $errors = $this->configuration->validate($formValues);
 
         $backendBasePath = PathUtility::guessBackendBasePath($request->getUri()->getPath());
         $backendUrls = [
@@ -87,6 +88,7 @@ final class SetupAssistantController
 
         $moduleTemplate->assignMultiple([
             'formValues' => $formValues,
+            'errors' => $errors,
             'requestTokenName' => \TYPO3\CMS\Core\Security\RequestToken::PARAM_NAME,
             'requestTokenValue' => $this->requestTokenService->createHashed(self::REQUEST_TOKEN_SCOPE),
             'saveUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_setup.save'),
@@ -94,6 +96,8 @@ final class SetupAssistantController
             'frontendSites' => $frontendSites,
             'hasCredentials' => trim((string)$formValues['apiKey']) !== '' && trim((string)$formValues['clientId']) !== '',
             'cookiePasswordValid' => mb_strlen(trim((string)$formValues['cookiePassword'])) >= 32,
+            'backendCookieSameSite' => $this->configuration->getBackendCookieSameSite(),
+            'backendCookieSameSiteCompatible' => $this->configuration->isBackendCookieSameSiteCompatible(),
         ]);
         $moduleTemplate->setTitle($this->translate('setup.title'));
         $this->pageRenderer->loadJavaScriptModule('@webconsulting/workos-auth/copy-urls.js');

@@ -271,6 +271,9 @@
             <trans-unit id="backend.login.notConfigured">
                 <source>WorkOS backend login is enabled, but not configured.</source>
             </trans-unit>
+            <trans-unit id="backend.login.cookieSameSiteUnsupported">
+                <source>WorkOS backend login requires TYPO3 backend cookies to use SameSite "lax" or "none". The current TYPO3 core value is "%s".</source>
+            </trans-unit>
             <trans-unit id="backend.login.openSetup">
                 <source>Open the setup assistant</source>
             </trans-unit>
@@ -613,6 +616,9 @@
             <trans-unit id="error.backendLoginDisabled">
                 <source>Backend WorkOS login is disabled.</source>
             </trans-unit>
+            <trans-unit id="error.backendLoginNotSupported">
+                <source>Backend WorkOS login requires TYPO3 backend cookies to use SameSite "lax" or "none". Update TYPO3 core BE.cookieSameSite and try again.</source>
+            </trans-unit>
             <trans-unit id="error.frontendLoginDisabled">
                 <source>Frontend WorkOS login is disabled.</source>
             </trans-unit>
@@ -646,6 +652,15 @@
             </trans-unit>
             <trans-unit id="validation.backendGroupUidsRequired">
                 <source>Automatic backend user creation needs at least one backend group UID.</source>
+            </trans-unit>
+            <trans-unit id="validation.backendCookieSameSiteUnsupported">
+                <source>Backend WorkOS login requires TYPO3 backend cookies to use SameSite "lax" or "none". The current TYPO3 core value is "%s".</source>
+            </trans-unit>
+            <trans-unit id="setup.backend.cookieSameSiteCompatible">
+                <source>TYPO3 core backend cookies are configured with SameSite "%s", which is compatible with the WorkOS redirect flow.</source>
+            </trans-unit>
+            <trans-unit id="setup.backend.cookieSameSiteUnsupported">
+                <source>TYPO3 core backend cookies currently use SameSite "%s". Change BE.cookieSameSite to "lax" or "none" before enabling WorkOS backend login, otherwise TYPO3 will not send the backend session cookie after the external redirect.</source>
             </trans-unit>
 
             <!-- Account Center plugin -->

@@ -18,12 +18,17 @@ use TYPO3\CMS\Core\View\ViewInterface;
 use TYPO3\CMS\Fluid\View\FluidViewAdapter;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Security\MixedCaster;
+use WebConsulting\WorkosAuth\Security\StateService;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 
 final class WorkosBackendLoginProvider implements LoginProviderInterface
 {
+    private const EMAIL_VERIFICATION_CONTEXT = 'backend_email_verification';
+    private const MAGIC_AUTH_CONTEXT = 'backend_magic_auth';
+
     public function __construct(
         private readonly WorkosConfiguration $configuration,
+        private readonly StateService $stateService,
         private readonly LanguageServiceFactory $languageServiceFactory,
         private readonly PageRenderer $pageRenderer,
     ) {}
@@ -52,7 +57,6 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         $queryParams = $request->getQueryParams();
         $authError = MixedCaster::string($queryParams['workosAuthError'] ?? null);
         $authNotice = MixedCaster::string($queryParams['workosAuthNotice'] ?? null);
-        $authErrorDetails = $this->buildAuthErrorDetails($authError, $backendBasePath);
 
         $passwordAuthUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/password-auth');
         $magicSendUrl = PathUtility::joinBaseAndPath($backendBasePath, '/workos-auth/backend/magic-auth-send');
@@ -62,48 +66,43 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
 
         $magicAuthState = trim(MixedCaster::string($queryParams['magicAuthState'] ?? null));
         $magicAuthEmail = '';
-        $magicAuthUserId = '';
         if ($magicAuthState !== '') {
-            $decoded = base64_decode($magicAuthState, true);
-            if ($decoded !== false) {
-                try {
-                    $payload = json_decode($decoded, true, 8, JSON_THROW_ON_ERROR);
-                    if (is_array($payload)) {
-                        $magicAuthEmail = self::stringFromMixed($payload['email'] ?? null);
-                        $magicAuthUserId = self::stringFromMixed($payload['userId'] ?? null);
-                    }
-                } catch (\JsonException) {
+            try {
+                $payload = $this->stateService->peek($request, self::MAGIC_AUTH_CONTEXT, $magicAuthState);
+                $magicAuthEmail = self::stringFromMixed($payload['email'] ?? null);
+                if ($magicAuthEmail === '') {
                     $magicAuthState = '';
                 }
-            } else {
+            } catch (\RuntimeException) {
                 $magicAuthState = '';
+                if ($authError === '') {
+                    $authError = $this->translate('error.invalidMagicAuthSession');
+                }
             }
         }
 
         $emailVerificationState = trim(MixedCaster::string($queryParams['emailVerificationState'] ?? null));
         $emailVerificationEmail = '';
-        $emailVerificationUserId = '';
-        $emailVerificationPendingToken = '';
+        $emailVerificationCanResend = false;
         if ($emailVerificationState !== '') {
-            $decoded = base64_decode($emailVerificationState, true);
-            if ($decoded !== false) {
-                try {
-                    $payload = json_decode($decoded, true, 8, JSON_THROW_ON_ERROR);
-                    if (is_array($payload)) {
-                        $emailVerificationEmail = self::stringFromMixed($payload['email'] ?? null);
-                        $emailVerificationUserId = self::stringFromMixed($payload['userId'] ?? null);
-                        $emailVerificationPendingToken = self::stringFromMixed($payload['pendingToken'] ?? null);
-                    }
-                } catch (\JsonException) {
+            try {
+                $payload = $this->stateService->peek($request, self::EMAIL_VERIFICATION_CONTEXT, $emailVerificationState);
+                $emailVerificationEmail = self::stringFromMixed($payload['email'] ?? null);
+                $pendingToken = self::stringFromMixed($payload['pendingToken'] ?? null);
+                $emailVerificationCanResend = self::stringFromMixed($payload['userId'] ?? null) !== '';
+                if ($emailVerificationEmail === '' || $pendingToken === '') {
                     $emailVerificationState = '';
+                    $emailVerificationCanResend = false;
                 }
-            } else {
+            } catch (\RuntimeException) {
                 $emailVerificationState = '';
+                $emailVerificationCanResend = false;
+                if ($authError === '') {
+                    $authError = $this->translate('error.verificationSessionExpired');
+                }
             }
         }
-        if ($emailVerificationPendingToken === '') {
-            $emailVerificationState = '';
-        }
+        $authErrorDetails = $this->buildAuthErrorDetails($authError, $backendBasePath);
 
         $socialProviders = [
             ['key' => 'GoogleOAuth', 'label' => $this->translate('provider.google'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GoogleOAuth'])],
@@ -128,17 +127,17 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             'magicVerifyUrl' => $magicVerifyUrl,
             'magicAuthState' => $magicAuthState,
             'magicAuthEmail' => $magicAuthEmail,
-            'magicAuthUserId' => $magicAuthUserId,
             'emailVerifyUrl' => $emailVerifyUrl,
             'emailVerifyResendUrl' => $emailVerifyResendUrl,
             'emailVerificationState' => $emailVerificationState,
             'emailVerificationEmail' => $emailVerificationEmail,
-            'emailVerificationUserId' => $emailVerificationUserId,
-            'emailVerificationPendingToken' => $emailVerificationPendingToken,
+            'emailVerificationCanResend' => $emailVerificationCanResend,
             'socialProviders' => $socialProviders,
             'authError' => $authError,
             'authErrorDetails' => $authErrorDetails,
             'authNotice' => $authNotice,
+            'backendCookieSameSite' => $this->configuration->getBackendCookieSameSite(),
+            'backendCookieSameSiteCompatible' => $this->configuration->isBackendCookieSameSiteCompatible(),
             'requestTokenName' => RequestToken::PARAM_NAME,
             'requestTokenValue' => $this->provideRequestTokenJwt(),
         ]);

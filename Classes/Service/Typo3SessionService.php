@@ -8,12 +8,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Context\SecurityAspect;
-use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
 
@@ -21,7 +17,6 @@ final class Typo3SessionService
 {
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly Context $context,
     ) {}
 
     /**
@@ -32,9 +27,7 @@ final class Typo3SessionService
         $frontendUser = new FrontendUserAuthentication();
         $frontendUser->setLogger($this->logger);
         $loginRequest = $this->createPendingLoginRequest($request, 'frontend', 'logintype', $userRow);
-        $this->runWithCoreLoginRequestToken('core/user-auth/fe', static function () use ($frontendUser, $loginRequest): void {
-            $frontendUser->start($loginRequest);
-        });
+        $frontendUser->start($loginRequest);
         $authenticatedUser = $this->normalizeUserRow(is_array($frontendUser->user ?? null) ? $frontendUser->user : null);
         $this->assertAuthenticatedUser($authenticatedUser, $userRow, 'frontend');
         $frontendUser->fetchGroupData($loginRequest);
@@ -71,9 +64,7 @@ final class Typo3SessionService
         $backendUser->setLogger($this->logger);
         $GLOBALS['BE_USER'] = $backendUser;
         $loginRequest = $this->createPendingLoginRequest($request, 'backend', 'login_status', $userRow);
-        $this->runWithCoreLoginRequestToken('core/user-auth/be', static function () use ($backendUser, $loginRequest): void {
-            $backendUser->start($loginRequest);
-        });
+        $backendUser->start($loginRequest);
         $authenticatedUser = $this->normalizeUserRow(is_array($backendUser->user ?? null) ? $backendUser->user : null);
         $this->assertAuthenticatedUser($authenticatedUser, $userRow, 'backend');
         $backendUser->initializeBackendLogin($loginRequest);
@@ -81,38 +72,10 @@ final class Typo3SessionService
             $backendUser->setAndSaveSessionData('workos_auth_user_id', $workosUserId);
         }
 
-        // TYPO3's BE session cookie defaults to SameSite=Strict. A WorkOS
-        // flow routes the browser through workos.com / provider.com, so a
-        // direct 303 back to /typo3/main would be treated by Chrome as a
-        // continuation of a cross-site top-level navigation chain, and the
-        // just-set Strict cookie would not be sent on that follow-up GET.
-        // Instead we render a tiny same-origin HTML page that scripts a
-        // click on its own anchor, which starts a fresh same-site
-        // navigation where Strict cookies are included as expected.
         return $backendUser->appendCookieToResponse(
-            $this->buildBackendBounceResponse($redirectUrl),
+            new RedirectResponse($redirectUrl, 303),
             $this->getNormalizedParams($request)
         );
-    }
-
-    private function buildBackendBounceResponse(string $redirectUrl): ResponseInterface
-    {
-        $escapedUrl = htmlspecialchars($redirectUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-
-        $html = '<!DOCTYPE html>'
-            . '<html lang="en">'
-            . '<head>'
-            . '<meta charset="utf-8">'
-            . '<meta http-equiv="refresh" content="0;url=' . $escapedUrl . '">'
-            . '<title>Signing in…</title>'
-            . '</head>'
-            . '<body>'
-            . '<p><a id="workos-continue" href="' . $escapedUrl . '">Continue to the TYPO3 backend</a></p>'
-            . '<script>document.getElementById("workos-continue").click();</script>'
-            . '</body>'
-            . '</html>';
-
-        return new HtmlResponse($html);
     }
 
     private function getNormalizedParams(ServerRequestInterface $request): NormalizedParams
@@ -186,25 +149,5 @@ final class Typo3SessionService
         }
 
         return $narrowed;
-    }
-
-    /**
-     * TYPO3 only treats the synthetic login as an active login when the
-     * current security aspect contains the matching core request-token scope.
-     * WorkOS frontend/backend flows validate their own tokens before they get
-     * here, so we temporarily swap in TYPO3's expected scope for the internal
-     * handoff to the auth service.
-     */
-    private function runWithCoreLoginRequestToken(string $scope, callable $callback): void
-    {
-        $securityAspect = SecurityAspect::provideIn($this->context);
-        $previousRequestToken = $securityAspect->getReceivedRequestToken();
-        $securityAspect->setReceivedRequestToken(RequestToken::create($scope));
-
-        try {
-            $callback();
-        } finally {
-            $securityAspect->setReceivedRequestToken($previousRequestToken);
-        }
     }
 }

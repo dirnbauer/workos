@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace WebConsulting\WorkosAuth\Tests\Functional\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
-use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
 
@@ -53,44 +50,6 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
         self::assertNotSame('', $response->getHeaderLine('Set-Cookie'));
     }
 
-    public function testCreateFrontendLoginResponseOverridesNonCoreRequestTokenScope(): void
-    {
-        $this->connectionPool()->getConnectionForTable('fe_users')->insert(
-            'fe_users',
-            [
-                'pid' => 1,
-                'username' => 'frontend-workos-token',
-                'password' => 'unused',
-                'email' => 'frontend-token@example.com',
-                'disable' => 0,
-                'deleted' => 0,
-            ]
-        );
-
-        $userRow = $this->fetchUserRow('fe_users', (int)$this->connectionPool()->getConnectionForTable('fe_users')->lastInsertId());
-        $service = $this->get(Typo3SessionService::class);
-        self::assertInstanceOf(Typo3SessionService::class, $service);
-
-        $context = $this->get(Context::class);
-        self::assertInstanceOf(Context::class, $context);
-        SecurityAspect::provideIn($context)->setReceivedRequestToken(
-            RequestToken::create('workos/frontend/login')
-        );
-
-        $response = $service->createFrontendLoginResponse(
-            $this->createRequest('https://app.local/workos-auth/frontend/callback'),
-            $userRow,
-            '/welcome'
-        );
-
-        self::assertSame(303, $response->getStatusCode());
-        self::assertSame('/welcome', $response->getHeaderLine('Location'));
-        self::assertNotSame('', $response->getHeaderLine('Set-Cookie'));
-        $restoredFrontendToken = SecurityAspect::provideIn($context)->getReceivedRequestToken();
-        self::assertInstanceOf(RequestToken::class, $restoredFrontendToken);
-        self::assertSame('workos/frontend/login', $restoredFrontendToken->scope);
-    }
-
     public function testCreateBackendLoginResponseUsesTypo3AuthService(): void
     {
         $this->connectionPool()->getConnectionForTable('be_users')->insert(
@@ -118,50 +77,9 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
             'user_123'
         );
 
-        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(303, $response->getStatusCode());
+        self::assertSame('/typo3/main', $response->getHeaderLine('Location'));
         self::assertNotSame('', $response->getHeaderLine('Set-Cookie'));
-        self::assertStringContainsString('Continue to the TYPO3 backend', (string)$response->getBody());
-    }
-
-    public function testCreateBackendLoginResponseOverridesNonCoreRequestTokenScope(): void
-    {
-        $this->connectionPool()->getConnectionForTable('be_users')->insert(
-            'be_users',
-            [
-                'pid' => 0,
-                'username' => 'backend-workos-token',
-                'password' => 'unused',
-                'email' => 'backend-token@example.com',
-                'realName' => 'Backend WorkOS Token',
-                'admin' => 1,
-                'disable' => 0,
-                'deleted' => 0,
-            ]
-        );
-
-        $userRow = $this->fetchUserRow('be_users', (int)$this->connectionPool()->getConnectionForTable('be_users')->lastInsertId());
-        $service = $this->get(Typo3SessionService::class);
-        self::assertInstanceOf(Typo3SessionService::class, $service);
-
-        $context = $this->get(Context::class);
-        self::assertInstanceOf(Context::class, $context);
-        SecurityAspect::provideIn($context)->setReceivedRequestToken(
-            RequestToken::create('workos/frontend/login')
-        );
-
-        $response = $service->createBackendLoginResponse(
-            $this->createRequest('https://app.local/typo3/workos-auth/backend/callback'),
-            $userRow,
-            '/typo3/main',
-            'user_123'
-        );
-
-        self::assertSame(200, $response->getStatusCode());
-        self::assertNotSame('', $response->getHeaderLine('Set-Cookie'));
-        self::assertStringContainsString('Continue to the TYPO3 backend', (string)$response->getBody());
-        $restoredBackendToken = SecurityAspect::provideIn($context)->getReceivedRequestToken();
-        self::assertInstanceOf(RequestToken::class, $restoredBackendToken);
-        self::assertSame('workos/frontend/login', $restoredBackendToken->scope);
     }
 
     private function createRequest(string $uri): ServerRequestInterface
