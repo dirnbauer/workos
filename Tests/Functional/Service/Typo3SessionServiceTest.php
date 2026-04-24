@@ -77,9 +77,11 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
             'user_123'
         );
 
-        self::assertSame(303, $response->getStatusCode());
-        self::assertSame('/typo3/main', $response->getHeaderLine('Location'));
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('', $response->getHeaderLine('Location'));
         self::assertNotSame('', $response->getHeaderLine('Set-Cookie'));
+        self::assertStringContainsString('Continue to the TYPO3 backend', (string)$response->getBody());
+        self::assertStringContainsString('/typo3/main', (string)$response->getBody());
     }
 
     private function createRequest(string $uri): ServerRequestInterface

@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
@@ -73,9 +74,31 @@ final class Typo3SessionService
         }
 
         return $backendUser->appendCookieToResponse(
-            new RedirectResponse($redirectUrl, 303),
+            $this->buildBackendBounceResponse($redirectUrl),
             $this->getNormalizedParams($request)
         );
+    }
+
+    private function buildBackendBounceResponse(string $redirectUrl): ResponseInterface
+    {
+        $escapedUrl = htmlspecialchars($redirectUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        // Break the external WorkOS redirect chain so TYPO3's default
+        // SameSite=Strict backend cookie is sent on the final navigation.
+        $html = '<!DOCTYPE html>'
+            . '<html lang="en">'
+            . '<head>'
+            . '<meta charset="utf-8">'
+            . '<meta http-equiv="refresh" content="0;url=' . $escapedUrl . '">'
+            . '<title>Signing in...</title>'
+            . '</head>'
+            . '<body>'
+            . '<p><a id="workos-continue" href="' . $escapedUrl . '">Continue to the TYPO3 backend</a></p>'
+            . '<script>document.getElementById("workos-continue").click();</script>'
+            . '</body>'
+            . '</html>';
+
+        return new HtmlResponse($html);
     }
 
     private function getNormalizedParams(ServerRequestInterface $request): NormalizedParams

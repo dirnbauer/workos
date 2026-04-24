@@ -357,8 +357,8 @@
                 <target>Die WorkOS-Backend-Anmeldung ist aktiviert, aber noch nicht konfiguriert.</target>
             </trans-unit>
             <trans-unit id="backend.login.cookieSameSiteUnsupported">
-                <source>WorkOS backend login requires TYPO3 backend cookies to use SameSite "lax" or "none". The current TYPO3 core value is "%s".</source>
-                <target>Die WorkOS-Backend-Anmeldung setzt voraus, dass TYPO3-Backend-Cookies SameSite „lax“ oder „none“ verwenden. Der aktuelle TYPO3-Core-Wert ist „%s“.</target>
+                <source>WorkOS backend login requires TYPO3 backend cookies to use one of the core SameSite values "strict", "lax", or "none". The current TYPO3 core value is "%s".</source>
+                <target>Die WorkOS-Backend-Anmeldung setzt voraus, dass TYPO3-Backend-Cookies einen der Core-SameSite-Werte „strict“, „lax“ oder „none“ verwenden. Der aktuelle TYPO3-Core-Wert ist „%s“.</target>
             </trans-unit>
             <trans-unit id="backend.login.openSetup">
                 <source>Open the setup assistant</source>
@@ -815,8 +815,8 @@
                 <target>Die WorkOS-Backend-Anmeldung ist deaktiviert.</target>
             </trans-unit>
             <trans-unit id="error.backendLoginNotSupported">
-                <source>Backend WorkOS login requires TYPO3 backend cookies to use SameSite "lax" or "none". Update TYPO3 core BE.cookieSameSite and try again.</source>
-                <target>Die WorkOS-Backend-Anmeldung setzt voraus, dass TYPO3-Backend-Cookies SameSite „lax“ oder „none“ verwenden. Passen Sie TYPO3 core BE.cookieSameSite an und versuchen Sie es erneut.</target>
+                <source>Backend WorkOS login is not fully configured yet. Open the setup assistant and try again.</source>
+                <target>Die WorkOS-Backend-Anmeldung ist noch nicht vollständig eingerichtet. Öffnen Sie den Einrichtungsassistenten und versuchen Sie es erneut.</target>
             </trans-unit>
             <trans-unit id="error.frontendLoginDisabled">
                 <source>Frontend WorkOS login is disabled.</source>
@@ -863,16 +863,16 @@
                 <target>Die automatische Erstellung von Backend-Benutzern benötigt mindestens eine Backend-Gruppen-UID.</target>
             </trans-unit>
             <trans-unit id="validation.backendCookieSameSiteUnsupported">
-                <source>Backend WorkOS login requires TYPO3 backend cookies to use SameSite "lax" or "none". The current TYPO3 core value is "%s".</source>
-                <target>Die WorkOS-Backend-Anmeldung setzt voraus, dass TYPO3-Backend-Cookies SameSite „lax“ oder „none“ verwenden. Der aktuelle TYPO3-Core-Wert ist „%s“.</target>
+                <source>Backend WorkOS login requires TYPO3 backend cookies to use one of the core SameSite values "strict", "lax", or "none". The current TYPO3 core value is "%s".</source>
+                <target>Die WorkOS-Backend-Anmeldung setzt voraus, dass TYPO3-Backend-Cookies einen der Core-SameSite-Werte „strict“, „lax“ oder „none“ verwenden. Der aktuelle TYPO3-Core-Wert ist „%s“.</target>
             </trans-unit>
             <trans-unit id="setup.backend.cookieSameSiteCompatible">
-                <source>TYPO3 core backend cookies are configured with SameSite "%s", which is compatible with the WorkOS redirect flow.</source>
-                <target>Die TYPO3-Core-Backend-Cookies sind mit SameSite „%s“ konfiguriert und damit mit dem WorkOS-Redirect-Flow kompatibel.</target>
+                <source>TYPO3 core backend cookies are configured with SameSite "%s", which is compatible with the WorkOS login flow.</source>
+                <target>Die TYPO3-Core-Backend-Cookies sind mit SameSite „%s“ konfiguriert und damit mit der WorkOS-Anmeldung kompatibel.</target>
             </trans-unit>
             <trans-unit id="setup.backend.cookieSameSiteUnsupported">
-                <source>TYPO3 core backend cookies currently use SameSite "%s". Change BE.cookieSameSite to "lax" or "none" before enabling WorkOS backend login, otherwise TYPO3 will not send the backend session cookie after the external redirect.</source>
-                <target>Die TYPO3-Core-Backend-Cookies verwenden derzeit SameSite „%s“. Stellen Sie BE.cookieSameSite auf „lax“ oder „none“, bevor Sie die WorkOS-Backend-Anmeldung aktivieren, sonst sendet TYPO3 das Backend-Session-Cookie nach dem externen Redirect nicht mit.</target>
+                <source>TYPO3 core backend cookies currently use SameSite "%s". Use one of TYPO3's supported values: "strict", "lax", or "none".</source>
+                <target>Die TYPO3-Core-Backend-Cookies verwenden derzeit SameSite „%s“. Verwenden Sie einen der von TYPO3 unterstützten Werte: „strict“, „lax“ oder „none“.</target>
             </trans-unit>
 
             <!-- Account Center plugin -->

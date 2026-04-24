@@ -115,6 +115,11 @@ TYPO3's backend login gains a WorkOS section with:
 Standard TYPO3 username + password login keeps working in parallel via
 the "Login with username and password" switcher.
 
+TYPO3's default `BE.cookieSameSite = strict` can stay in place. After
+the external WorkOS callback, the extension uses a same-origin
+continuation page before entering `/typo3/main`, so the strict backend
+session cookie is sent on the final backend navigation.
+
 ### TYPO3 auth service bridge
 
 The backend and frontend hand-off does not stop at the custom WorkOS

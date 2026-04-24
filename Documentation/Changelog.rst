@@ -13,7 +13,11 @@ All notable changes to this extension are documented in this file.
 Unreleased
 ==========
 
-Nothing yet.
+-   Backend WorkOS login accepts TYPO3's default
+    ``BE.cookieSameSite = strict`` again. After the external WorkOS
+    callback, the extension returns a same-origin continuation page so
+    the strict backend session cookie is sent on the final backend
+    navigation.
 
 ..  _changelog-0-26-0:
 

@@ -291,7 +291,7 @@ final class WorkosConfiguration
 
     public function isBackendCookieSameSiteCompatible(): bool
     {
-        return in_array($this->getBackendCookieSameSite(), ['lax', 'none'], true);
+        return in_array($this->getBackendCookieSameSite(), ['strict', 'lax', 'none'], true);
     }
 
     public function shouldAutoCreateBackendUsers(): bool

@@ -28,6 +28,28 @@ and fill in API key, Client ID and cookie password. See
 Same cause on the backend login form. Click the :guilabel:`Open the
 setup assistant` link next to the message.
 
+..  _troubleshooting-backend-samesite-strict:
+
+"TYPO3 backend cookies currently use SameSite strict"
+=====================================================
+
+``BE.cookieSameSite = strict`` is supported and recommended. You do
+not need to change it to ``lax`` or ``none`` for WorkOS.
+
+If you still see an older warning that says WorkOS requires
+``lax`` or ``none``, clear TYPO3's system cache and make sure the
+extension includes the strict-cookie continuation page described in
+:ref:`configuration-backend-samesite`.
+
+..  code-block:: bash
+    :caption: Flush the system cache
+
+    vendor/bin/typo3 cache:flush
+
+Only change ``BE.cookieSameSite`` when another integration requires a
+different TYPO3 backend cookie policy. WorkOS backend login itself
+works with ``strict``.
+
 ..  _troubleshooting-invalid-redirect-uri:
 
 "This is not a valid redirect URI"

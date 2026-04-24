@@ -112,10 +112,10 @@ final class WorkosConfigurationTest extends TestCase
         self::assertArrayHasKey('cookiePassword', $errors);
     }
 
-    public function testBackendCookieSameSiteCompatibilityRequiresLaxOrNone(): void
+    public function testBackendCookieSameSiteCompatibilityAcceptsCoreValues(): void
     {
         $this->writeBackendCookieSameSite('strict');
-        self::assertFalse($this->configuration->isBackendCookieSameSiteCompatible());
+        self::assertTrue($this->configuration->isBackendCookieSameSiteCompatible());
 
         $this->writeBackendCookieSameSite('lax');
         self::assertTrue($this->configuration->isBackendCookieSameSiteCompatible());
@@ -124,9 +124,9 @@ final class WorkosConfigurationTest extends TestCase
         self::assertTrue($this->configuration->isBackendCookieSameSiteCompatible());
     }
 
-    public function testValidateReportsBackendCookieSameSiteMismatch(): void
+    public function testValidateReportsUnsupportedBackendCookieSameSiteValue(): void
     {
-        $this->writeBackendCookieSameSite('strict');
+        $this->writeBackendCookieSameSite('unsupported');
 
         $errors = $this->configuration->validate([
             'frontendEnabled' => false,

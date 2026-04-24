@@ -141,6 +141,31 @@ them into the WorkOS Dashboard.
         -   ``/main``
         -   Backend route after successful login
 
+..  _configuration-backend-samesite:
+
+TYPO3 backend cookies and SameSite
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Keep TYPO3's default backend cookie setting
+``BE.cookieSameSite = strict`` unless your project has a separate
+reason to change it. WorkOS backend login supports ``strict``,
+``lax`` and ``none``.
+
+The WorkOS callback returns from an external identity provider, so a
+plain redirect straight into the backend can lose a freshly-set
+``SameSite=Strict`` backend session cookie in modern browsers. The
+extension handles this by setting the TYPO3 backend session on a
+small same-origin continuation page first. That page immediately
+navigates to the configured backend success path, and the final
+navigation sends the strict cookie as expected.
+
+..  note::
+
+    Do not switch ``BE.cookieSameSite`` to ``none`` just for WorkOS.
+    ``none`` is only useful for integrations that truly need TYPO3
+    backend cookies in a third-party context, and browsers require it
+    to be combined with HTTPS.
+
 ..  _configuration-authkit:
 
 5. Optional AuthKit hints
@@ -218,6 +243,9 @@ The setup assistant shows warnings but still saves. Validation rules:
 -   Frontend auto-create requires ``frontendStoragePid > 0``.
 -   Backend auto-create requires at least one entry in
     ``backendDefaultGroupUids``.
+-   ``BE.cookieSameSite`` must be one of TYPO3's supported core
+    values: ``strict``, ``lax`` or ``none``. The default ``strict``
+    is supported and recommended.
 
 ..  _configuration-workspaces:
 
