@@ -12,8 +12,17 @@ public page.
 cd Tests/E2E
 npm install
 npx playwright install --with-deps chromium
-E2E_BASE_URL=https://workos-auth.ddev.site E2E_LOGIN_PATH=/login npm test
+E2E_BASE_URL=https://workos-auth.ddev.site \
+E2E_LOGIN_PATH=/login \
+E2E_ACCOUNT_PATH=/my-account \
+E2E_TEAM_PATH=/team \
+npm test
 ```
+
+Use the real slug of each page where you dropped the **WorkOS Account Center**
+and **WorkOS Team** plugins (`E2E_ACCOUNT_PATH` / `E2E_TEAM_PATH`; defaults are
+`/account` and `/team`). Anonymous visitors should see the translated
+sign-in hint inside `.workos-account` / `.workos-team`.
 
 ## Run in CI
 
