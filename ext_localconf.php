@@ -48,7 +48,7 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
             \WebConsulting\WorkosAuth\Controller\Frontend\AccountController::class => 'dashboard,updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession',
         ],
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\AccountController::class => 'updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession',
+            \WebConsulting\WorkosAuth\Controller\Frontend\AccountController::class => 'dashboard,updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession',
         ]
     );
 
@@ -59,7 +59,7 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
             \WebConsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'dashboard,invite,resendInvitation,revokeInvitation,launchPortal',
         ],
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'invite,resendInvitation,revokeInvitation,launchPortal',
+            \WebConsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'dashboard,invite,resendInvitation,revokeInvitation,launchPortal',
         ]
     );
 
