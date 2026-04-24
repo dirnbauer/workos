@@ -194,6 +194,14 @@ After WorkOS succeeds, ``Typo3SessionService`` creates an internal
 request with the server-side ``workos_auth.pending_login`` attribute
 and hands it to TYPO3's authentication service.
 
+For frontend plugin requests, that handoff reuses the
+``frontend.user`` object that TYPO3 already attached to the request.
+The final session and cookie therefore remain part of TYPO3's normal
+``FrontendUserAuthenticator`` lifecycle. This is important for
+magic-auth and email-verification flows because the same request may
+also clear an anonymous pending-code session before the local FE user
+is logged in.
+
 ``AllowPendingWorkosLoginRequestTokenListener`` bridges that internal
 handoff by issuing the matching TYPO3 core token scope:
 

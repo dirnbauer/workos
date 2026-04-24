@@ -25,8 +25,7 @@ final class Typo3SessionService
      */
     public function createFrontendLoginResponse(ServerRequestInterface $request, array $userRow, string $redirectUrl): ResponseInterface
     {
-        $frontendUser = new FrontendUserAuthentication();
-        $frontendUser->setLogger($this->logger);
+        $frontendUser = $this->resolveFrontendUserAuthentication($request);
         $loginRequest = $this->createPendingLoginRequest($request, 'frontend', 'logintype', $userRow);
         $frontendUser->start($loginRequest);
         $authenticatedUser = $this->normalizeUserRow(is_array($frontendUser->user ?? null) ? $frontendUser->user : null);
@@ -41,8 +40,7 @@ final class Typo3SessionService
 
     public function createFrontendLogoutResponse(ServerRequestInterface $request, string $redirectUrl): ResponseInterface
     {
-        $frontendUser = new FrontendUserAuthentication();
-        $frontendUser->setLogger($this->logger);
+        $frontendUser = $this->resolveFrontendUserAuthentication($request);
         $frontendUser->start($request);
         $frontendUser->logoff();
 
@@ -77,6 +75,19 @@ final class Typo3SessionService
             $this->buildBackendBounceResponse($redirectUrl),
             $this->getNormalizedParams($request)
         );
+    }
+
+    private function resolveFrontendUserAuthentication(ServerRequestInterface $request): FrontendUserAuthentication
+    {
+        $frontendUser = $request->getAttribute('frontend.user');
+        if ($frontendUser instanceof FrontendUserAuthentication) {
+            $frontendUser->setLogger($this->logger);
+            return $frontendUser;
+        }
+
+        $frontendUser = new FrontendUserAuthentication();
+        $frontendUser->setLogger($this->logger);
+        return $frontendUser;
     }
 
     private function buildBackendBounceResponse(string $redirectUrl): ResponseInterface

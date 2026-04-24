@@ -156,6 +156,12 @@ context:
 That lets TYPO3 create the FE/BE session itself, run its normal login
 events, and continue into backend MFA if TYPO3 MFA is enabled.
 
+For frontend plugin logins, the hand-off reuses the `frontend.user`
+authentication object already attached to the TYPO3 request. That keeps
+the final session and cookie write in TYPO3's normal frontend middleware
+lifecycle, which is important after magic-auth and email-verification
+requests clear their anonymous pending-code session.
+
 Full details: [`Documentation/Features.rst`](Documentation/Features.rst).
 
 ### Backend modules

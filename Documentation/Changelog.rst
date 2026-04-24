@@ -23,6 +23,12 @@ Unreleased
     pending WorkOS login listener only swaps in TYPO3's
     ``core/user-auth/fe`` token for server-created pending-login
     requests and leaves invalid request-token states untouched.
+-   Frontend plugin logins reuse TYPO3's request-bound
+    ``frontend.user`` authentication object for the final local
+    login. This keeps cookie and session persistence inside
+    TYPO3's normal frontend middleware lifecycle and prevents the
+    previous anonymous magic-auth session from overwriting the
+    logged-in session.
 -   Frontend magic-auth verification now follows the same
     email-verification continuation as password login. If WorkOS
     returns ``email_verification_required`` after a valid magic code,

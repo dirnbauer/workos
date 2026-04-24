@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace WebConsulting\WorkosAuth\Tests\Functional\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
+use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
 
@@ -48,6 +50,42 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
         self::assertSame(303, $response->getStatusCode());
         self::assertSame('/welcome', $response->getHeaderLine('Location'));
         self::assertNotSame('', $response->getHeaderLine('Set-Cookie'));
+    }
+
+    public function testCreateFrontendLoginResponseReusesRequestFrontendUser(): void
+    {
+        $this->connectionPool()->getConnectionForTable('fe_users')->insert(
+            'fe_users',
+            [
+                'pid' => 1,
+                'username' => 'request-frontend-workos',
+                'password' => 'unused',
+                'email' => 'request-frontend@example.com',
+                'disable' => 0,
+                'deleted' => 0,
+            ]
+        );
+
+        $userRow = $this->fetchUserRow('fe_users', (int)$this->connectionPool()->getConnectionForTable('fe_users')->lastInsertId());
+        $request = $this->createRequest('https://app.local/login');
+        $frontendUser = new FrontendUserAuthentication();
+        $frontendUser->setLogger(new NullLogger());
+        $frontendUser->start($request);
+        $request = $request->withAttribute('frontend.user', $frontendUser);
+
+        $service = $this->get(Typo3SessionService::class);
+        self::assertInstanceOf(Typo3SessionService::class, $service);
+
+        $response = $service->createFrontendLoginResponse(
+            $request,
+            $userRow,
+            '/welcome'
+        );
+
+        $expectedUid = $this->intFromMixed($userRow['uid'] ?? null);
+        self::assertSame(303, $response->getStatusCode());
+        self::assertSame($expectedUid, $this->intFromMixed($frontendUser->user['uid'] ?? null));
+        $this->assertFrontendSessionExistsForUser($expectedUid);
     }
 
     public function testCreateBackendLoginResponseUsesTypo3AuthService(): void
@@ -127,6 +165,22 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
         }
 
         return $narrowed;
+    }
+
+    private function assertFrontendSessionExistsForUser(int $userId): void
+    {
+        $row = $this->connectionPool()
+            ->getConnectionForTable('fe_sessions')
+            ->select(['ses_userid'], 'fe_sessions', ['ses_userid' => $userId])
+            ->fetchAssociative();
+
+        self::assertIsArray($row);
+        self::assertSame($userId, $this->intFromMixed($row['ses_userid'] ?? null));
+    }
+
+    private function intFromMixed(mixed $value): int
+    {
+        return is_numeric($value) ? (int)$value : 0;
     }
 
     private function connectionPool(): ConnectionPool
