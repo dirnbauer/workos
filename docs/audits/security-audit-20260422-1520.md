@@ -6,7 +6,8 @@
 
 ## Result
 
-No unauthenticated session-bypass path found in the TYPO3 auth bridge after the current fixes.
+No unauthenticated session-bypass path found in the TYPO3 auth bridge
+after the April 22 fixes.
 
 ## Notes
 

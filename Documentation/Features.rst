@@ -45,9 +45,6 @@ The plugin renders a single card with:
         -   Link to AuthKit with ``?provider=GoogleOAuth`` etc.
     *   -   Sign-up link
         -   Opens the native registration form
-    *   -   Continue with WorkOS
-        -   Social buttons and the self sign-up link cover the hosted
-            flows
 
 Failed login attempts stay on the page and display a human-friendly
 error (e.g. "Magic Auth is not enabled" when it is disabled in the
@@ -115,9 +112,11 @@ login form. It shows:
     code-entry step
 -   Error banner if a previous attempt failed
 
-Magic-auth state between the send and verify steps is encoded into
-a signed query parameter (``magicAuthState``) so no backend session
-is needed before authentication.
+Magic-auth state between the send and verify steps is stored
+server-side through ``StateService``. The visible ``magicAuthState``
+parameter is only a random lookup token and is bound to an HttpOnly
+state cookie, so the email address and WorkOS pending tokens are not
+encoded into the URL.
 
 Standard TYPO3 username + password login remains available via the
 :guilabel:`Login with username and password` link provided by TYPO3
@@ -132,6 +131,13 @@ After WorkOS completes a login, the extension does not keep session
 creation in custom code only. Instead it hands the resolved TYPO3 user
 record back into TYPO3's own FE/BE authentication lifecycle through a
 registered auth service.
+
+WorkOS remains the authority for credential, magic-code, callback and
+email-verification checks. The extension uses TYPO3 APIs for the local
+handoff: it resolves or provisions the local ``fe_users`` /
+``be_users`` row, sets a server-created pending-login request
+attribute, and lets TYPO3's ``FrontendUserAuthentication`` or
+``BackendUserAuthentication`` create the session.
 
 The registration in :file:`ext_localconf.php` looks like this:
 
@@ -199,6 +205,9 @@ The listener is deliberately narrow:
 -   It requires the server-created pending-login request attribute.
 -   It requires the pending-login context to match the TYPO3 user
     object being authenticated.
+-   It only swaps to ``core/user-auth/fe`` or ``core/user-auth/be``;
+    plugin, account, team and backend-module tokens keep their own
+    scopes.
 -   It does not convert an invalid request-token state
     (``RequestTokenMiddleware`` resolved it as ``false``).
 -   It does not expose WorkOS pending tokens or local user rows in
@@ -279,7 +288,7 @@ flow before mounting the widget.
 All POST routes (``token``, ``join``, ``createOrganization``) are
 protected by an explicit ``isCurrentBackendUserAdmin()`` check (in
 addition to the module's ``access => 'admin'`` gate) and validate a
-``FormProtectionFactory`` token before talking to WorkOS.
+scoped TYPO3 request token before talking to WorkOS.
 
 ..  _features-account-center:
 
@@ -288,7 +297,7 @@ Account Center plugin
 
 Add the :guilabel:`WorkOS Account Center` content element to a page
 that signed-in frontend users can reach (typically ``/my-account``).
-The plugin is implemented by ``AccountController`` and renders four
+The plugin is implemented by ``AccountController`` and renders five
 cards backed by the WorkOS API:
 
 ..  list-table::
@@ -301,12 +310,14 @@ cards backed by the WorkOS API:
             ``UserManagement::updateUser``
     *   -   Password
         -   ``changePassword`` — translates WorkOS errors for
-            too-short, too-weak, breached, or already-existing passwords
+            too-short, too-weak, or breached passwords
     *   -   Two-factor authentication
         -   ``startMfaEnrollment`` → ``verifyMfaEnrollment`` (TOTP),
             ``cancelMfaEnrollment``, ``deleteFactor``
     *   -   Active sessions
         -   ``revokeSession`` per WorkOS session id
+    *   -   Organizations
+        -   Shows WorkOS organization memberships and role slugs
 
 A "directory sync" badge appears on organization memberships that
 are managed by an external IdP. Each card degrades gracefully: a

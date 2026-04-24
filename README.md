@@ -230,7 +230,7 @@ The full list of keys is in
 - [WorkOS Dashboard](Documentation/WorkosDashboard.rst) – Redirect URIs and enabling auth methods
 - [Troubleshooting](Documentation/Troubleshooting.rst) – Common errors and fixes
 - [Changelog](Documentation/Changelog.rst) – Release notes
-- [Current audit reports](docs/audits/) – v14 upgrade, conformance, security, testing, docs
+- [Audit snapshots](docs/audits/) – v14 upgrade, conformance, security, testing, docs
 
 ## Security
 
@@ -278,7 +278,7 @@ The extension takes an auth-first stance. Notable guarantees:
   WorkOS backend modules are registered with `workspaces => 'live'`
   and only appear in the LIVE workspace.
 
-The current audit snapshots live under [`docs/audits/`](docs/audits/).
+Audit snapshots live under [`docs/audits/`](docs/audits/).
 The targeted frontend login handoff review is documented in
 [`docs/audits/frontend-login-handoff-security-20260424.md`](docs/audits/frontend-login-handoff-security-20260424.md).
 

@@ -63,7 +63,8 @@ Team management plugins for signed-in users.
     ..  card:: :ref:`Troubleshooting <troubleshooting>`
 
         Common error messages and how to fix them — including the
-        backend "account not linked" screen and the new CSRF flash.
+        backend "account not linked" screen, frontend email-code
+        handoff failures, and CSRF flash messages.
 
 ..  _toc:
 

@@ -87,7 +87,8 @@ WorkOS enforces password policies configured in its dashboard. The
 most common reasons this appears during sign-up are:
 
 -   Password shorter than the configured minimum (default 10 in
-    WorkOS).
+    this extension's local pre-check; WorkOS may enforce a different
+    dashboard policy).
 -   Password too weak (no mix of letters, numbers, symbols).
 -   Password has appeared in a data breach.
 -   An account with the same email already exists.
@@ -116,9 +117,9 @@ frontend request-token handoff fix.
 
 The email-code POST validates the plugin token first. After WorkOS
 accepts the code, TYPO3 still performs its own active login check and
-expects the core ``core/user-auth/fe`` token scope. Current versions
-bridge that handoff only for a server-created pending WorkOS login and
-never for an invalid token state.
+expects the core ``core/user-auth/fe`` token scope. The fixed
+implementation bridges that handoff only for a server-created pending
+WorkOS login and never for an invalid token state.
 
 ..  code-block:: bash
     :caption: Clear compiled configuration after updating
@@ -153,7 +154,9 @@ Users are not created automatically
 Check:
 
 -   **Frontend**: ``frontendAutoCreateUsers`` must be on AND
-    ``frontendStoragePid`` must point to a real ``sys_folder``.
+    ``frontendStoragePid`` must be a valid page/storage PID where
+    TYPO3 may create ``fe_users`` records. A dedicated ``sys_folder``
+    is the usual setup.
 -   **Backend**: ``backendAutoCreateUsers`` must be on AND
     ``backendDefaultGroupUids`` must list at least one
     ``be_groups`` uid. If ``backendAllowedDomains`` is set, the

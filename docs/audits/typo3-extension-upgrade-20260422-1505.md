@@ -19,4 +19,4 @@ Clean after verification.
 
 - Kept the codebase TYPO3-14-only.
 - Refreshed release metadata and release notes for `0.26.0`.
-- Added current audit snapshots under `docs/audits/`.
+- Added audit snapshots under `docs/audits/`.

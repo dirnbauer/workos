@@ -6,10 +6,11 @@
 Configuration
 =============
 
-All settings are configured in :guilabel:`WorkOS` ->
-:guilabel:`Setup Assistant` in the TYPO3 backend (top-level **WorkOS**
-menu, registered next to :guilabel:`System`). You never need to edit
-PHP arrays by hand.
+Most installations should configure the extension in
+:guilabel:`WorkOS` -> :guilabel:`Setup Assistant` in the TYPO3 backend
+(top-level **WorkOS** menu, registered next to :guilabel:`System`).
+Direct edits to :file:`config/system/settings.php` are still possible
+for deployment automation.
 
 Settings are stored in TYPO3 extension configuration under
 ``EXTENSIONS.workos_auth`` and end up in :file:`config/system/settings.php`

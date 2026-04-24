@@ -86,10 +86,14 @@ Email + Password
 
 ..  note::
 
-    If you change the minimum password length here, also update the
-    hint text in the TYPO3 sign-up form template
+    WorkOS is the final source of truth for password policy. The
+    extension also has a local 10-character pre-check for sign-up and
+    password-change forms. If your WorkOS minimum is higher than 10,
+    update the hint text in the TYPO3 sign-up form template
     (:file:`Resources/Private/Language/locallang.xlf`, key
-    ``frontend.signup.passwordHint``).
+    ``frontend.signup.passwordHint``); if your WorkOS minimum is lower
+    than 10, TYPO3 will still require 10 until that local validation is
+    changed.
 
 ..  _workos-dashboard-social:
 

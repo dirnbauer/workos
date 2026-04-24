@@ -7,8 +7,8 @@
 
 ## Result
 
-No new unauthenticated session-bypass or CSRF bypass path was found after
-the current fixes.
+No unauthenticated session-bypass or CSRF bypass path was introduced by
+the April 24 frontend login handoff fix.
 
 Both problems were availability/auth-completion defects in the final
 handoff, not evidence that an attacker could create a TYPO3 session without

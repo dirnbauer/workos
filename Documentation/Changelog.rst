@@ -29,6 +29,9 @@ Unreleased
     the extension clears the magic-auth state and stores the pending
     email-verification token in the frontend session instead of
     dropping back to the generic login form.
+-   Documentation refreshed to describe the narrow TYPO3
+    request-token handoff, server-side WorkOS pending-token storage,
+    and the verified test-suite size after the frontend login fix.
 
 ..  _changelog-0-26-0:
 
@@ -119,8 +122,9 @@ official TYPO3 coding standards package.
 -   Additional unit coverage for ``WorkosConfiguration``
     normalization branches that Infection flagged. CI is opted into
     Node 24 to silence upcoming GitHub Actions runtime warnings.
--   Unit suite: 88 tests / 176 assertions / 1 skipped (the skipped
-    test waits for a German ``de.locallang_db.xlf`` to land).
+-   Unit coverage was expanded for configuration normalization,
+    request-token validation, and translation parity. The skipped
+    test waits for a German ``de.locallang_db.xlf`` to land.
 
 ..  _changelog-0-25-0:
 
@@ -143,8 +147,8 @@ Follow-up to 0.24.0. Third conformance / security / docs sweep.
     owning org via a new ``findInvitation()`` wrapper. A translated
     ``team.flash.forbidden`` surfaces the rejection.
 -   ``UserManagementController::tokenAction`` now validates a
-    ``FormProtectionFactory`` token before minting a WorkOS widget
-    token. The backend module passes the token via a new
+    scoped TYPO3 request token before minting a WorkOS widget token.
+    The backend module passes the token via a new
     ``data-csrf-token`` attribute on the mount element.
 -   All three POST routes in the backend User Management module
     (``token``, ``join``, ``createOrganization``) now call an
