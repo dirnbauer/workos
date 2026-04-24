@@ -104,6 +104,32 @@ Magic-auth codes expire after 10 minutes. If the user entered the
 code correctly but still sees this, they probably waited too long
 or requested a new code in a separate tab.
 
+..  _troubleshooting-frontend-code-final-step:
+
+Frontend email-code login sends the email but does not finish
+=============================================================
+
+If the first step works (the user receives a six-digit email code) but
+submitting that code returns to the login form with a generic
+"login failed" message, verify that the extension includes the
+frontend request-token handoff fix.
+
+The email-code POST validates the plugin token first. After WorkOS
+accepts the code, TYPO3 still performs its own active login check and
+expects the core ``core/user-auth/fe`` token scope. Current versions
+bridge that handoff only for a server-created pending WorkOS login and
+never for an invalid token state.
+
+..  code-block:: bash
+    :caption: Clear compiled configuration after updating
+
+    vendor/bin/typo3 cache:flush
+
+If WorkOS accepts the magic-auth code but then requires email
+verification, the flow should continue to the dedicated verification
+screen. The ``pending_authentication_token`` stays in the TYPO3
+frontend session and is not sent through a query parameter.
+
 ..  _troubleshooting-stuck-backend-workos:
 
 Backend login keeps showing WorkOS even after I disable it

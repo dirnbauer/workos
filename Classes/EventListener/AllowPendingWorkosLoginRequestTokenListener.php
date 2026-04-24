@@ -14,10 +14,6 @@ final class AllowPendingWorkosLoginRequestTokenListener
 {
     public function __invoke(BeforeRequestTokenProcessedEvent $event): void
     {
-        if ($event->getRequestToken() !== null) {
-            return;
-        }
-
         $pendingLogin = $event->getRequest()->getAttribute(
             WorkosTypo3AuthenticationService::PENDING_LOGIN_ATTRIBUTE
         );
@@ -35,8 +31,17 @@ final class AllowPendingWorkosLoginRequestTokenListener
             return;
         }
 
+        $requestToken = $event->getRequestToken();
+        $expectedScope = 'core/user-auth/' . $loginType;
+        if ($requestToken instanceof RequestToken && $requestToken->scope === $expectedScope) {
+            return;
+        }
+        if ($requestToken === false) {
+            return;
+        }
+
         $event->setRequestToken(
-            RequestToken::create('core/user-auth/' . $loginType)
+            RequestToken::create($expectedScope)
         );
     }
 }

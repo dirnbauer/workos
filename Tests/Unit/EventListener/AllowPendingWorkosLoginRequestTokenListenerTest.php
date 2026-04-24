@@ -37,6 +37,27 @@ final class AllowPendingWorkosLoginRequestTokenListenerTest extends TestCase
         self::assertSame('core/user-auth/fe', $requestToken->scope);
     }
 
+    public function testListenerReplacesValidatedFrontendPluginTokenForPendingFrontendLogin(): void
+    {
+        $listener = new AllowPendingWorkosLoginRequestTokenListener();
+        $request = (new ServerRequest(new Uri('https://app.local/login')))
+            ->withAttribute(WorkosTypo3AuthenticationService::PENDING_LOGIN_ATTRIBUTE, [
+                'context' => 'frontend',
+                'user' => ['uid' => 123],
+            ]);
+        $event = new BeforeRequestTokenProcessedEvent(
+            new FrontendUserAuthentication(),
+            $request,
+            RequestToken::create('workos/frontend/login')
+        );
+
+        $listener($event);
+
+        $requestToken = $event->getRequestToken();
+        self::assertInstanceOf(RequestToken::class, $requestToken);
+        self::assertSame('core/user-auth/fe', $requestToken->scope);
+    }
+
     public function testListenerDoesNotOverrideExistingOrMismatchedRequestTokenState(): void
     {
         $listener = new AllowPendingWorkosLoginRequestTokenListener();
@@ -55,5 +76,24 @@ final class AllowPendingWorkosLoginRequestTokenListenerTest extends TestCase
         $listener($event);
 
         self::assertSame($existingToken, $event->getRequestToken());
+    }
+
+    public function testListenerDoesNotOverrideInvalidRequestTokenState(): void
+    {
+        $listener = new AllowPendingWorkosLoginRequestTokenListener();
+        $request = (new ServerRequest(new Uri('https://app.local/login')))
+            ->withAttribute(WorkosTypo3AuthenticationService::PENDING_LOGIN_ATTRIBUTE, [
+                'context' => 'frontend',
+                'user' => ['uid' => 123],
+            ]);
+        $event = new BeforeRequestTokenProcessedEvent(
+            new FrontendUserAuthentication(),
+            $request,
+            false
+        );
+
+        $listener($event);
+
+        self::assertFalse($event->getRequestToken());
     }
 }

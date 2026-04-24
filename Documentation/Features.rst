@@ -57,6 +57,10 @@ All state-changing frontend auth forms (sign-up, password sign-in,
 magic-auth send/verify, email verification submit/resend) require a
 request token and sanitize ``returnTo`` through
 ``PathUtility::sanitizeReturnTo()`` before a TYPO3 session is created.
+If WorkOS requires email verification after a valid magic-auth code,
+the pending magic-auth session is cleared and the
+``pending_authentication_token`` is carried only in the TYPO3
+frontend session for the dedicated email-verification form.
 
 ..  _features-sign-up:
 
@@ -173,6 +177,32 @@ instead of bypassing its normal login flow. That keeps TYPO3 core
 behaviour intact, including session fixation protection, login
 logging/events, and backend MFA evaluation when TYPO3 MFA providers are
 enabled.
+
+Request-token handoff
+~~~~~~~~~~~~~~~~~~~~~
+
+TYPO3 v14 also verifies a core login request-token scope during active
+FE/BE login processing. WorkOS plugin forms validate their own scoped
+tokens before calling WorkOS, for example ``workos/frontend/login``.
+After WorkOS succeeds, ``Typo3SessionService`` creates an internal
+request with the server-side ``workos_auth.pending_login`` attribute
+and hands it to TYPO3's authentication service.
+
+``AllowPendingWorkosLoginRequestTokenListener`` bridges that internal
+handoff by issuing the matching TYPO3 core token scope:
+
+-   ``core/user-auth/fe`` for a pending frontend login
+-   ``core/user-auth/be`` for a pending backend login
+
+The listener is deliberately narrow:
+
+-   It requires the server-created pending-login request attribute.
+-   It requires the pending-login context to match the TYPO3 user
+    object being authenticated.
+-   It does not convert an invalid request-token state
+    (``RequestTokenMiddleware`` resolved it as ``false``).
+-   It does not expose WorkOS pending tokens or local user rows in
+    query parameters.
 
 ..  _features-backend-endpoints:
 

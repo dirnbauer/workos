@@ -18,6 +18,17 @@ Unreleased
     callback, the extension returns a same-origin continuation page so
     the strict backend session cookie is sent on the final backend
     navigation.
+-   Frontend email-code login now completes the TYPO3 auth-service
+    handoff after the plugin POST token has been validated. The
+    pending WorkOS login listener only swaps in TYPO3's
+    ``core/user-auth/fe`` token for server-created pending-login
+    requests and leaves invalid request-token states untouched.
+-   Frontend magic-auth verification now follows the same
+    email-verification continuation as password login. If WorkOS
+    returns ``email_verification_required`` after a valid magic code,
+    the extension clears the magic-auth state and stores the pending
+    email-verification token in the frontend session instead of
+    dropping back to the generic login form.
 
 ..  _changelog-0-26-0:
 

@@ -319,7 +319,12 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $code = RequestBody::fromRequest($this->request)->trimmedString('code');
         $sessionData = $this->getFrontendUser()->getSessionData('workos_magic_auth');
 
-        if (!is_array($sessionData) || !isset($sessionData['userId']) || $sessionData['userId'] === '') {
+        if (!is_array($sessionData)) {
+            return $this->redirectToShowWithError($this->translate('error.magicAuthSessionExpired'));
+        }
+
+        $email = $this->stringFromMixed($sessionData['email'] ?? $sessionData['userId'] ?? null);
+        if ($email === '') {
             return $this->redirectToShowWithError($this->translate('error.magicAuthSessionExpired'));
         }
 
@@ -335,12 +340,16 @@ final class LoginController extends ActionController implements LoggerAwareInter
             $result = $this->workosAuthenticationService->authenticateWithMagicAuth(
                 $this->request,
                 $code,
-                $this->stringFromMixed($sessionData['userId'])
+                $email
             );
             $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
             $returnTo = $this->stringFromMixed($sessionData['returnTo'] ?? '/');
             $this->getFrontendUser()->setAndSaveSessionData('workos_magic_auth', null);
             return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo === '' ? '/' : $returnTo);
+        } catch (EmailVerificationRequiredException $e) {
+            $returnTo = $this->stringFromMixed($sessionData['returnTo'] ?? '/');
+            $this->getFrontendUser()->setAndSaveSessionData('workos_magic_auth', null);
+            return $this->startEmailVerificationFlow($e, $returnTo === '' ? '/' : $returnTo);
         } catch (\Throwable $e) {
             return $this->redirectToShowWithError($this->sanitizeErrorMessage($e->getMessage()));
         }

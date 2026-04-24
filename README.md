@@ -247,6 +247,16 @@ The extension takes an auth-first stance. Notable guarantees:
   POST flow (password, sign-up, magic auth, email verification), and
   on the backend User Management module's widget-token, join, and
   create-organization routes.
+- **TYPO3 login-token handoff stays narrow**: after a WorkOS password,
+  magic-auth, or callback login succeeds, the extension only swaps to
+  TYPO3's `core/user-auth/fe` or `core/user-auth/be` scope when the
+  request carries the server-created pending-login attribute. Invalid
+  request-token states are not converted.
+- **Pending WorkOS auth state is session-bound**: frontend
+  email-verification tokens stay in the TYPO3 frontend session, while
+  backend magic-auth/email-verification state is stored server-side and
+  bound to an HttpOnly state cookie. Tokens are not exposed in success
+  or error redirect URLs.
 - **Object ownership checks**: Account Center factor deletion and
   session revocation first confirm that the posted WorkOS id belongs
   to the currently linked WorkOS user before using the API key.
@@ -269,6 +279,8 @@ The extension takes an auth-first stance. Notable guarantees:
   and only appear in the LIVE workspace.
 
 The current audit snapshots live under [`docs/audits/`](docs/audits/).
+The targeted frontend login handoff review is documented in
+[`docs/audits/frontend-login-handoff-security-20260424.md`](docs/audits/frontend-login-handoff-security-20260424.md).
 
 ## Quality
 
@@ -280,7 +292,7 @@ The current audit snapshots live under [`docs/audits/`](docs/audits/).
   `composer cs:check` or `composer cs:fix`.
 - `composer ci` runs TYPO3 coding standards, PHPStan, unit tests,
   and functional tests in one command.
-- **88 unit tests** (176 assertions, 1 skipped pending a
+- **97 unit tests** (199 assertions, 1 skipped pending a
   `de.locallang_db.xlf` translation), including regressions for
   every security fix, a TCA contract guard on the identity table,
   and XLIFF parity between English and German — run
