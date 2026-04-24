@@ -38,6 +38,10 @@ Unreleased
 -   Documentation refreshed to describe the narrow TYPO3
     request-token handoff, server-side WorkOS pending-token storage,
     and the verified test-suite size after the frontend login fix.
+-   README and troubleshooting documentation cleaned up so the README
+    stays high-level, while the detailed TYPO3 auth-service and
+    frontend session handoff behaviour lives in the TYPO3
+    documentation.
 
 ..  _changelog-0-26-0:
 

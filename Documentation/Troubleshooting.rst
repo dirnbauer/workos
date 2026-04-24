@@ -113,13 +113,29 @@ Frontend email-code login sends the email but does not finish
 If the first step works (the user receives a six-digit email code) but
 submitting that code returns to the login form with a generic
 "login failed" message, verify that the extension includes the
-frontend request-token handoff fix.
+frontend request-token and session handoff fixes.
+
+The relevant TYPO3 log line looks like this:
+
+..  code-block:: text
+    :caption: var/log/typo3_*.log
+
+    WorkOS auth error: The TYPO3 frontend authentication service did not authenticate the expected user.
 
 The email-code POST validates the plugin token first. After WorkOS
 accepts the code, TYPO3 still performs its own active login check and
 expects the core ``core/user-auth/fe`` token scope. The fixed
 implementation bridges that handoff only for a server-created pending
 WorkOS login and never for an invalid token state.
+
+There is a second symptom to watch for after older builds: the
+``fe_users.lastlogin`` timestamp may update, while the newest
+``fe_sessions`` row still has ``ses_userid = 0``. That means WorkOS
+verification reached the local login handoff, but TYPO3's original
+anonymous frontend session was saved after the newly-authenticated
+session. Current builds reuse TYPO3's request-bound ``frontend.user``
+object so the final session and cookie write stay in the normal
+``FrontendUserAuthenticator`` lifecycle.
 
 ..  code-block:: bash
     :caption: Clear compiled configuration after updating

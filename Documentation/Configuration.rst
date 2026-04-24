@@ -194,8 +194,8 @@ These are optional. Per-request overrides are also possible via
 All configuration keys
 ======================
 
-If you prefer editing :file:`config/system/settings.php` directly, here
-are every key with its default:
+If you prefer editing :file:`config/system/settings.php` directly, this
+is the complete configuration array with defaults:
 
 ..  code-block:: php
     :caption: config/system/settings.php

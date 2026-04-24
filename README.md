@@ -122,39 +122,17 @@ session cookie is sent on the final backend navigation.
 
 ### TYPO3 auth service bridge
 
-The backend and frontend hand-off does not stop at the custom WorkOS
-middleware. After WorkOS has authenticated the user, the extension
-hands the resolved TYPO3 user record back into TYPO3's native auth
-chain through a registered auth service:
+The frontend and backend hand-off does not bypass TYPO3's user
+authentication API. WorkOS verifies credentials, magic codes, social
+callbacks and email-verification codes. After that, the extension
+resolves the local TYPO3 user and hands the record to TYPO3 through a
+registered auth service covering `processLoginData*`, `getUser*`, and
+`authUser*` for both FE and BE contexts.
 
-```php
-ExtensionManagementUtility::addService(
-    'workos_auth',
-    'auth',
-    \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
-    [
-        'title' => 'WorkOS TYPO3 Authentication Bridge',
-        'description' => 'Authenticates TYPO3 FE and BE users after a successful WorkOS login flow.',
-        'subtype' => 'getUserBE,getUserFE,authUserBE,authUserFE,processLoginDataBE,processLoginDataFE',
-        'available' => true,
-        'priority' => 85,
-        'quality' => 80,
-        'os' => '',
-        'exec' => '',
-        'className' => \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
-    ]
-);
-```
-
-Why six hooks? TYPO3 authentication is split into three phases for each
-context:
-
-- `processLoginDataFE` / `processLoginDataBE` prepare the request so TYPO3 treats it as an active login.
-- `getUserFE` / `getUserBE` return the already-resolved local `fe_users` / `be_users` record.
-- `authUserFE` / `authUserBE` confirm that this candidate is the user TYPO3 should log in.
-
-That lets TYPO3 create the FE/BE session itself, run its normal login
-events, and continue into backend MFA if TYPO3 MFA is enabled.
+TYPO3 still creates the actual FE/BE session, applies session fixation
+protection, writes login logs, dispatches login events, and continues
+into backend MFA when TYPO3 MFA providers are enabled. The extension
+does not write TYPO3 session rows directly.
 
 For frontend plugin logins, the hand-off reuses the `frontend.user`
 authentication object already attached to the TYPO3 request. That keeps
@@ -303,15 +281,16 @@ The targeted frontend login handoff review is documented in
   every security fix, a TCA contract guard on the identity table,
   and XLIFF parity between English and German — run
   `composer test:unit`.
-- Functional tests cover `IdentityService` round-trips (including
-  under a workspace aspect) and `UserProvisioningService`
-  create-or-link flows via `typo3/testing-framework ^9.2` — run
-  `composer test:functional`.
+- **14 functional tests** cover `IdentityService` round-trips
+  (including under a workspace aspect), `UserProvisioningService`
+  create-or-link flows, and TYPO3 FE/BE session handoff through
+  `Typo3SessionService` — run `composer test:functional`.
 - Mutation testing via Infection — run `composer test:mutation`.
 - Architecture rules via `phpat` keep the
   Controllers → Services → Security boundary intact.
-- Uniform entry point: `Build/Scripts/runTests.sh -s ci` runs
-  PHPStan + unit tests with the same flags locally and in CI.
+- Uniform entry point: `Build/Scripts/runTests.sh -s ci` runs coding
+  standards, PHPStan, unit tests and functional tests with the same
+  flags locally and in CI.
 
 ## Licence
 

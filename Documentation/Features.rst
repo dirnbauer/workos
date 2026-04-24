@@ -139,6 +139,11 @@ handoff: it resolves or provisions the local ``fe_users`` /
 attribute, and lets TYPO3's ``FrontendUserAuthentication`` or
 ``BackendUserAuthentication`` create the session.
 
+The extension does not insert or update TYPO3 session rows directly.
+That is intentionally left to TYPO3 core so session fixation
+protection, login logging, login events and backend MFA evaluation keep
+their standard behaviour.
+
 The registration in :file:`ext_localconf.php` looks like this:
 
 ..  code-block:: php
@@ -200,7 +205,8 @@ The final session and cookie therefore remain part of TYPO3's normal
 ``FrontendUserAuthenticator`` lifecycle. This is important for
 magic-auth and email-verification flows because the same request may
 also clear an anonymous pending-code session before the local FE user
-is logged in.
+is logged in. Reusing the request-bound object prevents that anonymous
+session cleanup from overwriting the freshly authenticated FE session.
 
 ``AllowPendingWorkosLoginRequestTokenListener`` bridges that internal
 handoff by issuing the matching TYPO3 core token scope:
