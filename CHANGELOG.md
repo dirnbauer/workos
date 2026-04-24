@@ -1,6 +1,6 @@
 # Changelog
 
-The detailed release history lives in [Documentation/Changelog.rst](Documentation/Changelog.rst).
+The full, versioned release history is [Documentation/Changelog.rst](Documentation/Changelog.rst).
 
 ## 0.26.0 - 2026-04-22
 

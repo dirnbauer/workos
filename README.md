@@ -1,11 +1,14 @@
 # WorkOS Auth for TYPO3 14
 
+Source: [github.com/dirnbauer/workos](https://github.com/dirnbauer/workos)
+
 `workos_auth` adds [WorkOS](https://workos.com) authentication to both the
 TYPO3 **frontend** and the TYPO3 **backend**. It supports the full WorkOS
 AuthKit feature set: email + password, passwordless magic auth, and
 social sign-in with Google, Microsoft, GitHub, and Apple.
 
-Requirements: TYPO3 `^14.0`, PHP `^8.2`. Current release: **0.26.0**.
+Requirements: TYPO3 `^14.0`, PHP `^8.2` (compatible with PHP 8.2–8.5 per
+`ext_emconf.php`). Current release: **0.26.0**.
 
 ---
 
@@ -214,7 +217,6 @@ The full list of keys is in
 - [WorkOS Dashboard](Documentation/WorkosDashboard.rst) – Redirect URIs and enabling auth methods
 - [Troubleshooting](Documentation/Troubleshooting.rst) – Common errors and fixes
 - [Changelog](Documentation/Changelog.rst) – Release notes
-- [Audit snapshots](docs/audits/) – v14 upgrade, conformance, security, testing, docs
 
 ## Security
 
@@ -276,7 +278,7 @@ The targeted frontend login handoff review is documented in
   `composer cs:check` or `composer cs:fix`.
 - `composer ci` runs TYPO3 coding standards, PHPStan, unit tests,
   and functional tests in one command.
-- **97 unit tests** (199 assertions, 1 skipped pending a
+- **98 unit tests** (202 assertions, 1 skipped pending a
   `de.locallang_db.xlf` translation), including regressions for
   every security fix, a TCA contract guard on the identity table,
   and XLIFF parity between English and German — run
@@ -284,7 +286,10 @@ The targeted frontend login handoff review is documented in
 - **14 functional tests** cover `IdentityService` round-trips
   (including under a workspace aspect), `UserProvisioningService`
   create-or-link flows, and TYPO3 FE/BE session handoff through
-  `Typo3SessionService` — run `composer test:functional`.
+  `Typo3SessionService`. They need a TYPO3 functional-test database
+  (use `Build/Scripts/runTests.sh -s functional`; plain
+  `composer test:functional` only works when that environment is
+  already configured).
 - Mutation testing via Infection — run `composer test:mutation`.
 - Architecture rules via `phpat` keep the
   Controllers → Services → Security boundary intact.

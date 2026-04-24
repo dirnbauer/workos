@@ -8,41 +8,6 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
-..  _changelog-unreleased:
-
-Unreleased
-==========
-
--   Backend WorkOS login accepts TYPO3's default
-    ``BE.cookieSameSite = strict`` again. After the external WorkOS
-    callback, the extension returns a same-origin continuation page so
-    the strict backend session cookie is sent on the final backend
-    navigation.
--   Frontend email-code login now completes the TYPO3 auth-service
-    handoff after the plugin POST token has been validated. The
-    pending WorkOS login listener only swaps in TYPO3's
-    ``core/user-auth/fe`` token for server-created pending-login
-    requests and leaves invalid request-token states untouched.
--   Frontend plugin logins reuse TYPO3's request-bound
-    ``frontend.user`` authentication object for the final local
-    login. This keeps cookie and session persistence inside
-    TYPO3's normal frontend middleware lifecycle and prevents the
-    previous anonymous magic-auth session from overwriting the
-    logged-in session.
--   Frontend magic-auth verification now follows the same
-    email-verification continuation as password login. If WorkOS
-    returns ``email_verification_required`` after a valid magic code,
-    the extension clears the magic-auth state and stores the pending
-    email-verification token in the frontend session instead of
-    dropping back to the generic login form.
--   Documentation refreshed to describe the narrow TYPO3
-    request-token handoff, server-side WorkOS pending-token storage,
-    and the verified test-suite size after the frontend login fix.
--   README and troubleshooting documentation cleaned up so the README
-    stays high-level, while the detailed TYPO3 auth-service and
-    frontend session handoff behaviour lives in the TYPO3
-    documentation.
-
 ..  _changelog-0-26-0:
 
 0.26.0 — TYPO3 14 tooling + auth hardening
@@ -135,6 +100,8 @@ official TYPO3 coding standards package.
 -   Unit coverage was expanded for configuration normalization,
     request-token validation, and translation parity. The skipped
     test waits for a German ``de.locallang_db.xlf`` to land.
+-   Unit suite size for this release: 98 tests, 202 assertions, one
+    skipped (see ``composer test:unit``).
 
 ..  _changelog-0-25-0:
 
@@ -203,9 +170,7 @@ Follow-up to 0.24.0. Third conformance / security / docs sweep.
 -   New ``Tests/Unit/Configuration/XliffParityTest`` fails when any
     translation key added to ``locallang.xlf`` forgets its German
     counterpart (or vice versa).
--   Unit suite moves from 77 tests / 139 assertions to 82 / 151
-    (further uplifted to 83 / 166 in the post-0.25.0 mutation-
-    coverage work — see :ref:`Unreleased <changelog-unreleased>`).
+-   Unit suite moves from 77 tests / 139 assertions to 82 / 151.
 
 ..  rubric:: Quality
 

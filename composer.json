@@ -12,7 +12,7 @@
         "oidc",
         "mfa"
     ],
-    "homepage": "https://github.com/webconsulting/typo3-workos-auth",
+    "homepage": "https://github.com/dirnbauer/workos",
     "authors": [
         {
             "name": "webconsulting",
@@ -22,8 +22,8 @@
         }
     ],
     "support": {
-        "issues": "https://github.com/webconsulting/typo3-workos-auth/issues",
-        "source": "https://github.com/webconsulting/typo3-workos-auth"
+        "issues": "https://github.com/dirnbauer/workos/issues",
+        "source": "https://github.com/dirnbauer/workos"
     },
     "require": {
         "php": "^8.2",
