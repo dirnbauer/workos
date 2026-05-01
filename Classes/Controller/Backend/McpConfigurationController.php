@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Security\RequestTokenService;
+use WebConsulting\WorkosAuth\Service\ExtensionSchemaService;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 
 final class McpConfigurationController
@@ -38,6 +39,7 @@ final class McpConfigurationController
         private readonly CacheManager $cacheManager,
         private readonly SiteFinder $siteFinder,
         private readonly LanguageServiceFactory $languageServiceFactory,
+        private readonly ExtensionSchemaService $extensionSchemaService,
     ) {}
 
     public function indexAction(ServerRequestInterface $request): ResponseInterface
@@ -50,9 +52,11 @@ final class McpConfigurationController
             'formValues' => $formValues,
             'errors' => $mcpErrors,
             'saveUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_mcp.save'),
+            'schemaUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_mcp.schema'),
             'requestTokenName' => RequestToken::PARAM_NAME,
             'requestTokenValue' => $this->requestTokenService->createHashed(self::REQUEST_TOKEN_SCOPE),
             'status' => $this->buildStatus($formValues),
+            'databaseSchema' => $this->extensionSchemaService->getStatus(),
             'endpointUrls' => $this->buildEndpointUrls($request, $formValues),
             'modeOptions' => $this->buildModeOptions(MixedCaster::string($formValues['mcpAuthenticationMode'] ?? null)),
         ]);
@@ -109,6 +113,47 @@ final class McpConfigurationController
         } else {
             $this->flash($this->translate('module.mcp.flash.saved'), ContextualFeedbackSeverity::OK);
         }
+
+        return $this->redirectToIndex();
+    }
+
+    public function applySchemaAction(ServerRequestInterface $request): ResponseInterface
+    {
+        if (!$this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE)) {
+            $this->flash($this->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
+            return $this->redirectToIndex();
+        }
+
+        try {
+            $result = $this->extensionSchemaService->applyPendingUpdates();
+        } catch (\Throwable $exception) {
+            $this->flash(
+                $this->translate('module.mcp.schema.flash.error', ['error' => $exception->getMessage()]),
+                ContextualFeedbackSeverity::ERROR,
+            );
+            return $this->redirectToIndex();
+        }
+
+        if ($result['errors'] !== []) {
+            $this->flash(
+                $this->translate('module.mcp.schema.flash.partial', [
+                    'count' => (string)$result['appliedCount'],
+                    'errors' => implode(' ', array_values($result['errors'])),
+                ]),
+                ContextualFeedbackSeverity::WARNING,
+            );
+            return $this->redirectToIndex();
+        }
+
+        if ($result['appliedCount'] === 0) {
+            $this->flash($this->translate('module.mcp.schema.flash.upToDate'), ContextualFeedbackSeverity::OK);
+            return $this->redirectToIndex();
+        }
+
+        $this->flash(
+            $this->translate('module.mcp.schema.flash.applied', ['count' => (string)$result['appliedCount']]),
+            ContextualFeedbackSeverity::OK,
+        );
 
         return $this->redirectToIndex();
     }

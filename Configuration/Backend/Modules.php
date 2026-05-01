@@ -78,6 +78,10 @@ return [
                 'target' => McpConfigurationController::class . '::saveAction',
                 'methods' => ['POST'],
             ],
+            'schema' => [
+                'target' => McpConfigurationController::class . '::applySchemaAction',
+                'methods' => ['POST'],
+            ],
         ],
     ],
 ];

@@ -22,6 +22,9 @@ Unreleased
 -   A dedicated :guilabel:`WorkOS` -> :guilabel:`MCP Server` backend
     module now provides a TYPO3-style GUI for endpoint URLs, auth mode,
     AuthKit domain, WorkOS discovery, server limit and verbose logging.
+-   The MCP backend module now shows WorkOS database schema status and
+    can apply pending WorkOS table changes through TYPO3's schema
+    migrator.
 
 ..  _changelog-0-26-0:
 

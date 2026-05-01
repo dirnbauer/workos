@@ -934,6 +934,54 @@
                 <source>The MCP configuration has been saved, but needs attention: {errors}</source>
                 <target>Die MCP-Konfiguration wurde gespeichert, benötigt aber Aufmerksamkeit: {errors}</target>
             </trans-unit>
+            <trans-unit id="module.mcp.schema.title">
+                <source>Database schema</source>
+                <target>Datenbankschema</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.status">
+                <source>Status</source>
+                <target>Status</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.ready">
+                <source>Ready</source>
+                <target>Bereit</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.pending">
+                <source>Update required</source>
+                <target>Aktualisierung erforderlich</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.tables">
+                <source>Managed tables</source>
+                <target>Verwaltete Tabellen</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.ready.description">
+                <source>TYPO3 database schema is in sync for WorkOS.</source>
+                <target>Das TYPO3-Datenbankschema ist fuer WorkOS aktuell.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.pending.description">
+                <source>TYPO3 reports pending WorkOS schema updates from ext_tables.sql.</source>
+                <target>TYPO3 meldet ausstehende WorkOS-Schema-Updates aus ext_tables.sql.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.apply">
+                <source>Apply TYPO3 schema updates</source>
+                <target>TYPO3-Schema-Updates anwenden</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.applied">
+                <source>Applied {count} TYPO3 schema update(s) for WorkOS.</source>
+                <target>{count} TYPO3-Schema-Update(s) fuer WorkOS angewendet.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.partial">
+                <source>Applied {count} TYPO3 schema update(s), but some statements failed: {errors}</source>
+                <target>{count} TYPO3-Schema-Update(s) angewendet, aber einige Anweisungen sind fehlgeschlagen: {errors}</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.upToDate">
+                <source>TYPO3 database schema is already in sync for WorkOS.</source>
+                <target>Das TYPO3-Datenbankschema ist fuer WorkOS bereits aktuell.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.error">
+                <source>Could not apply TYPO3 schema updates: {error}</source>
+                <target>TYPO3-Schema-Updates konnten nicht angewendet werden: {error}</target>
+            </trans-unit>
 
             <!-- Error messages -->
             <trans-unit id="error.generic">

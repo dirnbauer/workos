@@ -175,7 +175,9 @@ with two entries:
   CSRF-protected and bound to the signed-in WorkOS session.
 - **MCP Server** (`/module/workos/mcp`) — dedicated TYPO3 backend UI
   for MCP endpoint URLs, auth mode, AuthKit domain, WorkOS discovery,
-  server limit, and verbose MCP logging.
+  server limit, verbose MCP logging, and WorkOS database schema status.
+  Its schema action uses TYPO3's schema migrator against the configured
+  TYPO3 database; no separate WorkOS database is created.
 
 Both modules register with `workspaces => 'live'` and only appear in
 the LIVE workspace.

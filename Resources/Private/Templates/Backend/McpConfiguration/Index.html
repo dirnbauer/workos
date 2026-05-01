@@ -169,6 +169,52 @@
         <div class="col-xl-5">
             <div class="card mb-4">
                 <div class="card-header">
+                    <h2 class="card-title"><f:translate key="workos_auth.messages:module.mcp.schema.title" /></h2>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted"><f:translate key="workos_auth.messages:module.mcp.schema.status" /></span>
+                        <f:if condition="{databaseSchema.ready}">
+                            <f:then><span class="badge bg-success"><f:translate key="workos_auth.messages:module.mcp.schema.ready" /></span></f:then>
+                            <f:else><span class="badge bg-warning text-dark"><f:translate key="workos_auth.messages:module.mcp.schema.pending" /></span></f:else>
+                        </f:if>
+                    </div>
+                    <div class="mb-3">
+                        <div class="text-muted mb-1"><f:translate key="workos_auth.messages:module.mcp.schema.tables" /></div>
+                        <f:for each="{databaseSchema.managedTables}" as="tableName">
+                            <code class="me-1">{tableName}</code>
+                        </f:for>
+                    </div>
+                    <f:if condition="{databaseSchema.error}">
+                        <f:then>
+                            <div class="alert alert-danger mb-0">{databaseSchema.error}</div>
+                        </f:then>
+                        <f:else>
+                            <f:if condition="{databaseSchema.ready}">
+                                <f:then>
+                                    <p class="text-muted mb-0">
+                                        <f:translate key="workos_auth.messages:module.mcp.schema.ready.description" />
+                                    </p>
+                                </f:then>
+                                <f:else>
+                                    <p class="text-muted">
+                                        <f:translate key="workos_auth.messages:module.mcp.schema.pending.description" />
+                                    </p>
+                                    <form method="post" action="{schemaUri}">
+                                        <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}">
+                                        <button class="btn btn-default" type="submit">
+                                            <f:translate key="workos_auth.messages:module.mcp.schema.apply" />
+                                        </button>
+                                    </form>
+                                </f:else>
+                            </f:if>
+                        </f:else>
+                    </f:if>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
                     <h2 class="card-title"><f:translate key="workos_auth.messages:module.mcp.endpoints.title" /></h2>
                 </div>
                 <div class="card-body p-0">

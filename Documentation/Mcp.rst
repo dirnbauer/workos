@@ -111,6 +111,25 @@ link-by-email and let the user sign in once through the normal WorkOS
 TYPO3 login flow. After that, MCP calls see the same local user and
 group mapping.
 
+Database schema
+===============
+
+The WorkOS identity mapping table is part of the TYPO3 extension schema
+in :file:`ext_tables.sql`. It is created in the normal TYPO3 database,
+through TYPO3's schema migrator, not in a separate database.
+
+Use one of TYPO3's standard schema update paths after installing or
+updating the extension:
+
+..  code-block:: bash
+
+    vendor/bin/typo3 extension:setup --extension=workos_auth
+
+Alternatively, open :guilabel:`WorkOS` -> :guilabel:`MCP Server` and
+use the :guilabel:`Database schema` card. The button there delegates to
+TYPO3's schema migrator and applies only pending WorkOS table changes
+from :file:`ext_tables.sql`.
+
 Development mode without WorkOS
 ===============================
 

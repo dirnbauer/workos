@@ -706,6 +706,42 @@
             <trans-unit id="module.mcp.flash.savedWithWarnings">
                 <source>The MCP configuration has been saved, but needs attention: {errors}</source>
             </trans-unit>
+            <trans-unit id="module.mcp.schema.title">
+                <source>Database schema</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.status">
+                <source>Status</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.ready">
+                <source>Ready</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.pending">
+                <source>Update required</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.tables">
+                <source>Managed tables</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.ready.description">
+                <source>TYPO3 database schema is in sync for WorkOS.</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.pending.description">
+                <source>TYPO3 reports pending WorkOS schema updates from ext_tables.sql.</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.apply">
+                <source>Apply TYPO3 schema updates</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.applied">
+                <source>Applied {count} TYPO3 schema update(s) for WorkOS.</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.partial">
+                <source>Applied {count} TYPO3 schema update(s), but some statements failed: {errors}</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.upToDate">
+                <source>TYPO3 database schema is already in sync for WorkOS.</source>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.error">
+                <source>Could not apply TYPO3 schema updates: {error}</source>
+            </trans-unit>
 
             <!-- Error messages -->
             <trans-unit id="error.generic">
