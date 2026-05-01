@@ -720,9 +720,219 @@
                 <source>Domain hint</source>
                 <target>Domain-Hinweis</target>
             </trans-unit>
+            <trans-unit id="setup.mcp.title">
+                <source>TYPO3 MCP server</source>
+                <target>TYPO3-MCP-Server</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.enable">
+                <source>Enable TYPO3 MCP server</source>
+                <target>TYPO3-MCP-Server aktivieren</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.enable.description">
+                <source>Expose a Streamable HTTP MCP endpoint from TYPO3. In auto mode it is anonymous in Development/Testing and requires WorkOS in Production.</source>
+                <target>Stellt einen Streamable-HTTP-MCP-Endpunkt aus TYPO3 bereit. Im Auto-Modus ist er in Development/Testing anonym und benötigt in Production WorkOS.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.serverPath">
+                <source>MCP endpoint path</source>
+                <target>MCP-Endpunktpfad</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.serverPath.description">
+                <source>Public URL path for JSON-RPC MCP requests. The default is /workos-auth/mcp.</source>
+                <target>Öffentlicher URL-Pfad für JSON-RPC-MCP-Anfragen. Standard ist /workos-auth/mcp.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode">
+                <source>Authentication mode</source>
+                <target>Authentifizierungsmodus</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode.auto">
+                <source>Auto: anonymous in development, WorkOS in production</source>
+                <target>Auto: anonym in Development, WorkOS in Production</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode.workos">
+                <source>Always require WorkOS</source>
+                <target>WorkOS immer voraussetzen</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode.anonymous">
+                <source>Allow anonymous access</source>
+                <target>Anonymen Zugriff erlauben</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode.description">
+                <source>Use anonymous only for trusted development or deliberately public MCP endpoints.</source>
+                <target>Anonym nur für vertrauenswürdige Entwicklung oder bewusst öffentliche MCP-Endpunkte verwenden.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authkitDomain">
+                <source>AuthKit domain</source>
+                <target>AuthKit-Domain</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authkitDomain.description">
+                <source>Issuer used to verify MCP bearer tokens, for example https://your-project.authkit.app.</source>
+                <target>Issuer zur Prüfung von MCP-Bearer-Tokens, zum Beispiel https://your-project.authkit.app.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.workosDiscovery">
+                <source>Discover authorized WorkOS MCP applications</source>
+                <target>Autorisierte WorkOS-MCP-Anwendungen erkennen</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.workosDiscovery.description">
+                <source>List WorkOS Connect applications authorized by the current WorkOS user without local TYPO3 server configuration.</source>
+                <target>Listet vom aktuellen WorkOS-Benutzer autorisierte WorkOS-Connect-Anwendungen ohne lokale TYPO3-Serverkonfiguration.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.verboseLogging">
+                <source>Verbose MCP logging</source>
+                <target>Ausführliches MCP-Logging</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.verboseLogging.description">
+                <source>Log MCP method calls and WorkOS discovery failures. Bearer tokens and secrets are redacted.</source>
+                <target>Protokolliert MCP-Methodenaufrufe und WorkOS-Discovery-Fehler. Bearer-Tokens und Secrets werden maskiert.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.serverLimit">
+                <source>Maximum WorkOS MCP applications</source>
+                <target>Maximale Anzahl WorkOS-MCP-Anwendungen</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.serverLimit.description">
+                <source>Maximum number of authorized WorkOS Connect applications to expose through TYPO3. Capped at 10.</source>
+                <target>Maximale Anzahl autorisierter WorkOS-Connect-Anwendungen, die TYPO3 bereitstellt. Auf 10 begrenzt.</target>
+            </trans-unit>
             <trans-unit id="setup.save">
                 <source>Save configuration</source>
                 <target>Konfiguration speichern</target>
+            </trans-unit>
+
+            <!-- Backend MCP module -->
+            <trans-unit id="module.mcp.title">
+                <source>TYPO3 MCP Server</source>
+                <target>TYPO3-MCP-Server</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.description">
+                <source>Configure the TYPO3 MCP endpoint, WorkOS authentication policy and WorkOS-authorized MCP discovery.</source>
+                <target>TYPO3-MCP-Endpunkt, WorkOS-Authentifizierungsrichtlinie und WorkOS-autorisierte MCP-Discovery konfigurieren.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.context">
+                <source>Context</source>
+                <target>Kontext</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.endpoint">
+                <source>Endpoint</source>
+                <target>Endpunkt</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.auth">
+                <source>Auth</source>
+                <target>Auth</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.enabled">
+                <source>Enabled</source>
+                <target>Aktiviert</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.disabled">
+                <source>Disabled</source>
+                <target>Deaktiviert</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.workosRequired">
+                <source>WorkOS required</source>
+                <target>WorkOS erforderlich</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.anonymous">
+                <source>Anonymous</source>
+                <target>Anonym</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.ready.title">
+                <source>MCP endpoint is ready</source>
+                <target>MCP-Endpunkt ist bereit</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.ready.description">
+                <source>Clients can connect to the endpoint below. In production, WorkOS bearer-token protection is applied when the effective authentication mode requires it.</source>
+                <target>Clients können sich mit dem untenstehenden Endpunkt verbinden. In Production wird WorkOS-Bearer-Token-Schutz angewendet, wenn der effektive Authentifizierungsmodus dies erfordert.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.notReady.title">
+                <source>MCP endpoint needs attention</source>
+                <target>MCP-Endpunkt benötigt Aufmerksamkeit</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.notReady.description">
+                <source>Enable the endpoint or add an AuthKit domain when WorkOS authentication is required.</source>
+                <target>Aktivieren Sie den Endpunkt oder ergänzen Sie eine AuthKit-Domain, wenn WorkOS-Authentifizierung erforderlich ist.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.section.endpoint">
+                <source>Endpoint</source>
+                <target>Endpunkt</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.section.security">
+                <source>Security</source>
+                <target>Sicherheit</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.section.workos">
+                <source>WorkOS discovery</source>
+                <target>WorkOS-Discovery</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.save">
+                <source>Save MCP configuration</source>
+                <target>MCP-Konfiguration speichern</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.title">
+                <source>Client URLs</source>
+                <target>Client-URLs</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.label">
+                <source>Scope</source>
+                <target>Bereich</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.url">
+                <source>URL</source>
+                <target>URL</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.currentHost">
+                <source>Current host</source>
+                <target>Aktueller Host</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.protectedResource">
+                <source>Protected resource metadata</source>
+                <target>Protected-Resource-Metadaten</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.authorizationServer">
+                <source>Authorization server metadata</source>
+                <target>Authorization-Server-Metadaten</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.title">
+                <source>Production checklist</source>
+                <target>Production-Checkliste</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.endpoint">
+                <source>Add the MCP endpoint URL as protected resource in WorkOS.</source>
+                <target>Fügen Sie die MCP-Endpunkt-URL in WorkOS als Protected Resource hinzu.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.authkit">
+                <source>Set the AuthKit domain so TYPO3 can verify bearer tokens.</source>
+                <target>Setzen Sie die AuthKit-Domain, damit TYPO3 Bearer-Tokens prüfen kann.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.mapping">
+                <source>Let users sign in through WorkOS once so TYPO3 can create the FE/BE identity mapping.</source>
+                <target>Lassen Sie Benutzer einmal über WorkOS anmelden, damit TYPO3 das FE/BE-Identity-Mapping erstellen kann.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.client">
+                <source>Point the MCP client at the TYPO3 endpoint; WorkOS handles authorization and consent.</source>
+                <target>Richten Sie den MCP-Client auf den TYPO3-Endpunkt; WorkOS übernimmt Autorisierung und Zustimmung.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.mode.auto.description">
+                <source>Recommended. Anonymous in TYPO3 Development/Testing, WorkOS-protected in Production.</source>
+                <target>Empfohlen. Anonym in TYPO3 Development/Testing, WorkOS-geschützt in Production.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.mode.workos.description">
+                <source>Requires a valid WorkOS bearer token in every TYPO3 context.</source>
+                <target>Erfordert in jedem TYPO3-Kontext ein gültiges WorkOS-Bearer-Token.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.mode.anonymous.description">
+                <source>Allows unauthenticated MCP calls in every context. Use only for trusted local or deliberately public endpoints.</source>
+                <target>Erlaubt unauthentifizierte MCP-Aufrufe in jedem Kontext. Nur für vertrauenswürdige lokale oder bewusst öffentliche Endpunkte verwenden.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.flashTitle">
+                <source>MCP configuration</source>
+                <target>MCP-Konfiguration</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.flash.saved">
+                <source>The MCP configuration has been saved.</source>
+                <target>Die MCP-Konfiguration wurde gespeichert.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.flash.savedWithWarnings">
+                <source>The MCP configuration has been saved, but needs attention: {errors}</source>
+                <target>Die MCP-Konfiguration wurde gespeichert, benötigt aber Aufmerksamkeit: {errors}</target>
             </trans-unit>
 
             <!-- Error messages -->
@@ -865,6 +1075,14 @@
             <trans-unit id="validation.backendCookieSameSiteUnsupported">
                 <source>Backend WorkOS login requires TYPO3 backend cookies to use one of the core SameSite values "strict", "lax", or "none". The current TYPO3 core value is "%s".</source>
                 <target>Die WorkOS-Backend-Anmeldung setzt voraus, dass TYPO3-Backend-Cookies einen der Core-SameSite-Werte „strict“, „lax“ oder „none“ verwenden. Der aktuelle TYPO3-Core-Wert ist „%s“.</target>
+            </trans-unit>
+            <trans-unit id="validation.mcpAuthenticationModeInvalid">
+                <source>Choose a valid MCP authentication mode.</source>
+                <target>Wählen Sie einen gültigen MCP-Authentifizierungsmodus.</target>
+            </trans-unit>
+            <trans-unit id="validation.mcpAuthkitDomainRequired">
+                <source>Production MCP authentication requires an AuthKit domain.</source>
+                <target>MCP-Authentifizierung in Production benötigt eine AuthKit-Domain.</target>
             </trans-unit>
             <trans-unit id="setup.backend.cookieSameSiteCompatible">
                 <source>TYPO3 core backend cookies are configured with SameSite "%s", which is compatible with the WorkOS login flow.</source>

@@ -8,6 +8,21 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
+..  _changelog-unreleased:
+
+Unreleased
+==========
+
+..  rubric:: Added
+
+-   TYPO3 can now expose a Streamable HTTP MCP endpoint with
+    WorkOS-protected production mode, anonymous development mode,
+    WorkOS-authorized Connect application discovery, and TYPO3
+    frontend/backend user group introspection.
+-   A dedicated :guilabel:`WorkOS` -> :guilabel:`MCP Server` backend
+    module now provides a TYPO3-style GUI for endpoint URLs, auth mode,
+    AuthKit domain, WorkOS discovery, server limit and verbose logging.
+
 ..  _changelog-0-26-0:
 
 0.26.0 — TYPO3 14 tooling + auth hardening

@@ -75,6 +75,27 @@ final class WorkosConfigurationTest extends TestCase
         self::assertSame(0, $result['frontendStoragePid']);
     }
 
+    public function testNormalizeInputNormalizesMcpSettings(): void
+    {
+        $result = $this->configuration->normalizeInput([
+            'mcpEnabled' => true,
+            'mcpServerPath' => 'custom-mcp/',
+            'mcpAuthenticationMode' => 'WORKOS',
+            'mcpAuthkitDomain' => ' https://example.authkit.app/ ',
+            'mcpWorkosDiscovery' => true,
+            'mcpServerLimit' => 25,
+            'mcpVerboseLogging' => true,
+        ]);
+
+        self::assertTrue($result['mcpEnabled']);
+        self::assertSame('/custom-mcp', $result['mcpServerPath']);
+        self::assertSame(WorkosConfiguration::MCP_AUTHENTICATION_WORKOS, $result['mcpAuthenticationMode']);
+        self::assertSame('https://example.authkit.app', $result['mcpAuthkitDomain']);
+        self::assertTrue($result['mcpWorkosDiscovery']);
+        self::assertSame(10, $result['mcpServerLimit']);
+        self::assertTrue($result['mcpVerboseLogging']);
+    }
+
     public function testValidateReportsMissingCredentialsWhenAuthEnabled(): void
     {
         $errors = $this->configuration->validate([
@@ -95,6 +116,32 @@ final class WorkosConfigurationTest extends TestCase
         $errors = $this->configuration->validate([
             'frontendEnabled' => false,
             'backendEnabled' => false,
+        ]);
+
+        self::assertSame([], $errors);
+    }
+
+    public function testValidateRequiresAuthkitDomainWhenMcpAlwaysRequiresWorkos(): void
+    {
+        $errors = $this->configuration->validate([
+            'frontendEnabled' => false,
+            'backendEnabled' => false,
+            'mcpEnabled' => true,
+            'mcpAuthenticationMode' => WorkosConfiguration::MCP_AUTHENTICATION_WORKOS,
+            'mcpAuthkitDomain' => '',
+        ]);
+
+        self::assertArrayHasKey('mcpAuthkitDomain', $errors);
+    }
+
+    public function testValidateAcceptsAnonymousMcpWithoutAuthkitDomain(): void
+    {
+        $errors = $this->configuration->validate([
+            'frontendEnabled' => false,
+            'backendEnabled' => false,
+            'mcpEnabled' => true,
+            'mcpAuthenticationMode' => WorkosConfiguration::MCP_AUTHENTICATION_ANONYMOUS,
+            'mcpAuthkitDomain' => '',
         ]);
 
         self::assertSame([], $errors);

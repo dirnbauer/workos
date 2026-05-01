@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use WebConsulting\WorkosAuth\Controller\Backend\McpConfigurationController;
 use WebConsulting\WorkosAuth\Controller\Backend\SetupAssistantController;
 use WebConsulting\WorkosAuth\Controller\Backend\UserManagementController;
 
@@ -57,6 +58,24 @@ return [
             ],
             'save' => [
                 'target' => SetupAssistantController::class . '::saveAction',
+                'methods' => ['POST'],
+            ],
+        ],
+    ],
+    'workos_mcp' => [
+        'parent' => 'workos',
+        'position' => ['after' => 'workos_setup'],
+        'access' => 'admin',
+        'workspaces' => 'live',
+        'path' => '/module/workos/mcp',
+        'iconIdentifier' => 'workos-auth-mcp',
+        'labels' => 'LLL:EXT:workos_auth/Resources/Private/Language/locallang_mod_mcp.xlf',
+        'routes' => [
+            '_default' => [
+                'target' => McpConfigurationController::class . '::indexAction',
+            ],
+            'save' => [
+                'target' => McpConfigurationController::class . '::saveAction',
                 'methods' => ['POST'],
             ],
         ],

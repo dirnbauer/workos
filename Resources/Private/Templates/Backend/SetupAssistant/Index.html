@@ -298,6 +298,87 @@
             </div>
         </div>
 
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title"><f:translate key="workos_auth.messages:setup.mcp.title" /></h3>
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    <input type="hidden" name="configuration[mcpEnabled]" value="0">
+                    <input id="mcpEnabled" class="form-check-input" type="checkbox" name="configuration[mcpEnabled]" value="1" <f:if condition="{formValues.mcpEnabled}">checked</f:if>>
+                    <label class="form-check-label" for="mcpEnabled"><f:translate key="workos_auth.messages:setup.mcp.enable" /></label>
+                    <small class="form-text text-muted d-block">
+                        <f:translate key="workos_auth.messages:setup.mcp.enable.description" />
+                    </small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="mcpServerPath"><strong><f:translate key="workos_auth.messages:setup.mcp.serverPath" /></strong></label>
+                    <input id="mcpServerPath" class="form-control" type="text" name="configuration[mcpServerPath]" value="{formValues.mcpServerPath}">
+                    <small class="form-text text-muted">
+                        <f:translate key="workos_auth.messages:setup.mcp.serverPath.description" />
+                    </small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="mcpAuthenticationMode"><strong><f:translate key="workos_auth.messages:setup.mcp.authenticationMode" /></strong></label>
+                    <select id="mcpAuthenticationMode" class="form-select" name="configuration[mcpAuthenticationMode]">
+                        <option value="auto" <f:if condition="{formValues.mcpAuthenticationMode} == 'auto'">selected</f:if>><f:translate key="workos_auth.messages:setup.mcp.authenticationMode.auto" /></option>
+                        <option value="workos" <f:if condition="{formValues.mcpAuthenticationMode} == 'workos'">selected</f:if>><f:translate key="workos_auth.messages:setup.mcp.authenticationMode.workos" /></option>
+                        <option value="anonymous" <f:if condition="{formValues.mcpAuthenticationMode} == 'anonymous'">selected</f:if>><f:translate key="workos_auth.messages:setup.mcp.authenticationMode.anonymous" /></option>
+                    </select>
+                    <small class="form-text text-muted">
+                        <f:translate key="workos_auth.messages:setup.mcp.authenticationMode.description" />
+                    </small>
+                    <f:if condition="{errors.mcpAuthenticationMode}">
+                        <div class="text-danger mt-1">{errors.mcpAuthenticationMode}</div>
+                    </f:if>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="mcpAuthkitDomain"><strong><f:translate key="workos_auth.messages:setup.mcp.authkitDomain" /></strong></label>
+                    <input id="mcpAuthkitDomain" class="form-control" type="text" name="configuration[mcpAuthkitDomain]" value="{formValues.mcpAuthkitDomain}" placeholder="https://your-project.authkit.app">
+                    <small class="form-text text-muted">
+                        <f:translate key="workos_auth.messages:setup.mcp.authkitDomain.description" />
+                    </small>
+                    <f:if condition="{errors.mcpAuthkitDomain}">
+                        <div class="text-danger mt-1">{errors.mcpAuthkitDomain}</div>
+                    </f:if>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input type="hidden" name="configuration[mcpWorkosDiscovery]" value="0">
+                            <input id="mcpWorkosDiscovery" class="form-check-input" type="checkbox" name="configuration[mcpWorkosDiscovery]" value="1" <f:if condition="{formValues.mcpWorkosDiscovery}">checked</f:if>>
+                            <label class="form-check-label" for="mcpWorkosDiscovery"><f:translate key="workos_auth.messages:setup.mcp.workosDiscovery" /></label>
+                            <small class="form-text text-muted d-block">
+                                <f:translate key="workos_auth.messages:setup.mcp.workosDiscovery.description" />
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input type="hidden" name="configuration[mcpVerboseLogging]" value="0">
+                            <input id="mcpVerboseLogging" class="form-check-input" type="checkbox" name="configuration[mcpVerboseLogging]" value="1" <f:if condition="{formValues.mcpVerboseLogging}">checked</f:if>>
+                            <label class="form-check-label" for="mcpVerboseLogging"><f:translate key="workos_auth.messages:setup.mcp.verboseLogging" /></label>
+                            <small class="form-text text-muted d-block">
+                                <f:translate key="workos_auth.messages:setup.mcp.verboseLogging.description" />
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="mcpServerLimit"><strong><f:translate key="workos_auth.messages:setup.mcp.serverLimit" /></strong></label>
+                    <input id="mcpServerLimit" class="form-control" type="number" min="1" max="10" name="configuration[mcpServerLimit]" value="{formValues.mcpServerLimit}">
+                    <small class="form-text text-muted">
+                        <f:translate key="workos_auth.messages:setup.mcp.serverLimit.description" />
+                    </small>
+                </div>
+            </div>
+        </div>
+
         <button class="btn btn-primary" type="submit"><f:translate key="workos_auth.messages:setup.save" /></button>
     </form>
 </div>

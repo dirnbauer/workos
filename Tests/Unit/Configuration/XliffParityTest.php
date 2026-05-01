@@ -26,6 +26,7 @@ final class XliffParityTest extends TestCase
             ['source' => $languageDir . '/locallang_db.xlf', 'target' => $languageDir . '/de.locallang_db.xlf'],
             ['source' => $languageDir . '/locallang_mod.xlf', 'target' => $languageDir . '/de.locallang_mod.xlf'],
             ['source' => $languageDir . '/locallang_mod_users.xlf', 'target' => $languageDir . '/de.locallang_mod_users.xlf'],
+            ['source' => $languageDir . '/locallang_mod_mcp.xlf', 'target' => $languageDir . '/de.locallang_mod_mcp.xlf'],
             ['source' => $languageDir . '/locallang_mod_setup.xlf', 'target' => $languageDir . '/de.locallang_mod_setup.xlf'],
         ];
     }

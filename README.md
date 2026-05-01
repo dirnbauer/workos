@@ -24,6 +24,7 @@ Requirements: TYPO3 `^14.0`, PHP `^8.2` (compatible with PHP 8.2–8.5 per
 | Backend modules | Top-level **WorkOS** menu with **Setup Assistant** and **User Management** (no PHP editing required) |
 | Provisioning | Create or link TYPO3 users from WorkOS identities (frontend & backend) |
 | Storage | Identity mapping table `tx_workosauth_identity` (with full WorkOS profile JSON) |
+| MCP | Streamable HTTP TYPO3 MCP endpoint with WorkOS bearer-token protection in production and anonymous development mode |
 | Localization | English and German out of the box, XLIFF 1.2 with ICU MessageFormat |
 
 ## Quick install
@@ -145,6 +146,22 @@ requests clear their anonymous pending-code session.
 
 Full details: [`Documentation/Features.rst`](Documentation/Features.rst).
 
+## TYPO3 MCP server
+
+The extension can expose TYPO3 as a Streamable HTTP MCP server at
+`/workos-auth/mcp`. In the default `auto` mode it works anonymously in
+TYPO3 `Development` / `Testing` context, and requires WorkOS AuthKit
+bearer tokens in `Production`.
+
+WorkOS is the source of truth for MCP applications: add or revoke the
+MCP/Connect application in WorkOS, and TYPO3 lists the applications
+authorized by the current WorkOS user without maintaining a second
+server list. MCP tools can inspect the linked `fe_users` / `be_users`
+record and group UIDs through the existing `tx_workosauth_identity`
+mapping.
+
+Full setup: [`Documentation/Mcp.rst`](Documentation/Mcp.rst).
+
 ### Backend modules
 
 The extension installs a new top-level **WorkOS** menu in the backend
@@ -156,6 +173,9 @@ with two entries:
   WorkOS *User Management* widget so admins can invite teammates,
   change roles, and remove users without leaving TYPO3 (admin only).
   CSRF-protected and bound to the signed-in WorkOS session.
+- **MCP Server** (`/module/workos/mcp`) — dedicated TYPO3 backend UI
+  for MCP endpoint URLs, auth mode, AuthKit domain, WorkOS discovery,
+  server limit, and verbose MCP logging.
 
 Both modules register with `workspaces => 'live'` and only appear in
 the LIVE workspace.
@@ -214,6 +234,7 @@ The full list of keys is in
 
 - [Configuration](Documentation/Configuration.rst) – Setup assistant, every config key, workspaces behaviour
 - [Features](Documentation/Features.rst) – Frontend/backend flows, profile display, dynamic parameters
+- [TYPO3 MCP server](Documentation/Mcp.rst) – MCP endpoint, WorkOS protection, application discovery, TYPO3 groups
 - [WorkOS Dashboard](Documentation/WorkosDashboard.rst) – Redirect URIs and enabling auth methods
 - [Troubleshooting](Documentation/Troubleshooting.rst) – Common errors and fixes
 - [Changelog](Documentation/Changelog.rst) – Release notes

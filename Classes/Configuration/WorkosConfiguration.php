@@ -34,11 +34,30 @@ use WebConsulting\WorkosAuth\Service\PathUtility;
  *     authkitOrganizationId: string,
  *     authkitConnectionId: string,
  *     authkitDomainHint: string,
+ *     mcpEnabled: bool,
+ *     mcpServerPath: string,
+ *     mcpAuthenticationMode: string,
+ *     mcpAuthkitDomain: string,
+ *     mcpWorkosDiscovery: bool,
+ *     mcpServerLimit: int,
+ *     mcpVerboseLogging: bool,
  * }
  */
 final class WorkosConfiguration
 {
     public const EXTENSION_KEY = 'workos_auth';
+    public const MCP_AUTHENTICATION_AUTO = 'auto';
+    public const MCP_AUTHENTICATION_WORKOS = 'workos';
+    public const MCP_AUTHENTICATION_ANONYMOUS = 'anonymous';
+
+    /**
+     * @var list<string>
+     */
+    public const MCP_AUTHENTICATION_MODES = [
+        self::MCP_AUTHENTICATION_AUTO,
+        self::MCP_AUTHENTICATION_WORKOS,
+        self::MCP_AUTHENTICATION_ANONYMOUS,
+    ];
 
     /**
      * Social login providers supported by the `?provider=` query
@@ -81,6 +100,13 @@ final class WorkosConfiguration
         'authkitOrganizationId' => '',
         'authkitConnectionId' => '',
         'authkitDomainHint' => '',
+        'mcpEnabled' => true,
+        'mcpServerPath' => '/workos-auth/mcp',
+        'mcpAuthenticationMode' => self::MCP_AUTHENTICATION_AUTO,
+        'mcpAuthkitDomain' => '',
+        'mcpWorkosDiscovery' => true,
+        'mcpServerLimit' => 10,
+        'mcpVerboseLogging' => false,
     ];
 
     /**
@@ -134,6 +160,13 @@ final class WorkosConfiguration
             'authkitOrganizationId' => trim(self::toString($input['authkitOrganizationId'] ?? self::DEFAULTS['authkitOrganizationId'])),
             'authkitConnectionId' => trim(self::toString($input['authkitConnectionId'] ?? self::DEFAULTS['authkitConnectionId'])),
             'authkitDomainHint' => trim(self::toString($input['authkitDomainHint'] ?? self::DEFAULTS['authkitDomainHint'])),
+            'mcpEnabled' => (bool)($input['mcpEnabled'] ?? self::DEFAULTS['mcpEnabled']),
+            'mcpServerPath' => PathUtility::normalizePath(trim(self::toString($input['mcpServerPath'] ?? self::DEFAULTS['mcpServerPath']))),
+            'mcpAuthenticationMode' => $this->normalizeMcpAuthenticationMode($input['mcpAuthenticationMode'] ?? self::DEFAULTS['mcpAuthenticationMode']),
+            'mcpAuthkitDomain' => rtrim(trim(self::toString($input['mcpAuthkitDomain'] ?? self::DEFAULTS['mcpAuthkitDomain'])), '/'),
+            'mcpWorkosDiscovery' => (bool)($input['mcpWorkosDiscovery'] ?? self::DEFAULTS['mcpWorkosDiscovery']),
+            'mcpServerLimit' => min(10, max(1, self::toInt($input['mcpServerLimit'] ?? self::DEFAULTS['mcpServerLimit']))),
+            'mcpVerboseLogging' => (bool)($input['mcpVerboseLogging'] ?? self::DEFAULTS['mcpVerboseLogging']),
         ];
     }
 
@@ -181,7 +214,24 @@ final class WorkosConfiguration
             );
         }
 
+        if ((bool)($configuration['mcpEnabled'] ?? false)) {
+            $mcpMode = self::toString($configuration['mcpAuthenticationMode'] ?? self::MCP_AUTHENTICATION_AUTO);
+            if (!in_array($mcpMode, self::MCP_AUTHENTICATION_MODES, true)) {
+                $errors['mcpAuthenticationMode'] = $this->translate('validation.mcpAuthenticationModeInvalid');
+            }
+            if ($this->mcpRequiresWorkosForConfiguration($configuration)
+                && trim(self::toString($configuration['mcpAuthkitDomain'] ?? '')) === ''
+            ) {
+                $errors['mcpAuthkitDomain'] = $this->translate('validation.mcpAuthkitDomainRequired');
+            }
+        }
+
         return $errors;
+    }
+
+    public function hasWorkosCredentials(): bool
+    {
+        return $this->hasBaseCredentials($this->all());
     }
 
     public function getApiKey(): string
@@ -360,6 +410,52 @@ final class WorkosConfiguration
         return $value !== '' ? $value : null;
     }
 
+    public function isMcpEnabled(): bool
+    {
+        return $this->all()['mcpEnabled'];
+    }
+
+    public function getMcpServerPath(): string
+    {
+        return $this->all()['mcpServerPath'];
+    }
+
+    public function getMcpAuthenticationMode(): string
+    {
+        return $this->all()['mcpAuthenticationMode'];
+    }
+
+    public function getMcpAuthkitDomain(): ?string
+    {
+        $value = trim($this->all()['mcpAuthkitDomain']);
+        return $value !== '' ? $value : null;
+    }
+
+    public function shouldDiscoverWorkosMcpServers(): bool
+    {
+        return $this->all()['mcpWorkosDiscovery'];
+    }
+
+    public function getMcpServerLimit(): int
+    {
+        return $this->all()['mcpServerLimit'];
+    }
+
+    public function shouldLogMcpVerbously(): bool
+    {
+        return $this->all()['mcpVerboseLogging'];
+    }
+
+    public function getMcpProtectedResourceMetadataPath(): string
+    {
+        return '/.well-known/oauth-protected-resource';
+    }
+
+    public function getMcpAuthorizationServerMetadataPath(): string
+    {
+        return '/.well-known/oauth-authorization-server';
+    }
+
     /**
      * @return WorkosSettings
      */
@@ -386,6 +482,34 @@ final class WorkosConfiguration
     {
         return trim($configuration['apiKey']) !== ''
             && trim($configuration['clientId']) !== '';
+    }
+
+    private function normalizeMcpAuthenticationMode(mixed $value): string
+    {
+        $mode = strtolower(trim(self::toString($value)));
+        return in_array($mode, self::MCP_AUTHENTICATION_MODES, true)
+            ? $mode
+            : self::MCP_AUTHENTICATION_AUTO;
+    }
+
+    /**
+     * @param array<string, mixed> $configuration
+     */
+    private function mcpRequiresWorkosForConfiguration(array $configuration): bool
+    {
+        $mode = self::toString($configuration['mcpAuthenticationMode'] ?? self::MCP_AUTHENTICATION_AUTO);
+        if ($mode === self::MCP_AUTHENTICATION_WORKOS) {
+            return true;
+        }
+        if ($mode === self::MCP_AUTHENTICATION_ANONYMOUS) {
+            return false;
+        }
+
+        try {
+            return \TYPO3\CMS\Core\Core\Environment::getContext()->isProduction();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

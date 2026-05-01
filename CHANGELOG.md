@@ -2,6 +2,13 @@
 
 The full, versioned release history is [Documentation/Changelog.rst](Documentation/Changelog.rst).
 
+## Unreleased
+
+### Added
+
+- TYPO3 MCP server endpoint with anonymous development mode, WorkOS-protected production mode, WorkOS-authorized Connect application discovery, and TYPO3 FE/BE group introspection.
+- Dedicated WorkOS → MCP Server backend module for endpoint URLs, auth mode, AuthKit domain, WorkOS discovery, server limit, and verbose logging.
+
 ## 0.26.0 - 2026-04-22
 
 ### Changed

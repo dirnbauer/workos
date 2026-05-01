@@ -14,6 +14,26 @@ A complete reference of what the extension exposes at runtime.
 
 ..  _features-frontend-plugin:
 
+..  _features-mcp-server:
+
+TYPO3 MCP server
+================
+
+The extension can expose TYPO3 as a Streamable HTTP MCP server at the
+configured ``mcpServerPath`` (default ``/workos-auth/mcp``). The
+endpoint supports ``initialize``, ``ping``, ``tools/list`` and
+``tools/call`` and currently exposes two tools:
+
+-   ``workos.mcp_context`` — current MCP auth mode, WorkOS user id,
+    linked ``fe_users`` / ``be_users`` UIDs and their group UIDs.
+-   ``workos.authorized_mcp_servers`` — WorkOS Connect applications
+    authorized by the current WorkOS user, capped by
+    ``mcpServerLimit`` (maximum ``10``).
+
+In default ``auto`` mode the endpoint is anonymous in TYPO3
+``Development`` / ``Testing`` and WorkOS-protected in ``Production``.
+See :ref:`mcp` for setup details.
+
 Frontend plugin
 ===============
 

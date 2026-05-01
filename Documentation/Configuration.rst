@@ -33,7 +33,7 @@ content.
 The setup assistant
 ===================
 
-The assistant has five sections. You can save at any time — the page
+The assistant has six sections. You can save at any time — the page
 tells you which required values are still missing.
 
 ..  _configuration-redirect-uris:
@@ -189,6 +189,51 @@ Extension-level defaults applied to every authorization URL:
 These are optional. Per-request overrides are also possible via
 :ref:`query parameters <features-dynamic-parameters>`.
 
+..  _configuration-mcp:
+
+6. TYPO3 MCP server
+-------------------
+
+..  list-table::
+    :header-rows: 1
+
+    *   -   Field
+        -   Default
+        -   Purpose
+    *   -   Enable TYPO3 MCP server
+        -   on
+        -   Exposes the Streamable HTTP endpoint at the configured
+            path.
+    *   -   MCP endpoint path
+        -   ``/workos-auth/mcp``
+        -   Public JSON-RPC endpoint used by MCP clients.
+    *   -   Authentication mode
+        -   ``auto``
+        -   ``auto`` allows anonymous MCP calls in TYPO3
+            ``Development`` / ``Testing`` and requires WorkOS bearer
+            tokens in ``Production``. ``workos`` always requires
+            WorkOS. ``anonymous`` deliberately allows unauthenticated
+            calls in every context.
+    *   -   AuthKit domain
+        -   –
+        -   Required when WorkOS protection is active. Example:
+            ``https://your-project.authkit.app``.
+    *   -   Discover authorized WorkOS MCP applications
+        -   on
+        -   Uses WorkOS as the source of truth by listing Connect
+            applications authorized by the current WorkOS user.
+    *   -   Maximum WorkOS MCP applications
+        -   ``10``
+        -   Upper bound for the WorkOS-authorized applications exposed
+            through TYPO3. Values are capped at ``10``.
+    *   -   Verbose MCP logging
+        -   off
+        -   Logs MCP method calls and WorkOS discovery failures.
+            Tokens and secrets are redacted before they reach the TYPO3
+            log.
+
+See :ref:`mcp` for the complete WorkOS and MCP client setup flow.
+
 ..  _configuration-all-keys:
 
 All configuration keys
@@ -228,6 +273,14 @@ is the complete configuration array with defaults:
             'authkitOrganizationId' => '',
             'authkitConnectionId' => '',
             'authkitDomainHint' => '',
+
+            'mcpEnabled' => '1',
+            'mcpServerPath' => '/workos-auth/mcp',
+            'mcpAuthenticationMode' => 'auto',
+            'mcpAuthkitDomain' => '',
+            'mcpWorkosDiscovery' => '1',
+            'mcpServerLimit' => '10',
+            'mcpVerboseLogging' => '0',
         ],
     ],
 
@@ -247,6 +300,9 @@ The setup assistant shows warnings but still saves. Validation rules:
 -   ``BE.cookieSameSite`` must be one of TYPO3's supported core
     values: ``strict``, ``lax`` or ``none``. The default ``strict``
     is supported and recommended.
+-   If the MCP server is enabled and the effective authentication mode
+    requires WorkOS, ``mcpAuthkitDomain`` must be set so TYPO3 can
+    verify bearer tokens issued by AuthKit.
 
 ..  _configuration-workspaces:
 

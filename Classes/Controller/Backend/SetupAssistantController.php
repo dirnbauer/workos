@@ -98,6 +98,7 @@ final class SetupAssistantController
             'cookiePasswordValid' => mb_strlen(trim((string)$formValues['cookiePassword'])) >= 32,
             'backendCookieSameSite' => $this->configuration->getBackendCookieSameSite(),
             'backendCookieSameSiteCompatible' => $this->configuration->isBackendCookieSameSiteCompatible(),
+            'mcpAuthenticationModes' => WorkosConfiguration::MCP_AUTHENTICATION_MODES,
         ]);
         $moduleTemplate->setTitle($this->translate('setup.title'));
         $this->pageRenderer->loadJavaScriptModule('@webconsulting/workos-auth/copy-urls.js');

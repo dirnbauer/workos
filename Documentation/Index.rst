@@ -55,6 +55,12 @@ Team management plugins for signed-in users.
         the identity data model, and dynamic AuthKit query
         parameters.
 
+    ..  card:: :ref:`TYPO3 MCP server <mcp>`
+
+        Streamable HTTP MCP endpoint, WorkOS bearer-token protection,
+        WorkOS-authorized MCP application discovery, and TYPO3
+        frontend/backend user group mapping.
+
     ..  card:: :ref:`WorkOS Dashboard <workos-dashboard>`
 
         Adding redirect URIs and enabling the authentication methods
@@ -77,6 +83,7 @@ Table of contents
 
     Configuration
     Features
+    Mcp
     WorkosDashboard
     Troubleshooting
     Changelog

@@ -13,6 +13,9 @@ services:
   WebConsulting\WorkosAuth\Controller\Backend\UserManagementController:
     public: true
 
+  WebConsulting\WorkosAuth\Controller\Backend\McpConfigurationController:
+    public: true
+
   WebConsulting\WorkosAuth\Controller\Frontend\LoginController:
     public: true
 
@@ -32,4 +35,7 @@ services:
     public: true
 
   WebConsulting\WorkosAuth\Middleware\BackendWorkosAuthMiddleware:
+    public: true
+
+  WebConsulting\WorkosAuth\Middleware\McpServerMiddleware:
     public: true
