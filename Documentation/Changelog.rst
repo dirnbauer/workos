@@ -13,6 +13,34 @@ All notable changes to this extension are documented in this file.
 Unreleased
 ==========
 
+..  _changelog-14-0-0:
+
+14.0.0 — TYPO3 14.3-only cleanup
+=================================
+
+..  rubric:: Changed
+
+-   The extension release is now ``14.0.0`` in TYPO3's Composer
+    metadata and :file:`ext_emconf.php`.
+-   TYPO3 14.3 classic-mode Composer metadata now declares
+    ``extra.typo3/cms.version`` and ``Package.providesPackages`` while
+    keeping :file:`ext_emconf.php` for TER/tooling compatibility.
+-   Composer now requires TYPO3 ``^14.3`` packages only. Classic
+    extension metadata mirrors that with ``14.3.0-14.3.99``.
+-   The local dependency set was refreshed to TYPO3 14.3.1 and current
+    PHPStan 2.x tooling.
+-   PHPStan now runs at ``level: max`` with
+    ``saschaegerer/phpstan-typo3`` 3.0.1 and no project baseline.
+
+..  rubric:: Fixed
+
+-   Removed TYPO3 14's deleted TCA ``ctrl.searchFields`` option from
+    ``tx_workosauth_identity`` and marked searchable fields directly.
+-   Added PHP 8.3 ``#[Override]`` attributes where max-level analysis
+    requires them.
+-   Normalized arrays returned from JWT, JSON-RPC, and TYPO3 schema
+    APIs before exposing them through typed extension services.
+
 ..  rubric:: Added
 
 -   TYPO3 can now expose a Streamable HTTP MCP endpoint with
@@ -60,11 +88,10 @@ official TYPO3 coding standards package.
 
 ..  rubric:: Quality
 
--   PHPStan now runs at ``level: 9`` with
+-   PHPStan now runs at ``level: max`` with
     ``saschaegerer/phpstan-typo3 ^3.0`` as the TYPO3-specific
-    framework plugin. Request-attribute mappings and the generated
-    TYPO3 container XML are configured explicitly in
-    :file:`phpstan.neon`.
+    framework plugin. Request-attribute mappings are configured
+    explicitly in :file:`phpstan.neon`.
 -   Official TYPO3 coding standards are now enforced via
     ``typo3/coding-standards ^0.8``. The repository ships a generated
     :file:`.php-cs-fixer.dist.php` and exposes ``composer cs:check`` /

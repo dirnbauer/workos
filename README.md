@@ -7,8 +7,8 @@ TYPO3 **frontend** and the TYPO3 **backend**. It supports the full WorkOS
 AuthKit feature set: email + password, passwordless magic auth, and
 social sign-in with Google, Microsoft, GitHub, and Apple.
 
-Requirements: TYPO3 `^14.0`, PHP `^8.2` (compatible with PHP 8.2–8.5 per
-`ext_emconf.php`). Current release: **0.26.0**.
+Requirements: TYPO3 `^14.3`, PHP `^8.2` (compatible with PHP 8.2–8.5 per
+`ext_emconf.php`). Current release: **14.0.0**.
 
 ---
 
@@ -305,9 +305,9 @@ The targeted frontend login handoff review is documented in
 
 ## Quality
 
-- PHPStan **level 9** (PHPStan 2.x) with
-  `saschaegerer/phpstan-typo3 ^3.0`, plus request-attribute and
-  container metadata tuned for TYPO3 14 — run `composer phpstan`.
+- PHPStan **level max** (PHPStan 2.x) with
+  `saschaegerer/phpstan-typo3 ^3.0`, plus request-attribute metadata
+  tuned for TYPO3 14.3 — run `composer phpstan`.
 - Official TYPO3 coding standards via
   `typo3/coding-standards ^0.8` and PHP-CS-Fixer 3.x — run
   `composer cs:check` or `composer cs:fix`.

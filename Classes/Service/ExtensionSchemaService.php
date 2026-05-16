@@ -82,7 +82,13 @@ final class ExtensionSchemaService
             ];
         }
 
-        $errors = $this->schemaMigrator->migrate($databaseDefinitions, $selectedStatements);
+        $migrationErrors = $this->schemaMigrator->migrate($databaseDefinitions, $selectedStatements);
+        $errors = [];
+        foreach ($migrationErrors as $key => $message) {
+            if (is_scalar($message) || $message instanceof \Stringable) {
+                $errors[(string)$key] = (string)$message;
+            }
+        }
 
         return [
             'appliedCount' => count($selectedStatements) - count($errors),
@@ -127,9 +133,16 @@ final class ExtensionSchemaService
      */
     private function getCreateTableStatements(): array
     {
-        return array_values($this->sqlReader->getCreateTableStatementArray(
+        $statements = $this->sqlReader->getCreateTableStatementArray(
             $this->sqlReader->getTablesDefinitionString()
-        ));
+        );
+        $createTableStatements = [];
+        foreach ($statements as $statement) {
+            if (is_string($statement)) {
+                $createTableStatements[] = $statement;
+            }
+        }
+        return $createTableStatements;
     }
 
     private function referencesManagedTable(string $statement): bool

@@ -33,6 +33,7 @@ final class McpServerMiddleware implements MiddlewareInterface, LoggerAwareInter
         private readonly RequestFactory $requestFactory,
     ) {}
 
+    #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!$this->configuration->isMcpEnabled()) {

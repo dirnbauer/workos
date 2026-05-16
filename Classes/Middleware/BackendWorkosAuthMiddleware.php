@@ -48,6 +48,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         private LanguageServiceFactory $languageServiceFactory,
     ) {}
 
+    #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $requestPath = PathUtility::normalizePath($request->getUri()->getPath());
@@ -551,6 +552,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
                     $this->handler = $handler;
                 }
 
+                #[\Override]
                 public function handle(ServerRequestInterface $request): ResponseInterface
                 {
                     return ($this->handler)($request);

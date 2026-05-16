@@ -119,12 +119,17 @@ final class McpAuthenticationService
             throw McpAuthenticationException::invalidToken();
         }
 
+        $normalizedClaims = [];
+        foreach ($claims as $key => $value) {
+            $normalizedClaims[(string)$key] = $value;
+        }
+
         $issuer = MixedCaster::string($claims['iss'] ?? null);
         if (rtrim($issuer, '/') !== rtrim($authkitDomain, '/')) {
             throw McpAuthenticationException::invalidToken();
         }
 
-        return $claims;
+        return $normalizedClaims;
     }
 
     /**

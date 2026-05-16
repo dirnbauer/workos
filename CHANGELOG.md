@@ -4,6 +4,29 @@ The full, versioned release history is [Documentation/Changelog.rst](Documentati
 
 ## Unreleased
 
+## 14.0.0 - 2026-05-16
+
+### Changed
+
+- Raised the extension release to `14.0.0` in TYPO3's Composer metadata
+  and `ext_emconf.php`.
+- Added TYPO3 14.3 classic-mode Composer metadata
+  (`extra.typo3/cms.version` and `Package.providesPackages`) while
+  keeping `ext_emconf.php` for TER/tooling compatibility.
+- Dropped broad TYPO3 14 minor compatibility and now require TYPO3 `^14.3`
+  / `14.3.0-14.3.99` only.
+- Updated the lock-file install to TYPO3 14.3.1 and current PHPStan 2.x
+  tooling while keeping PHP 8.2 as the minimum runtime.
+- PHPStan now runs at `level: max` with `saschaegerer/phpstan-typo3` 3.0.1.
+
+### Fixed
+
+- Replaced removed TYPO3 14 TCA `ctrl.searchFields` usage with field-level
+  searchable configuration.
+- Added PHP 8.3 `#[Override]` attributes required by max-level analysis.
+- Normalized external API arrays before returning them from MCP/schema
+  services.
+
 ### Added
 
 - TYPO3 MCP server endpoint with anonymous development mode, WorkOS-protected production mode, WorkOS-authorized Connect application discovery, and TYPO3 FE/BE group introspection.

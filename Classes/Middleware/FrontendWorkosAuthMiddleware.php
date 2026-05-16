@@ -36,6 +36,7 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface, LoggerA
         private LanguageServiceFactory $languageServiceFactory,
     ) {}
 
+    #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $site = $request->getAttribute('site');

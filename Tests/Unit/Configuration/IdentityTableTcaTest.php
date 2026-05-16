@@ -28,6 +28,7 @@ final class IdentityTableTcaTest extends TestCase
      */
     private array $tca;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

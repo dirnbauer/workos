@@ -17,6 +17,7 @@ final class StateServiceTest extends TestCase
     private StateService $stateService;
     private FrontendInterface&MockObject $cache;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();

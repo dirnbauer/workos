@@ -20,6 +20,7 @@ final class RequestTokenServiceTest extends TestCase
     private Context $context;
     private SecurityAspect $securityAspect;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -34,6 +35,7 @@ final class RequestTokenServiceTest extends TestCase
         $this->subject = new RequestTokenService();
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         GeneralUtility::purgeInstances();

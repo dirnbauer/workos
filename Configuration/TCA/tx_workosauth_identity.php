@@ -19,7 +19,6 @@ return [
         'hideTable' => true,
         'rootLevel' => -1,
         'versioningWS' => false,
-        'searchFields' => 'email,workos_user_id,user_table',
         'iconfile' => 'EXT:workos_auth/Resources/Public/Icons/Extension.svg',
     ],
     'columns' => [
@@ -41,6 +40,7 @@ return [
                 'type' => 'input',
                 'size' => 40,
                 'max' => 255,
+                'searchable' => true,
                 'readOnly' => true,
             ],
         ],
@@ -49,6 +49,7 @@ return [
             'config' => [
                 'type' => 'email',
                 'size' => 40,
+                'searchable' => true,
                 'readOnly' => true,
             ],
         ],

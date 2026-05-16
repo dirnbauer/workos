@@ -14,6 +14,7 @@ final class WorkosConfigurationTest extends TestCase
     private WorkosConfiguration $configuration;
     private string|null $originalBackendCookieSameSite;
 
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -29,6 +30,7 @@ final class WorkosConfigurationTest extends TestCase
         );
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         if ($this->originalBackendCookieSameSite === null) {

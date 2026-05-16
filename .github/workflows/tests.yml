@@ -44,7 +44,7 @@ jobs:
             - name: TYPO3 coding standards
               run: composer cs:check --no-interaction
 
-            - name: PHPStan (level 9 + phpat)
+            - name: PHPStan (level max + phpat)
               run: composer phpstan --no-interaction -- --no-progress --error-format=github
 
     unit-tests:

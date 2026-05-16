@@ -33,6 +33,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         private readonly PageRenderer $pageRenderer,
     ) {}
 
+    #[\Override]
     public function modifyView(ServerRequestInterface $request, ViewInterface $view): string
     {
         $backendBasePath = PathUtility::guessBackendBasePath($request->getUri()->getPath());

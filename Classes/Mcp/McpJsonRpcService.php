@@ -56,15 +56,33 @@ final class McpJsonRpcService implements LoggerAwareInterface
                 'serverInfo' => [
                     'name' => 'typo3-workos-auth',
                     'title' => 'TYPO3 WorkOS MCP',
-                    'version' => '0.26.0',
+                    'version' => '14.0.0',
                 ],
                 'instructions' => 'This TYPO3 MCP endpoint exposes the current TYPO3/WorkOS identity context and WorkOS-authorized MCP applications for the authenticated WorkOS user.',
             ]),
             'ping' => $this->success($id, new \stdClass()),
             'tools/list' => $this->success($id, ['tools' => $this->tools()]),
-            'tools/call' => $this->callTool($id, is_array($message['params'] ?? null) ? $message['params'] : [], $context),
+            'tools/call' => $this->callTool($id, $this->normalizeParams($message['params'] ?? null), $context),
             default => $this->error($id, -32601, sprintf('Unsupported MCP method "%s".', $method)),
         };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalizeParams(mixed $params): array
+    {
+        if (!is_array($params)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($params as $key => $value) {
+            if (is_string($key)) {
+                $normalized[$key] = $value;
+            }
+        }
+        return $normalized;
     }
 
     /**

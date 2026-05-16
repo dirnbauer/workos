@@ -27,11 +27,11 @@
     },
     "require": {
         "php": "^8.2",
-        "typo3/cms-backend": "^14.0",
-        "typo3/cms-core": "^14.0",
-        "typo3/cms-extbase": "^14.0",
-        "typo3/cms-fluid": "^14.0",
-        "typo3/cms-frontend": "^14.0",
+        "typo3/cms-backend": "^14.3",
+        "typo3/cms-core": "^14.3",
+        "typo3/cms-extbase": "^14.3",
+        "typo3/cms-fluid": "^14.3",
+        "typo3/cms-frontend": "^14.3",
         "workos/workos-php": "^5.0.3"
     },
     "require-dev": {
@@ -44,7 +44,8 @@
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^11.5",
         "saschaegerer/phpstan-typo3": "^3.0",
-        "typo3/cms-workspaces": "^14.0",
+        "symfony/stopwatch": "^7.4",
+        "typo3/cms-workspaces": "^14.3",
         "typo3/coding-standards": "^0.8",
         "typo3/testing-framework": "^9.2"
     },
@@ -84,7 +85,11 @@
     },
     "extra": {
         "typo3/cms": {
-            "extension-key": "workos_auth"
+            "extension-key": "workos_auth",
+            "version": "14.0.0",
+            "Package": {
+                "providesPackages": {}
+            }
         }
     }
 }
