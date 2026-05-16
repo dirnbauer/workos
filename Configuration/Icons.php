@@ -17,4 +17,16 @@ return [
         'provider' => SvgIconProvider::class,
         'source' => 'EXT:workos_auth/Resources/Public/Icons/module-workos-setup.svg',
     ],
+    'workos-auth-mcp' => [
+        'provider' => SvgIconProvider::class,
+        'source' => 'EXT:workos_auth/Resources/Public/Icons/module-workos-mcp.svg',
+    ],
+    'workos-auth-account' => [
+        'provider' => SvgIconProvider::class,
+        'source' => 'EXT:workos_auth/Resources/Public/Icons/module-workos-account.svg',
+    ],
+    'workos-auth-team' => [
+        'provider' => SvgIconProvider::class,
+        'source' => 'EXT:workos_auth/Resources/Public/Icons/module-workos-team.svg',
+    ],
 ];
