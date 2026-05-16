@@ -57,6 +57,18 @@ stored on the WorkOS user record.
 
 Detailed feature guide: [`Documentation/Features.rst`](Documentation/Features.rst).
 
+### Frontend template ownership
+
+The extension ships functional Fluid templates for the WorkOS login, account,
+and team plugins. They are authentication UIs, not page-layout templates, and
+should not render TYPO3 page content areas with `f:render.contentArea` or
+`f:mark.contentArea`.
+
+Project-specific Bootstrap 5.3 or shadcn/ui styling belongs in the consuming
+sitepackage, where these templates can be overridden alongside the rest of the
+website. Keep `workos_auth` focused on WorkOS flow, TYPO3 session hand-off, and
+safe default markup.
+
 ## Account Center (frontend)
 
 Drop the **WorkOS Account Center** plugin on any page that signed-in
