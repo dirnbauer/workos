@@ -66,3 +66,24 @@ authkitConnectionId =
 
 # cat=workos/options; type=string; label=Optional domain hint
 authkitDomainHint =
+
+# cat=mcp/basic; type=boolean; label=Enable TYPO3 MCP server
+mcpEnabled = 1
+
+# cat=mcp/basic; type=string; label=TYPO3 MCP server path
+mcpServerPath = /workos-auth/mcp
+
+# cat=mcp/security; type=string; label=MCP authentication mode (auto, workos, anonymous)
+mcpAuthenticationMode = auto
+
+# cat=mcp/security; type=string; label=AuthKit domain for MCP bearer-token verification
+mcpAuthkitDomain =
+
+# cat=mcp/workos; type=boolean; label=Discover authorized MCP applications from WorkOS
+mcpWorkosDiscovery = 1
+
+# cat=mcp/workos; type=int+; label=Maximum WorkOS MCP applications to expose (1-10)
+mcpServerLimit = 10
+
+# cat=mcp/logging; type=boolean; label=Enable verbose MCP logging
+mcpVerboseLogging = 0

@@ -6,6 +6,7 @@ namespace WebConsulting\WorkosAuth\Service;
 
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 
 final class IdentityService
 {
@@ -15,6 +16,9 @@ final class IdentityService
         private ConnectionPool $connectionPool,
     ) {}
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findIdentity(string $context, string $workosUserId): ?array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
@@ -33,6 +37,9 @@ final class IdentityService
         return is_array($identity) ? $identity : null;
     }
 
+    /**
+     * @param array<string, mixed> $workosProfile
+     */
     public function storeIdentity(
         string $context,
         string $workosUserId,
@@ -43,7 +50,10 @@ final class IdentityService
     ): void {
         $connection = $this->connectionPool->getConnectionForTable(self::TABLE);
         $existingIdentity = $this->findIdentity($context, $workosUserId);
-        $timestamp = $GLOBALS['EXEC_TIME'] ?? time();
+        if ($existingIdentity === null) {
+            $existingIdentity = $this->findIdentityByLocalUser($context, $userTable, $userUid);
+        }
+        $timestamp = MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time());
 
         $data = [
             'tstamp' => $timestamp,
@@ -62,13 +72,23 @@ final class IdentityService
             return;
         }
 
+        $data['workos_user_id'] = $workosUserId;
         $connection->update(
             self::TABLE,
             $data,
-            ['uid' => (int)$existingIdentity['uid']]
+            ['uid' => MixedCaster::int($existingIdentity['uid'])]
+        );
+        $this->deleteDuplicateLocalUserIdentities(
+            context: $context,
+            userTable: $userTable,
+            userUid: $userUid,
+            keepUid: MixedCaster::int($existingIdentity['uid'])
         );
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findIdentityByLocalUser(string $context, string $userTable, int $userUid): ?array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
@@ -82,6 +102,8 @@ final class IdentityService
                 $queryBuilder->expr()->eq('user_table', $queryBuilder->createNamedParameter($userTable)),
                 $queryBuilder->expr()->eq('user_uid', $queryBuilder->createNamedParameter($userUid, Connection::PARAM_INT))
             )
+            ->orderBy('tstamp', 'DESC')
+            ->addOrderBy('uid', 'DESC')
             ->setMaxResults(1)
             ->executeQuery()
             ->fetchAssociative();
@@ -89,6 +111,9 @@ final class IdentityService
         return is_array($row) ? $row : null;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findProfileByLocalUser(string $context, string $userTable, int $userUid): ?array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
@@ -106,15 +131,46 @@ final class IdentityService
             ->executeQuery()
             ->fetchAssociative();
 
-        if (!is_array($row) || empty($row['workos_profile_json'])) {
+        if (!is_array($row)) {
+            return null;
+        }
+        $json = $row['workos_profile_json'] ?? '';
+        if (!is_string($json) || $json === '') {
             return null;
         }
 
         try {
-            $profile = json_decode($row['workos_profile_json'], true, 512, JSON_THROW_ON_ERROR);
-            return is_array($profile) ? $profile : null;
+            $profile = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+            if (!is_array($profile)) {
+                return null;
+            }
+            $keyed = [];
+            foreach ($profile as $key => $value) {
+                $keyed[(string)$key] = $value;
+            }
+            return $keyed;
         } catch (\JsonException) {
             return null;
         }
+    }
+
+    private function deleteDuplicateLocalUserIdentities(string $context, string $userTable, int $userUid, int $keepUid): void
+    {
+        if ($keepUid <= 0) {
+            return;
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $queryBuilder
+            ->delete(self::TABLE)
+            ->where(
+                $queryBuilder->expr()->eq('login_context', $queryBuilder->createNamedParameter($context)),
+                $queryBuilder->expr()->eq('user_table', $queryBuilder->createNamedParameter($userTable)),
+                $queryBuilder->expr()->eq('user_uid', $queryBuilder->createNamedParameter($userUid, Connection::PARAM_INT)),
+                $queryBuilder->expr()->neq('uid', $queryBuilder->createNamedParameter($keepUid, Connection::PARAM_INT))
+            )
+            ->executeStatement();
     }
 }
