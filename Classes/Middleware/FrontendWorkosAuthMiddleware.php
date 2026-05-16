@@ -8,18 +8,26 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Symfony\Component\HttpFoundation\Cookie;
+use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
 use WebConsulting\WorkosAuth\Service\UserProvisioningService;
 use WebConsulting\WorkosAuth\Service\WorkosAuthenticationService;
 
-final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
+final class FrontendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     public function __construct(
         private WorkosConfiguration $configuration,
         private WorkosAuthenticationService $workosAuthenticationService,
@@ -65,35 +73,36 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
             $queryParams = $request->getQueryParams();
             $returnTo = PathUtility::sanitizeReturnTo(
                 $request,
-                (string)($queryParams['returnTo'] ?? ''),
+                MixedCaster::string($queryParams['returnTo'] ?? null),
                 $this->configuration->getFrontendSuccessRedirect()
             );
 
-            $screenHint = in_array($queryParams['screen'] ?? '', ['sign-in', 'sign-up'], true)
-                ? $queryParams['screen']
-                : 'sign-in';
+            $requestedScreen = MixedCaster::string($queryParams['screen'] ?? null, 'sign-in');
+            $screenHint = in_array($requestedScreen, ['sign-in', 'sign-up'], true) ? $requestedScreen : 'sign-in';
 
-            $allowedProviders = ['GoogleOAuth', 'MicrosoftOAuth', 'GitHubOAuth', 'AppleOAuth'];
-            $provider = in_array($queryParams['provider'] ?? '', $allowedProviders, true)
-                ? $queryParams['provider']
+            $requestedProvider = MixedCaster::string($queryParams['provider'] ?? null);
+            $provider = in_array($requestedProvider, WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS, true)
+                ? $requestedProvider
                 : null;
 
-            $loginHint = isset($queryParams['login_hint']) ? trim((string)$queryParams['login_hint']) : null;
-            $organizationId = isset($queryParams['organization']) ? trim((string)$queryParams['organization']) : null;
+            $loginHint = trim(MixedCaster::string($queryParams['login_hint'] ?? null));
+            $organizationId = trim(MixedCaster::string($queryParams['organization'] ?? null));
+            $authorizationRequest = $this->workosAuthenticationService->buildFrontendAuthorizationUrl(
+                $request,
+                $returnTo,
+                $screenHint,
+                $provider,
+                $loginHint !== '' ? $loginHint : null,
+                $organizationId !== '' ? $organizationId : null,
+            );
 
-            return new RedirectResponse(
-                $this->workosAuthenticationService->buildFrontendAuthorizationUrl(
-                    $request,
-                    $returnTo,
-                    $screenHint,
-                    $provider,
-                    $loginHint ?: null,
-                    $organizationId ?: null,
-                ),
-                302
+            return $this->appendCookie(
+                new RedirectResponse((string)$authorizationRequest['url'], 302),
+                $authorizationRequest['cookie'] ?? null,
             );
         } catch (\Throwable $exception) {
-            return $this->errorResponse($exception->getMessage(), 500);
+            $this->logger?->error('WorkOS frontend login error: ' . SecretRedactor::redact($exception->getMessage()));
+            return $this->errorResponse($this->translate('error.loginError'), 500);
         }
     }
 
@@ -106,10 +115,11 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
             return $this->typo3SessionService->createFrontendLoginResponse(
                 $request,
                 $frontendUser,
-                (string)$authenticationResult['returnTo']
+                $authenticationResult['returnTo']
             );
         } catch (\Throwable $exception) {
-            return $this->errorResponse($exception->getMessage(), 403);
+            $this->logger?->error('WorkOS frontend callback error: ' . SecretRedactor::redact($exception->getMessage()));
+            return $this->errorResponse($this->translate('error.loginError'), 403);
         }
     }
 
@@ -117,7 +127,7 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
     {
         $returnTo = PathUtility::sanitizeReturnTo(
             $request,
-            (string)($request->getQueryParams()['returnTo'] ?? ''),
+            MixedCaster::string($request->getQueryParams()['returnTo'] ?? null),
             $this->configuration->getFrontendSuccessRedirect()
         );
 
@@ -131,9 +141,24 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface
         return new HtmlResponse('<h1>' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1><p>' . $safeMessage . '</p>', $statusCode);
     }
 
+    /**
+     * @param array<int|string, mixed> $arguments
+     */
     private function translate(string $key, array $arguments = []): string
     {
-        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        $languageService = $this->languageServiceFactory->createFromUserPreferences(
+            $beUser instanceof AbstractUserAuthentication ? $beUser : null
+        );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
+    }
+
+    private function appendCookie(ResponseInterface $response, mixed $cookie): ResponseInterface
+    {
+        if (!$cookie instanceof Cookie) {
+            return $response;
+        }
+
+        return $response->withAddedHeader('Set-Cookie', $cookie->__toString());
     }
 }

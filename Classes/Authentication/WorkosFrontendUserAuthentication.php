@@ -9,6 +9,9 @@ use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 
 final class WorkosFrontendUserAuthentication extends FrontendUserAuthentication
 {
+    /**
+     * @param array<string, mixed> $userRow
+     */
     public function signIn(array $userRow, ServerRequestInterface $request): void
     {
         $this->initializeUserSessionManager();
