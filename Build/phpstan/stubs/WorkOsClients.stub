@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * PHPStan stubs for WorkOS SDK client classes whose docblocks
+ * advertise types the runtime does not actually enforce.
+ *
+ * The real `WorkOS\Widgets::getToken()` documents
+ * `@param WidgetScope[] $scopes`, but `WidgetScope` is a plain
+ * container of string constants — the runtime happily accepts
+ * `list<string>`. Stub the signature accordingly so call sites
+ * can pass the raw constant values.
+ */
+
+namespace WorkOS;
+
+use WorkOS\Resource\WidgetTokenResponse;
+
+class Widgets
+{
+    /**
+     * @param list<string> $scopes
+     */
+    public function getToken(string $organizationId, string $userId, array $scopes): WidgetTokenResponse
+    {
+    }
+}

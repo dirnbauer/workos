@@ -1,0 +1,29 @@
+parameters:
+    level: 9
+    paths:
+        - Classes
+        - Configuration
+        - Tests
+        - ext_emconf.php
+        - ext_localconf.php
+    stubFiles:
+        - Build/phpstan/stubs/WorkOsResources.stub
+        - Build/phpstan/stubs/WorkOsClients.stub
+    tmpDir: var/cache/phpstan
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: true
+    typo3:
+        containerXmlPath: var/cache/production/App_KernelProductionDebugContainer.xml
+        requestGetAttributeMapping:
+            'frontend.user': 'TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication'
+            normalizedParams: 'TYPO3\CMS\Core\Http\NormalizedParams'
+            site: 'TYPO3\CMS\Core\Site\Entity\Site'
+    phpat:
+        show_rule_names: true
+        ignore_doc_comments: true
+
+services:
+    -
+        class: WebConsulting\WorkosAuth\Tests\Architecture\LayeringTest
+        tags:
+            - phpat.test
