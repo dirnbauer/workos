@@ -30,6 +30,7 @@ use WorkOS\Resource\Organization;
 use WorkOS\Resource\OrganizationMembershipStatus;
 use WorkOS\Resource\UserOrganizationMembership;
 use WorkOS\Resource\WidgetSessionTokenScopes;
+use WorkOS\Service\RoleSingle;
 
 /**
  * Backend module that embeds the WorkOS "User Management" Widget.
@@ -174,7 +175,7 @@ final class UserManagementController implements LoggerAwareInterface
             $this->workosClientFactory->createUserManagement()->createOrganizationMembership(
                 $workosUserId,
                 $organizationId,
-                'admin',
+                new RoleSingle('admin'),
             );
         } catch (\Throwable $exception) {
             $this->logger?->error('WorkOS join organization failed: ' . SecretRedactor::redact($exception->getMessage()));
@@ -228,7 +229,7 @@ final class UserManagementController implements LoggerAwareInterface
             $this->workosClientFactory->createUserManagement()->createOrganizationMembership(
                 $workosUserId,
                 $organizationId,
-                'admin',
+                new RoleSingle('admin'),
             );
         } catch (\Throwable $exception) {
             $this->logger?->error('WorkOS create organization failed: ' . SecretRedactor::redact($exception->getMessage()));

@@ -13,6 +13,7 @@ use WebConsulting\WorkosAuth\Security\StateService;
 use WorkOS\Resource\User;
 use WorkOS\Resource\UserManagementAuthenticationProvider;
 use WorkOS\Resource\UserManagementAuthenticationScreenHint;
+use WorkOS\Service\PasswordPlaintext;
 use WorkOS\Service\UserManagement;
 
 final class WorkosAuthenticationService
@@ -326,7 +327,7 @@ final class WorkosAuthenticationService
 
         return $userManagement->createUser(
             email: $email,
-            password: self::nullIfEmpty($password),
+            password: $password !== '' ? new PasswordPlaintext($password) : null,
             firstName: self::nullIfEmpty($firstName),
             lastName: self::nullIfEmpty($lastName),
         );

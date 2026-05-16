@@ -13,6 +13,7 @@ use WorkOS\Resource\User;
 use WorkOS\Resource\UserAuthenticationFactorEnrollResponse;
 use WorkOS\Resource\UserOrganizationMembership;
 use WorkOS\Resource\UserSessionsListItem;
+use WorkOS\Service\PasswordPlaintext;
 
 /**
  * High-level facade around the WorkOS UserManagement endpoints used by
@@ -50,7 +51,7 @@ final class WorkosAccountService
         }
         return $this->workosClientFactory->createUserManagement()->updateUser(
             id: $workosUserId,
-            password: $newPassword,
+            password: new PasswordPlaintext($newPassword),
         );
     }
 
