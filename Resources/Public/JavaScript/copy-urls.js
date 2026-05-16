@@ -1,7 +1,9 @@
-const button = document.querySelector('[data-action-copy-urls]');
-if (button) {
-    button.addEventListener('click', () => {
-        const container = button.closest('.card-body');
+const trigger = document.querySelector('[data-action-copy-urls]');
+if (trigger) {
+    trigger.addEventListener('click', (event) => {
+        event.preventDefault();
+
+        const container = trigger.closest('.card') || document;
         const urls = Array.from(container.querySelectorAll('[data-callback-url]'))
             .map(el => el.textContent.trim())
             .filter(url => url.length > 0);
@@ -10,14 +12,14 @@ if (button) {
             return;
         }
 
-        const originalText = button.textContent;
+        const originalText = trigger.textContent;
+        const restore = () => {
+            setTimeout(() => { trigger.textContent = originalText; }, 2000);
+        };
+
         navigator.clipboard.writeText(urls.join('\n')).then(() => {
-            button.textContent = 'Copied ' + urls.length + ' URLs!';
-            button.classList.replace('btn-secondary', 'btn-success');
-            setTimeout(() => {
-                button.textContent = originalText;
-                button.classList.replace('btn-success', 'btn-secondary');
-            }, 2000);
+            trigger.textContent = 'Copied ' + urls.length + ' URLs!';
+            restore();
         }).catch(() => {
             const textarea = document.createElement('textarea');
             textarea.value = urls.join('\n');
@@ -27,8 +29,8 @@ if (button) {
             textarea.select();
             document.execCommand('copy');
             document.body.removeChild(textarea);
-            button.textContent = 'Copied ' + urls.length + ' URLs!';
-            setTimeout(() => { button.textContent = originalText; }, 2000);
+            trigger.textContent = 'Copied ' + urls.length + ' URLs!';
+            restore();
         });
     });
 }

@@ -1,0 +1,199 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<f:asset.css identifier="workos-team-dashboard" href="EXT:workos_auth/Resources/Public/Css/Frontend/team-dashboard.css" />
+
+<div class="workos-team">
+
+    <f:if condition="{configured}">
+        <f:then>
+            <f:if condition="{isLoggedIn}">
+                <f:then>
+
+                    <f:if condition="{noWorkosLink}">
+                        <f:then>
+                            <div class="workos-team__alert workos-team__alert--warning">
+                                <f:translate key="workos_auth.messages:account.notLinked" />
+                            </div>
+                        </f:then>
+                        <f:else>
+
+                            <div class="workos-team__header">
+                                <p class="workos-team__eyebrow"><f:translate key="workos_auth.messages:team.eyebrow" /></p>
+                                <p class="workos-team__title"><f:translate key="workos_auth.messages:team.title" /></p>
+                                <p class="workos-team__subtitle"><f:translate key="workos_auth.messages:team.subtitle" /></p>
+                            </div>
+
+                            <f:if condition="{flash}">
+                                <div class="workos-team__alert workos-team__alert--{flash.type}">{flash.message}</div>
+                            </f:if>
+
+                            <f:if condition="{noOrganizations}">
+                                <f:then>
+                                    <div class="workos-team__alert workos-team__alert--info">
+                                        <f:translate key="workos_auth.messages:team.noOrganizations" />
+                                    </div>
+                                </f:then>
+                                <f:else>
+
+                                    <div class="workos-team__org-bar">
+                                        <label><f:translate key="workos_auth.messages:team.organization" />:</label>
+                                        <div style="flex:1; display:flex; gap:0.4rem; flex-wrap:wrap;">
+                                            <f:for each="{organizations}" as="org">
+                                                <f:if condition="{org.selected}">
+                                                    <f:then>
+                                                        <span class="workos-team__btn workos-team__btn--primary" style="cursor:default;">{org.name}</span>
+                                                    </f:then>
+                                                    <f:else>
+                                                        <f:link.action action="dashboard" arguments="{organizationId: org.id}" class="workos-team__btn workos-team__btn--ghost">{org.name}</f:link.action>
+                                                    </f:else>
+                                                </f:if>
+                                            </f:for>
+                                        </div>
+                                        <f:if condition="{selectedOrganization.id}">
+                                            <span class="workos-team__org-domains"><code>{selectedOrganization.id}</code></span>
+                                        </f:if>
+                                    </div>
+
+                                    <!-- Admin Portal launchers -->
+                                    <div class="workos-team__card">
+                                        <p class="workos-team__card-title">
+                                            <f:translate key="workos_auth.messages:team.portal.title" />
+                                            <span class="workos-team__badge workos-team__badge--green"><f:translate key="workos_auth.messages:team.portal.signedLink" /></span>
+                                        </p>
+                                        <p class="workos-team__card-sub">
+                                            <f:translate key="workos_auth.messages:team.portal.subtitle" />
+                                        </p>
+                                        <div class="workos-team__portal-grid">
+                                            <f:for each="{portalIntents}" as="intent">
+                                                <div class="workos-team__portal-tile">
+                                                    <div class="workos-team__portal-icon">
+                                                        <f:switch expression="{intent.slug}">
+                                                            <f:case value="sso">SSO</f:case>
+                                                            <f:case value="dsync">DS</f:case>
+                                                            <f:case value="audit_logs">A</f:case>
+                                                            <f:case value="log_streams">L</f:case>
+                                                            <f:case value="domain_verification">D</f:case>
+                                                            <f:case value="certificate_renewal">C</f:case>
+                                                            <f:defaultCase>·</f:defaultCase>
+                                                        </f:switch>
+                                                    </div>
+                                                    <div class="workos-team__portal-name">{intent.label}</div>
+                                                    <f:form action="launchPortal" method="post" requestToken="{requestToken}">
+                                                        <input type="hidden" name="intent" value="{intent.slug}" />
+                                                        <input type="hidden" name="organizationId" value="{selectedOrganization.id}" />
+                                                        <button type="submit" class="workos-team__btn workos-team__btn--primary" style="width:100%;">
+                                                            <f:translate key="workos_auth.messages:team.portal.launch" />
+                                                        </button>
+                                                    </f:form>
+                                                </div>
+                                            </f:for>
+                                        </div>
+                                    </div>
+
+                                    <!-- Invitation form -->
+                                    <div class="workos-team__card">
+                                        <p class="workos-team__card-title">
+                                            <f:translate key="workos_auth.messages:team.invite.title" />
+                                        </p>
+                                        <p class="workos-team__card-sub">
+                                            <f:translate key="workos_auth.messages:team.invite.subtitle" />
+                                        </p>
+                                        <f:form action="invite" method="post" requestToken="{requestToken}">
+                                            <input type="hidden" name="organizationId" value="{selectedOrganization.id}" />
+                                            <div class="workos-team__row">
+                                                <div style="flex:2;">
+                                                    <label class="workos-team__label" for="wt-email"><f:translate key="workos_auth.messages:common.email" /></label>
+                                                    <input id="wt-email" type="email" name="email" required autocomplete="off" placeholder="teammate@example.com" />
+                                                </div>
+                                                <div>
+                                                    <label class="workos-team__label" for="wt-role"><f:translate key="workos_auth.messages:team.invite.role" /></label>
+                                                    <input id="wt-role" type="text" name="roleSlug" placeholder="member" />
+                                                </div>
+                                            </div>
+                                            <div class="workos-team__actions">
+                                                <button type="submit" class="workos-team__btn workos-team__btn--primary">
+                                                    <f:translate key="workos_auth.messages:team.invite.send" />
+                                                </button>
+                                            </div>
+                                        </f:form>
+                                    </div>
+
+                                    <!-- Pending invitations list -->
+                                    <div class="workos-team__card">
+                                        <p class="workos-team__card-title">
+                                            <f:translate key="workos_auth.messages:team.invitations.title" />
+                                        </p>
+                                        <p class="workos-team__card-sub">
+                                            <f:translate key="workos_auth.messages:team.invitations.subtitle" />
+                                        </p>
+                                        <f:if condition="{sectionErrors.invitations}">
+                                            <div class="workos-team__alert workos-team__alert--danger">{sectionErrors.invitations}</div>
+                                        </f:if>
+                                        <f:if condition="{invitations -> f:count()}">
+                                            <f:then>
+                                                <div class="workos-team__list">
+                                                    <f:for each="{invitations}" as="inv">
+                                                        <div class="workos-team__item">
+                                                            <div class="workos-team__item-meta">
+                                                                <div class="workos-team__item-title">
+                                                                    {inv.email}
+                                                                    <f:switch expression="{inv.state}">
+                                                                        <f:case value="pending"><span class="workos-team__badge workos-team__badge--orange"><f:translate key="workos_auth.messages:team.invitations.statePending" /></span></f:case>
+                                                                        <f:case value="accepted"><span class="workos-team__badge workos-team__badge--green"><f:translate key="workos_auth.messages:team.invitations.stateAccepted" /></span></f:case>
+                                                                        <f:case value="expired"><span class="workos-team__badge workos-team__badge--gray"><f:translate key="workos_auth.messages:team.invitations.stateExpired" /></span></f:case>
+                                                                        <f:case value="revoked"><span class="workos-team__badge workos-team__badge--red"><f:translate key="workos_auth.messages:team.invitations.stateRevoked" /></span></f:case>
+                                                                        <f:defaultCase><span class="workos-team__badge workos-team__badge--gray">{inv.state}</span></f:defaultCase>
+                                                                    </f:switch>
+                                                                </div>
+                                                                <div class="workos-team__item-sub">
+                                                                    <f:if condition="{inv.expiresAt}"><f:translate key="workos_auth.messages:team.invitations.expires" /> {inv.expiresAt}</f:if>
+                                                                    <f:if condition="{inv.acceptUrl}"> · <a href="{inv.acceptUrl}" target="_blank" rel="noopener">{inv.acceptUrl}</a></f:if>
+                                                                </div>
+                                                            </div>
+                                                            <f:if condition="{inv.isPending}">
+                                                                <f:form action="resendInvitation" method="post" style="margin:0;" requestToken="{requestToken}">
+                                                                    <input type="hidden" name="invitationId" value="{inv.id}" />
+                                                                    <input type="hidden" name="organizationId" value="{selectedOrganization.id}" />
+                                                                    <button type="submit" class="workos-team__btn workos-team__btn--ghost"><f:translate key="workos_auth.messages:team.invitations.resend" /></button>
+                                                                </f:form>
+                                                                <f:form action="revokeInvitation" method="post" style="margin:0;" requestToken="{requestToken}">
+                                                                    <input type="hidden" name="invitationId" value="{inv.id}" />
+                                                                    <input type="hidden" name="organizationId" value="{selectedOrganization.id}" />
+                                                                    <button type="submit" class="workos-team__btn workos-team__btn--danger"><f:translate key="workos_auth.messages:team.invitations.revoke" /></button>
+                                                                </f:form>
+                                                            </f:if>
+                                                        </div>
+                                                    </f:for>
+                                                </div>
+                                            </f:then>
+                                            <f:else>
+                                                <p style="margin:0; color:#6b7280; font-size:0.9rem;">
+                                                    <f:translate key="workos_auth.messages:team.invitations.empty" />
+                                                </p>
+                                            </f:else>
+                                        </f:if>
+                                    </div>
+
+                                </f:else>
+                            </f:if>
+
+                        </f:else>
+                    </f:if>
+
+                </f:then>
+                <f:else>
+                    <div class="workos-team__alert workos-team__alert--info">
+                        <f:translate key="workos_auth.messages:team.signInRequired" />
+                    </div>
+                </f:else>
+            </f:if>
+        </f:then>
+        <f:else>
+            <div class="workos-team__alert workos-team__alert--warning">
+                <f:translate key="workos_auth.messages:common.notConfigured" />
+            </div>
+        </f:else>
+    </f:if>
+
+</div>
+</html>
