@@ -4,13 +4,21 @@
         <header/>
         <body>
             <!-- Plugin & provider -->
+            <trans-unit id="plugin.group.title">
+                <source>WorkOS</source>
+                <target>WorkOS</target>
+            </trans-unit>
             <trans-unit id="plugin.login.title">
                 <source>WorkOS Login</source>
                 <target>WorkOS-Anmeldung</target>
             </trans-unit>
+            <trans-unit id="plugin.login.description">
+                <source>Frontend login and sign-up form powered by WorkOS AuthKit.</source>
+                <target>Frontend-Anmelde- und Registrierungsformular mit WorkOS AuthKit.</target>
+            </trans-unit>
             <trans-unit id="loginprovider.label">
-                <source>Continue with WorkOS</source>
-                <target>Weiter mit WorkOS</target>
+                <source>Login with WorkOS</source>
+                <target>WorkOS-Anmeldung</target>
             </trans-unit>
 
             <!-- Social provider labels -->
@@ -228,6 +236,14 @@
                 <source>Classic sign-in</source>
                 <target>Klassische Anmeldung</target>
             </trans-unit>
+            <trans-unit id="backend.login.switch.toClassic">
+                <source>switch to Login with username and password</source>
+                <target>Zur klassischen Anmeldung wechseln</target>
+            </trans-unit>
+            <trans-unit id="backend.login.switch.toWorkos">
+                <source>switch to login with WorkOS</source>
+                <target>Zur WorkOS-Anmeldung wechseln</target>
+            </trans-unit>
             <trans-unit id="backend.login.signInWithEmail">
                 <source>Sign in with email</source>
                 <target>Mit E-Mail anmelden</target>
@@ -266,7 +282,7 @@
             </trans-unit>
             <trans-unit id="backend.login.magic.codeSent">
                 <source>We sent a six-digit code to %s. Enter it below to sign in.</source>
-                <target>Wir haben einen sechsstelligen Code an %s gesendet. Bitte gib ihn unten ein, um dich anzumelden.</target>
+                <target>Wir haben einen sechsstelligen Code an %s gesendet. Bitte geben Sie ihn unten ein, um sich anzumelden.</target>
             </trans-unit>
             <trans-unit id="backend.login.magic.codeLabel">
                 <source>Sign-in code</source>
@@ -302,7 +318,7 @@
             </trans-unit>
             <trans-unit id="backend.login.error.notLinked.hint">
                 <source>Ask a TYPO3 administrator to set this e-mail on your backend user, or open the WorkOS setup assistant to enable automatic backend provisioning for trusted domains.</source>
-                <target>Lass eine Administratorin oder einen Administrator diese E-Mail-Adresse an deinem Backend-Benutzer eintragen, oder öffne den WorkOS-Einrichtungsassistenten und aktiviere das automatische Anlegen für vertrauenswürdige Domains.</target>
+                <target>Bitten Sie eine Administratorin oder einen Administrator, diese E-Mail-Adresse an Ihrem Backend-Benutzer einzutragen, oder öffnen Sie den WorkOS-Einrichtungsassistenten und aktivieren Sie das automatische Anlegen für vertrauenswürdige Domains.</target>
             </trans-unit>
             <trans-unit id="backend.login.error.notLinked.action">
                 <source>Open WorkOS setup assistant</source>
@@ -339,6 +355,10 @@
             <trans-unit id="backend.login.notConfigured">
                 <source>WorkOS backend login is enabled, but not configured.</source>
                 <target>Die WorkOS-Backend-Anmeldung ist aktiviert, aber noch nicht konfiguriert.</target>
+            </trans-unit>
+            <trans-unit id="backend.login.cookieSameSiteUnsupported">
+                <source>WorkOS backend login requires TYPO3 backend cookies to use one of the core SameSite values "strict", "lax", or "none". The current TYPO3 core value is "%s".</source>
+                <target>Die WorkOS-Backend-Anmeldung setzt voraus, dass TYPO3-Backend-Cookies einen der Core-SameSite-Werte „strict“, „lax“ oder „none“ verwenden. Der aktuelle TYPO3-Core-Wert ist „%s“.</target>
             </trans-unit>
             <trans-unit id="backend.login.openSetup">
                 <source>Open the setup assistant</source>
@@ -443,8 +463,8 @@
                 <target>Organisation beitreten</target>
             </trans-unit>
             <trans-unit id="module.users.join.existing.single">
-                <source>You currently have access to one organization: %s.</source>
-                <target>Derzeit ist eine Organisation verfügbar: %s.</target>
+                <source>One organization is available in this WorkOS account: %s.</source>
+                <target>In diesem WorkOS-Konto ist eine Organisation verfügbar: %s.</target>
             </trans-unit>
             <trans-unit id="module.users.join.existing.singleSubmit">
                 <source>Join "%s"</source>
@@ -548,37 +568,73 @@
                 <source>Enable frontend login</source>
                 <target>Frontend-Anmeldung aktivieren</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.enable.description">
+                <source>Expose the WorkOS-powered login routes on the website.</source>
+                <target>Stellt die WorkOS-gestützten Anmelderouten im Frontend bereit.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.autoCreate">
                 <source>Auto-create missing frontend users</source>
                 <target>Fehlende Frontend-Benutzer automatisch anlegen</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.autoCreate.description">
+                <source>Provision a new fe_users record after a successful WorkOS sign-in if no matching user exists.</source>
+                <target>Legt nach erfolgreicher WorkOS-Anmeldung automatisch einen fe_users-Datensatz an, wenn noch keiner existiert.</target>
             </trans-unit>
             <trans-unit id="setup.frontend.linkByEmail">
                 <source>Link existing frontend users by email</source>
                 <target>Bestehende Frontend-Benutzer per E-Mail verknüpfen</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.linkByEmail.description">
+                <source>Match WorkOS sign-ins to existing frontend users that share the same email address.</source>
+                <target>Verknüpft WorkOS-Anmeldungen mit bestehenden Frontend-Benutzern anhand der E-Mail-Adresse.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.storagePid">
                 <source>Frontend storage PID</source>
                 <target>Frontend-Speicher-PID</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.storagePid.description">
+                <source>Page UID where new fe_users records are stored. Required when auto-creation is enabled.</source>
+                <target>Seiten-UID, unter der neue fe_users-Datensätze gespeichert werden. Erforderlich, wenn die automatische Erstellung aktiviert ist.</target>
             </trans-unit>
             <trans-unit id="setup.frontend.defaultGroupUids">
                 <source>Default frontend group UIDs</source>
                 <target>Standard-Frontend-Gruppen-UIDs</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.defaultGroupUids.description">
+                <source>Comma-separated list of fe_groups UIDs assigned to auto-created frontend users.</source>
+                <target>Kommagetrennte Liste von fe_groups-UIDs, die automatisch angelegten Frontend-Benutzern zugewiesen werden.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.loginPath">
                 <source>Login path</source>
                 <target>Anmeldepfad</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.loginPath.description">
+                <source>Public URL path that starts the WorkOS sign-in flow for frontend users.</source>
+                <target>Öffentlicher URL-Pfad, der den WorkOS-Anmeldevorgang für Frontend-Benutzer startet.</target>
             </trans-unit>
             <trans-unit id="setup.frontend.callbackPath">
                 <source>Callback path</source>
                 <target>Callback-Pfad</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.callbackPath.description">
+                <source>URL path WorkOS redirects to after a successful sign-in. Must match a redirect URI registered in WorkOS.</source>
+                <target>URL-Pfad, zu dem WorkOS nach erfolgreicher Anmeldung weiterleitet. Muss einer in WorkOS registrierten Weiterleitungs-URI entsprechen.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.logoutPath">
                 <source>Logout path</source>
                 <target>Abmeldepfad</target>
             </trans-unit>
+            <trans-unit id="setup.frontend.logoutPath.description">
+                <source>URL path that ends the WorkOS session and signs the frontend user out.</source>
+                <target>URL-Pfad, der die WorkOS-Sitzung beendet und den Frontend-Benutzer abmeldet.</target>
+            </trans-unit>
             <trans-unit id="setup.frontend.successRedirect">
                 <source>Success redirect</source>
                 <target>Weiterleitung nach Erfolg</target>
+            </trans-unit>
+            <trans-unit id="setup.frontend.successRedirect.description">
+                <source>Path users are redirected to after a successful sign-in (for example /).</source>
+                <target>Pfad, zu dem Benutzer nach erfolgreicher Anmeldung weitergeleitet werden (zum Beispiel /).</target>
             </trans-unit>
             <trans-unit id="setup.backend.title">
                 <source>Backend login</source>
@@ -588,17 +644,33 @@
                 <source>Enable backend login</source>
                 <target>Backend-Anmeldung aktivieren</target>
             </trans-unit>
+            <trans-unit id="setup.backend.enable.description">
+                <source>Show the WorkOS sign-in option on the TYPO3 backend login screen.</source>
+                <target>Zeigt die WorkOS-Anmeldung auf der TYPO3-Backend-Anmeldeseite an.</target>
+            </trans-unit>
             <trans-unit id="setup.backend.autoCreate">
                 <source>Auto-create missing backend users</source>
                 <target>Fehlende Backend-Benutzer automatisch anlegen</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.autoCreate.description">
+                <source>Provision a new be_users record after a successful WorkOS sign-in if no matching user exists.</source>
+                <target>Legt nach erfolgreicher WorkOS-Anmeldung automatisch einen be_users-Datensatz an, wenn noch keiner existiert.</target>
             </trans-unit>
             <trans-unit id="setup.backend.linkByEmail">
                 <source>Link existing backend users by email</source>
                 <target>Bestehende Backend-Benutzer per E-Mail verknüpfen</target>
             </trans-unit>
+            <trans-unit id="setup.backend.linkByEmail.description">
+                <source>Match WorkOS sign-ins to existing backend users that share the same email address.</source>
+                <target>Verknüpft WorkOS-Anmeldungen mit bestehenden Backend-Benutzern anhand der E-Mail-Adresse.</target>
+            </trans-unit>
             <trans-unit id="setup.backend.defaultGroupUids">
                 <source>Default backend group UIDs</source>
                 <target>Standard-Backend-Gruppen-UIDs</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.defaultGroupUids.description">
+                <source>Comma-separated list of be_groups UIDs assigned to auto-created backend users.</source>
+                <target>Kommagetrennte Liste von be_groups-UIDs, die automatisch angelegten Backend-Benutzern zugewiesen werden.</target>
             </trans-unit>
             <trans-unit id="setup.backend.allowedDomains">
                 <source>Allowed backend email domains</source>
@@ -612,13 +684,25 @@
                 <source>Login path</source>
                 <target>Anmeldepfad</target>
             </trans-unit>
+            <trans-unit id="setup.backend.loginPath.description">
+                <source>URL path that starts the WorkOS sign-in flow for backend users.</source>
+                <target>URL-Pfad, der den WorkOS-Anmeldevorgang für Backend-Benutzer startet.</target>
+            </trans-unit>
             <trans-unit id="setup.backend.callbackPath">
                 <source>Callback path</source>
                 <target>Callback-Pfad</target>
             </trans-unit>
+            <trans-unit id="setup.backend.callbackPath.description">
+                <source>URL path WorkOS redirects to after a successful backend sign-in. Must match a registered redirect URI.</source>
+                <target>URL-Pfad, zu dem WorkOS nach erfolgreicher Backend-Anmeldung weiterleitet. Muss einer registrierten Weiterleitungs-URI entsprechen.</target>
+            </trans-unit>
             <trans-unit id="setup.backend.successPath">
                 <source>Success path</source>
                 <target>Erfolgspfad</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.successPath.description">
+                <source>Backend route to open after a successful sign-in (for example /main).</source>
+                <target>Backend-Route, die nach erfolgreicher Anmeldung geöffnet wird (zum Beispiel /main).</target>
             </trans-unit>
             <trans-unit id="setup.authkit.title">
                 <source>Optional AuthKit hints</source>
@@ -636,12 +720,274 @@
                 <source>Domain hint</source>
                 <target>Domain-Hinweis</target>
             </trans-unit>
+            <trans-unit id="setup.mcp.title">
+                <source>TYPO3 MCP server</source>
+                <target>TYPO3-MCP-Server</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.enable">
+                <source>Enable TYPO3 MCP server</source>
+                <target>TYPO3-MCP-Server aktivieren</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.enable.description">
+                <source>Expose a Streamable HTTP MCP endpoint from TYPO3. In auto mode it is anonymous in Development/Testing and requires WorkOS in Production.</source>
+                <target>Stellt einen Streamable-HTTP-MCP-Endpunkt aus TYPO3 bereit. Im Auto-Modus ist er in Development/Testing anonym und benötigt in Production WorkOS.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.serverPath">
+                <source>MCP endpoint path</source>
+                <target>MCP-Endpunktpfad</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.serverPath.description">
+                <source>Public URL path for JSON-RPC MCP requests. The default is /workos-auth/mcp.</source>
+                <target>Öffentlicher URL-Pfad für JSON-RPC-MCP-Anfragen. Standard ist /workos-auth/mcp.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode">
+                <source>Authentication mode</source>
+                <target>Authentifizierungsmodus</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode.auto">
+                <source>Auto: anonymous in development, WorkOS in production</source>
+                <target>Auto: anonym in Development, WorkOS in Production</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode.workos">
+                <source>Always require WorkOS</source>
+                <target>WorkOS immer voraussetzen</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode.anonymous">
+                <source>Allow anonymous access</source>
+                <target>Anonymen Zugriff erlauben</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authenticationMode.description">
+                <source>Use anonymous only for trusted development or deliberately public MCP endpoints.</source>
+                <target>Anonym nur für vertrauenswürdige Entwicklung oder bewusst öffentliche MCP-Endpunkte verwenden.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authkitDomain">
+                <source>AuthKit domain</source>
+                <target>AuthKit-Domain</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.authkitDomain.description">
+                <source>Issuer used to verify MCP bearer tokens, for example https://your-project.authkit.app.</source>
+                <target>Issuer zur Prüfung von MCP-Bearer-Tokens, zum Beispiel https://your-project.authkit.app.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.workosDiscovery">
+                <source>Discover authorized WorkOS MCP applications</source>
+                <target>Autorisierte WorkOS-MCP-Anwendungen erkennen</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.workosDiscovery.description">
+                <source>List WorkOS Connect applications authorized by the current WorkOS user without local TYPO3 server configuration.</source>
+                <target>Listet vom aktuellen WorkOS-Benutzer autorisierte WorkOS-Connect-Anwendungen ohne lokale TYPO3-Serverkonfiguration.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.verboseLogging">
+                <source>Verbose MCP logging</source>
+                <target>Ausführliches MCP-Logging</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.verboseLogging.description">
+                <source>Log MCP method calls and WorkOS discovery failures. Bearer tokens and secrets are redacted.</source>
+                <target>Protokolliert MCP-Methodenaufrufe und WorkOS-Discovery-Fehler. Bearer-Tokens und Secrets werden maskiert.</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.serverLimit">
+                <source>Maximum WorkOS MCP applications</source>
+                <target>Maximale Anzahl WorkOS-MCP-Anwendungen</target>
+            </trans-unit>
+            <trans-unit id="setup.mcp.serverLimit.description">
+                <source>Maximum number of authorized WorkOS Connect applications to expose through TYPO3. Capped at 10.</source>
+                <target>Maximale Anzahl autorisierter WorkOS-Connect-Anwendungen, die TYPO3 bereitstellt. Auf 10 begrenzt.</target>
+            </trans-unit>
             <trans-unit id="setup.save">
                 <source>Save configuration</source>
                 <target>Konfiguration speichern</target>
             </trans-unit>
 
+            <!-- Backend MCP module -->
+            <trans-unit id="module.mcp.title">
+                <source>TYPO3 MCP Server</source>
+                <target>TYPO3-MCP-Server</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.description">
+                <source>Configure the TYPO3 MCP endpoint, WorkOS authentication policy and WorkOS-authorized MCP discovery.</source>
+                <target>TYPO3-MCP-Endpunkt, WorkOS-Authentifizierungsrichtlinie und WorkOS-autorisierte MCP-Discovery konfigurieren.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.context">
+                <source>Context</source>
+                <target>Kontext</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.endpoint">
+                <source>Endpoint</source>
+                <target>Endpunkt</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.auth">
+                <source>Auth</source>
+                <target>Auth</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.enabled">
+                <source>Enabled</source>
+                <target>Aktiviert</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.disabled">
+                <source>Disabled</source>
+                <target>Deaktiviert</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.workosRequired">
+                <source>WorkOS required</source>
+                <target>WorkOS erforderlich</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.status.anonymous">
+                <source>Anonymous</source>
+                <target>Anonym</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.ready.title">
+                <source>MCP endpoint is ready</source>
+                <target>MCP-Endpunkt ist bereit</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.ready.description">
+                <source>Clients can connect to the endpoint below. In production, WorkOS bearer-token protection is applied when the effective authentication mode requires it.</source>
+                <target>Clients können sich mit dem untenstehenden Endpunkt verbinden. In Production wird WorkOS-Bearer-Token-Schutz angewendet, wenn der effektive Authentifizierungsmodus dies erfordert.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.notReady.title">
+                <source>MCP endpoint needs attention</source>
+                <target>MCP-Endpunkt benötigt Aufmerksamkeit</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.notReady.description">
+                <source>Enable the endpoint or add an AuthKit domain when WorkOS authentication is required.</source>
+                <target>Aktivieren Sie den Endpunkt oder ergänzen Sie eine AuthKit-Domain, wenn WorkOS-Authentifizierung erforderlich ist.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.section.endpoint">
+                <source>Endpoint</source>
+                <target>Endpunkt</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.section.security">
+                <source>Security</source>
+                <target>Sicherheit</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.section.workos">
+                <source>WorkOS discovery</source>
+                <target>WorkOS-Discovery</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.save">
+                <source>Save MCP configuration</source>
+                <target>MCP-Konfiguration speichern</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.title">
+                <source>Client URLs</source>
+                <target>Client-URLs</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.label">
+                <source>Scope</source>
+                <target>Bereich</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.url">
+                <source>URL</source>
+                <target>URL</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.currentHost">
+                <source>Current host</source>
+                <target>Aktueller Host</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.protectedResource">
+                <source>Protected resource metadata</source>
+                <target>Protected-Resource-Metadaten</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.endpoints.authorizationServer">
+                <source>Authorization server metadata</source>
+                <target>Authorization-Server-Metadaten</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.title">
+                <source>Production checklist</source>
+                <target>Production-Checkliste</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.endpoint">
+                <source>Add the MCP endpoint URL as protected resource in WorkOS.</source>
+                <target>Fügen Sie die MCP-Endpunkt-URL in WorkOS als Protected Resource hinzu.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.authkit">
+                <source>Set the AuthKit domain so TYPO3 can verify bearer tokens.</source>
+                <target>Setzen Sie die AuthKit-Domain, damit TYPO3 Bearer-Tokens prüfen kann.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.mapping">
+                <source>Let users sign in through WorkOS once so TYPO3 can create the FE/BE identity mapping.</source>
+                <target>Lassen Sie Benutzer einmal über WorkOS anmelden, damit TYPO3 das FE/BE-Identity-Mapping erstellen kann.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.checklist.client">
+                <source>Point the MCP client at the TYPO3 endpoint; WorkOS handles authorization and consent.</source>
+                <target>Richten Sie den MCP-Client auf den TYPO3-Endpunkt; WorkOS übernimmt Autorisierung und Zustimmung.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.mode.auto.description">
+                <source>Recommended. Anonymous in TYPO3 Development/Testing, WorkOS-protected in Production.</source>
+                <target>Empfohlen. Anonym in TYPO3 Development/Testing, WorkOS-geschützt in Production.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.mode.workos.description">
+                <source>Requires a valid WorkOS bearer token in every TYPO3 context.</source>
+                <target>Erfordert in jedem TYPO3-Kontext ein gültiges WorkOS-Bearer-Token.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.mode.anonymous.description">
+                <source>Allows unauthenticated MCP calls in every context. Use only for trusted local or deliberately public endpoints.</source>
+                <target>Erlaubt unauthentifizierte MCP-Aufrufe in jedem Kontext. Nur für vertrauenswürdige lokale oder bewusst öffentliche Endpunkte verwenden.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.flashTitle">
+                <source>MCP configuration</source>
+                <target>MCP-Konfiguration</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.flash.saved">
+                <source>The MCP configuration has been saved.</source>
+                <target>Die MCP-Konfiguration wurde gespeichert.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.flash.savedWithWarnings">
+                <source>The MCP configuration has been saved, but needs attention: {errors}</source>
+                <target>Die MCP-Konfiguration wurde gespeichert, benötigt aber Aufmerksamkeit: {errors}</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.title">
+                <source>Database schema</source>
+                <target>Datenbankschema</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.status">
+                <source>Status</source>
+                <target>Status</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.ready">
+                <source>Ready</source>
+                <target>Bereit</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.pending">
+                <source>Update required</source>
+                <target>Aktualisierung erforderlich</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.tables">
+                <source>Managed tables</source>
+                <target>Verwaltete Tabellen</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.ready.description">
+                <source>TYPO3 database schema is in sync for WorkOS.</source>
+                <target>Das TYPO3-Datenbankschema ist fuer WorkOS aktuell.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.pending.description">
+                <source>TYPO3 reports pending WorkOS schema updates from ext_tables.sql.</source>
+                <target>TYPO3 meldet ausstehende WorkOS-Schema-Updates aus ext_tables.sql.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.apply">
+                <source>Apply TYPO3 schema updates</source>
+                <target>TYPO3-Schema-Updates anwenden</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.applied">
+                <source>Applied {count} TYPO3 schema update(s) for WorkOS.</source>
+                <target>{count} TYPO3-Schema-Update(s) fuer WorkOS angewendet.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.partial">
+                <source>Applied {count} TYPO3 schema update(s), but some statements failed: {errors}</source>
+                <target>{count} TYPO3-Schema-Update(s) angewendet, aber einige Anweisungen sind fehlgeschlagen: {errors}</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.upToDate">
+                <source>TYPO3 database schema is already in sync for WorkOS.</source>
+                <target>Das TYPO3-Datenbankschema ist fuer WorkOS bereits aktuell.</target>
+            </trans-unit>
+            <trans-unit id="module.mcp.schema.flash.error">
+                <source>Could not apply TYPO3 schema updates: {error}</source>
+                <target>TYPO3-Schema-Updates konnten nicht angewendet werden: {error}</target>
+            </trans-unit>
+
             <!-- Error messages -->
+            <trans-unit id="error.generic">
+                <source>Sign-in failed. Please try again or contact your administrator.</source>
+                <target>Anmeldung fehlgeschlagen. Bitte erneut versuchen oder den Administrator kontaktieren.</target>
+            </trans-unit>
             <trans-unit id="error.invalidEmailOrPassword">
                 <source>Invalid email or password.</source>
                 <target>Ungültige E-Mail oder ungültiges Passwort.</target>
@@ -726,6 +1072,10 @@
                 <source>Backend WorkOS login is disabled.</source>
                 <target>Die WorkOS-Backend-Anmeldung ist deaktiviert.</target>
             </trans-unit>
+            <trans-unit id="error.backendLoginNotSupported">
+                <source>Backend WorkOS login is not fully configured yet. Open the setup assistant and try again.</source>
+                <target>Die WorkOS-Backend-Anmeldung ist noch nicht vollständig eingerichtet. Öffnen Sie den Einrichtungsassistenten und versuchen Sie es erneut.</target>
+            </trans-unit>
             <trans-unit id="error.frontendLoginDisabled">
                 <source>Frontend WorkOS login is disabled.</source>
                 <target>Die WorkOS-Frontend-Anmeldung ist deaktiviert.</target>
@@ -769,6 +1119,493 @@
             <trans-unit id="validation.backendGroupUidsRequired">
                 <source>Automatic backend user creation needs at least one backend group UID.</source>
                 <target>Die automatische Erstellung von Backend-Benutzern benötigt mindestens eine Backend-Gruppen-UID.</target>
+            </trans-unit>
+            <trans-unit id="validation.backendCookieSameSiteUnsupported">
+                <source>Backend WorkOS login requires TYPO3 backend cookies to use one of the core SameSite values "strict", "lax", or "none". The current TYPO3 core value is "%s".</source>
+                <target>Die WorkOS-Backend-Anmeldung setzt voraus, dass TYPO3-Backend-Cookies einen der Core-SameSite-Werte „strict“, „lax“ oder „none“ verwenden. Der aktuelle TYPO3-Core-Wert ist „%s“.</target>
+            </trans-unit>
+            <trans-unit id="validation.mcpAuthenticationModeInvalid">
+                <source>Choose a valid MCP authentication mode.</source>
+                <target>Wählen Sie einen gültigen MCP-Authentifizierungsmodus.</target>
+            </trans-unit>
+            <trans-unit id="validation.mcpAuthkitDomainRequired">
+                <source>Production MCP authentication requires an AuthKit domain.</source>
+                <target>MCP-Authentifizierung in Production benötigt eine AuthKit-Domain.</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.cookieSameSiteCompatible">
+                <source>TYPO3 core backend cookies are configured with SameSite "%s", which is compatible with the WorkOS login flow.</source>
+                <target>Die TYPO3-Core-Backend-Cookies sind mit SameSite „%s“ konfiguriert und damit mit der WorkOS-Anmeldung kompatibel.</target>
+            </trans-unit>
+            <trans-unit id="setup.backend.cookieSameSiteUnsupported">
+                <source>TYPO3 core backend cookies currently use SameSite "%s". Use one of TYPO3's supported values: "strict", "lax", or "none".</source>
+                <target>Die TYPO3-Core-Backend-Cookies verwenden derzeit SameSite „%s“. Verwenden Sie einen der von TYPO3 unterstützten Werte: „strict“, „lax“ oder „none“.</target>
+            </trans-unit>
+
+            <!-- Account Center plugin -->
+            <trans-unit id="plugin.account.title">
+                <source>WorkOS Account Center</source>
+                <target>WorkOS Konto-Center</target>
+            </trans-unit>
+            <trans-unit id="plugin.account.description">
+                <source>Signed-in user dashboard: profile, password, MFA, and sessions.</source>
+                <target>Bereich für angemeldete Nutzer: Profil, Passwort, MFA und Sitzungen.</target>
+            </trans-unit>
+            <trans-unit id="account.greeting">
+                <source>Signed in as</source>
+                <target>Angemeldet als</target>
+            </trans-unit>
+            <trans-unit id="account.signInRequired">
+                <source>Please sign in to manage your WorkOS account.</source>
+                <target>Bitte melden Sie sich an, um Ihr WorkOS-Konto zu verwalten.</target>
+            </trans-unit>
+            <trans-unit id="account.notLinked">
+                <source>This frontend user is not linked to a WorkOS account, so the Account Center cannot show profile data.</source>
+                <target>Dieser Frontend-Benutzer ist mit keinem WorkOS-Konto verknüpft, daher kann das Konto-Center keine Profildaten anzeigen.</target>
+            </trans-unit>
+
+            <trans-unit id="account.profile.title">
+                <source>Profile</source>
+                <target>Profil</target>
+            </trans-unit>
+            <trans-unit id="account.profile.subtitle">
+                <source>Update the name your team and customers see.</source>
+                <target>Passen Sie den Namen an, den Ihr Team und Ihre Kund:innen sehen.</target>
+            </trans-unit>
+            <trans-unit id="account.profile.firstName">
+                <source>First name</source>
+                <target>Vorname</target>
+            </trans-unit>
+            <trans-unit id="account.profile.lastName">
+                <source>Last name</source>
+                <target>Nachname</target>
+            </trans-unit>
+            <trans-unit id="account.profile.save">
+                <source>Save profile</source>
+                <target>Profil speichern</target>
+            </trans-unit>
+
+            <trans-unit id="account.password.title">
+                <source>Password</source>
+                <target>Passwort</target>
+            </trans-unit>
+            <trans-unit id="account.password.subtitle">
+                <source>Choose a strong password (at least 10 characters).</source>
+                <target>Wählen Sie ein starkes Passwort (mindestens 10 Zeichen).</target>
+            </trans-unit>
+            <trans-unit id="account.password.new">
+                <source>New password</source>
+                <target>Neues Passwort</target>
+            </trans-unit>
+            <trans-unit id="account.password.confirm">
+                <source>Confirm password</source>
+                <target>Passwort bestätigen</target>
+            </trans-unit>
+            <trans-unit id="account.password.save">
+                <source>Update password</source>
+                <target>Passwort aktualisieren</target>
+            </trans-unit>
+
+            <trans-unit id="account.mfa.title">
+                <source>Two-factor authentication</source>
+                <target>Zwei-Faktor-Authentifizierung</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.activeBadge">
+                <source>Enabled</source>
+                <target>Aktiv</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.subtitle">
+                <source>Add an authenticator app for an extra layer of security on your account.</source>
+                <target>Fügen Sie eine Authenticator-App für zusätzliche Sicherheit hinzu.</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.scanInstruction">
+                <source>Scan this QR code with your authenticator app.</source>
+                <target>Scannen Sie diesen QR-Code mit Ihrer Authenticator-App.</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.cantScan">
+                <source>Can't scan? Enter this secret manually:</source>
+                <target>Kein Scan möglich? Geben Sie diesen Schlüssel manuell ein:</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.codeLabel">
+                <source>6-digit code</source>
+                <target>6-stelliger Code</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.verify">
+                <source>Verify code</source>
+                <target>Code bestätigen</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.cancel">
+                <source>Cancel</source>
+                <target>Abbrechen</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.factorTotp">
+                <source>Authenticator app</source>
+                <target>Authenticator-App</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.factorAdded">
+                <source>Added</source>
+                <target>Hinzugefügt</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.confirmDelete">
+                <source>Remove this authenticator factor?</source>
+                <target>Diesen Authenticator wirklich entfernen?</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.remove">
+                <source>Remove</source>
+                <target>Entfernen</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.noFactors">
+                <source>No authenticator app set up yet.</source>
+                <target>Noch keine Authenticator-App eingerichtet.</target>
+            </trans-unit>
+            <trans-unit id="account.mfa.enroll">
+                <source>Set up authenticator app</source>
+                <target>Authenticator-App einrichten</target>
+            </trans-unit>
+
+            <trans-unit id="account.sessions.title">
+                <source>Active sessions</source>
+                <target>Aktive Sitzungen</target>
+            </trans-unit>
+            <trans-unit id="account.sessions.subtitle">
+                <source>Devices currently signed in to your WorkOS account.</source>
+                <target>Geräte, die aktuell bei Ihrem WorkOS-Konto angemeldet sind.</target>
+            </trans-unit>
+            <trans-unit id="account.sessions.unknownDevice">
+                <source>Unknown device</source>
+                <target>Unbekanntes Gerät</target>
+            </trans-unit>
+            <trans-unit id="account.sessions.statusActive">
+                <source>Active</source>
+                <target>Aktiv</target>
+            </trans-unit>
+            <trans-unit id="account.sessions.expires">
+                <source>expires</source>
+                <target>läuft ab</target>
+            </trans-unit>
+            <trans-unit id="account.sessions.revoke">
+                <source>Sign out</source>
+                <target>Abmelden</target>
+            </trans-unit>
+            <trans-unit id="account.sessions.empty">
+                <source>No active sessions.</source>
+                <target>Keine aktiven Sitzungen.</target>
+            </trans-unit>
+
+            <trans-unit id="account.orgs.title">
+                <source>Organizations</source>
+                <target>Organisationen</target>
+            </trans-unit>
+            <trans-unit id="account.orgs.subtitle">
+                <source>Workspaces and teams your account belongs to.</source>
+                <target>Arbeitsbereiche und Teams, denen Ihr Konto angehört.</target>
+            </trans-unit>
+            <trans-unit id="account.orgs.directorySync">
+                <source>Directory sync</source>
+                <target>Verzeichnis-Sync</target>
+            </trans-unit>
+            <trans-unit id="account.orgs.role">
+                <source>Role</source>
+                <target>Rolle</target>
+            </trans-unit>
+            <trans-unit id="account.orgs.noRole">
+                <source>No role assigned</source>
+                <target>Keine Rolle zugewiesen</target>
+            </trans-unit>
+            <trans-unit id="account.orgs.empty">
+                <source>You are not a member of any organization yet.</source>
+                <target>Sie sind noch in keiner Organisation Mitglied.</target>
+            </trans-unit>
+
+            <trans-unit id="account.flash.csrfInvalid">
+                <source>Security check failed. Please reload the page and try again.</source>
+                <target>Sicherheitsprüfung fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.forbidden">
+                <source>You are not allowed to manage that WorkOS resource.</source>
+                <target>Sie dürfen diese WorkOS-Ressource nicht verwalten.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.profileUpdated">
+                <source>Profile updated.</source>
+                <target>Profil aktualisiert.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.profileFailed">
+                <source>Could not update your profile. Please try again.</source>
+                <target>Profil konnte nicht aktualisiert werden. Bitte erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordUpdated">
+                <source>Password updated.</source>
+                <target>Passwort aktualisiert.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordRequired">
+                <source>Please enter and confirm a new password.</source>
+                <target>Bitte geben Sie ein neues Passwort ein und bestätigen Sie es.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordMismatch">
+                <source>Passwords do not match.</source>
+                <target>Die Passwörter stimmen nicht überein.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordTooShort">
+                <source>Password must be at least 10 characters long.</source>
+                <target>Das Passwort muss mindestens 10 Zeichen lang sein.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordTooWeak">
+                <source>That password is too easy to guess. Please pick a stronger one.</source>
+                <target>Dieses Passwort ist zu leicht zu erraten. Bitte wählen Sie ein stärkeres.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordBreached">
+                <source>That password has appeared in a known data breach. Please pick a different one.</source>
+                <target>Dieses Passwort ist in einem bekannten Datenleck aufgetaucht. Bitte wählen Sie ein anderes.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.passwordFailed">
+                <source>Could not update your password. Please try again.</source>
+                <target>Passwort konnte nicht aktualisiert werden. Bitte erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaEnrollFailed">
+                <source>Could not start authenticator setup. Please try again.</source>
+                <target>Einrichtung der Authenticator-App fehlgeschlagen. Bitte erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaPendingMissing">
+                <source>The authenticator setup expired. Please start again.</source>
+                <target>Die Authenticator-Einrichtung ist abgelaufen. Bitte erneut starten.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaActivated">
+                <source>Authenticator app activated.</source>
+                <target>Authenticator-App aktiviert.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaCodeInvalid">
+                <source>That code is not valid. Please try the latest code from your authenticator app.</source>
+                <target>Der Code ist ungültig. Bitte verwenden Sie den aktuellen Code Ihrer Authenticator-App.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaCancelled">
+                <source>Authenticator setup cancelled.</source>
+                <target>Authenticator-Einrichtung abgebrochen.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaRemoved">
+                <source>Authenticator removed.</source>
+                <target>Authenticator entfernt.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.mfaRemoveFailed">
+                <source>Could not remove the authenticator. Please try again.</source>
+                <target>Authenticator konnte nicht entfernt werden. Bitte erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.sessionRevoked">
+                <source>Session signed out.</source>
+                <target>Sitzung abgemeldet.</target>
+            </trans-unit>
+            <trans-unit id="account.flash.sessionRevokeFailed">
+                <source>Could not sign that session out. Please try again.</source>
+                <target>Sitzung konnte nicht abgemeldet werden. Bitte erneut versuchen.</target>
+            </trans-unit>
+
+            <trans-unit id="account.error.loadProfile">
+                <source>Your WorkOS profile could not be loaded.</source>
+                <target>Ihr WorkOS-Profil konnte nicht geladen werden.</target>
+            </trans-unit>
+            <trans-unit id="account.error.loadFactors">
+                <source>Your authentication factors could not be loaded.</source>
+                <target>Ihre Authentifizierungs-Faktoren konnten nicht geladen werden.</target>
+            </trans-unit>
+            <trans-unit id="account.error.loadSessions">
+                <source>Your active sessions could not be loaded.</source>
+                <target>Ihre aktiven Sitzungen konnten nicht geladen werden.</target>
+            </trans-unit>
+            <trans-unit id="account.error.loadOrganizations">
+                <source>Your organization memberships could not be loaded.</source>
+                <target>Ihre Organisations-Mitgliedschaften konnten nicht geladen werden.</target>
+            </trans-unit>
+
+            <!-- Team plugin -->
+            <trans-unit id="plugin.team.title">
+                <source>WorkOS Team</source>
+                <target>WorkOS Team</target>
+            </trans-unit>
+            <trans-unit id="plugin.team.description">
+                <source>Team and organisation management for the signed-in WorkOS user.</source>
+                <target>Team- und Organisationsverwaltung für den angemeldeten WorkOS-Nutzer.</target>
+            </trans-unit>
+            <trans-unit id="team.eyebrow">
+                <source>Workspace administration</source>
+                <target>Workspace-Verwaltung</target>
+            </trans-unit>
+            <trans-unit id="team.title">
+                <source>Run your organization on WorkOS</source>
+                <target>Verwalten Sie Ihre Organisation mit WorkOS</target>
+            </trans-unit>
+            <trans-unit id="team.subtitle">
+                <source>Invite teammates, manage pending invitations and launch one-time WorkOS Admin Portal sessions for SSO, Directory Sync and audit logging.</source>
+                <target>Laden Sie Teammitglieder ein, verwalten Sie offene Einladungen und starten Sie einmalige WorkOS Admin-Portal-Sessions für SSO, Directory Sync und Audit-Logs.</target>
+            </trans-unit>
+            <trans-unit id="team.signInRequired">
+                <source>Please sign in to access the team workspace.</source>
+                <target>Bitte melden Sie sich an, um den Team-Bereich zu nutzen.</target>
+            </trans-unit>
+            <trans-unit id="team.noOrganizations">
+                <source>You're not a member of any active WorkOS organization yet.</source>
+                <target>Sie sind noch in keiner aktiven WorkOS-Organisation Mitglied.</target>
+            </trans-unit>
+            <trans-unit id="team.organization">
+                <source>Organization</source>
+                <target>Organisation</target>
+            </trans-unit>
+
+            <trans-unit id="team.portal.title">
+                <source>Admin Portal</source>
+                <target>Admin-Portal</target>
+            </trans-unit>
+            <trans-unit id="team.portal.signedLink">
+                <source>Signed link</source>
+                <target>Signierter Link</target>
+            </trans-unit>
+            <trans-unit id="team.portal.subtitle">
+                <source>Open a one-time hosted setup session in the WorkOS Admin Portal. Each link is signed and scoped to this organization.</source>
+                <target>Öffnen Sie eine einmalige gehostete Einrichtungs-Session im WorkOS Admin-Portal. Jeder Link ist signiert und auf diese Organisation beschränkt.</target>
+            </trans-unit>
+            <trans-unit id="team.portal.launch">
+                <source>Open Admin Portal</source>
+                <target>Admin-Portal öffnen</target>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.sso">
+                <source>Single Sign-On (SSO)</source>
+                <target>Single Sign-On (SSO)</target>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.dsync">
+                <source>Directory Sync (SCIM)</source>
+                <target>Directory Sync (SCIM)</target>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.auditLogs">
+                <source>Audit Logs</source>
+                <target>Audit-Logs</target>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.logStreams">
+                <source>Log Streams</source>
+                <target>Log Streams</target>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.domain">
+                <source>Domain Verification</source>
+                <target>Domain-Verifizierung</target>
+            </trans-unit>
+            <trans-unit id="team.portal.intent.certs">
+                <source>Certificate Renewal</source>
+                <target>Zertifikatserneuerung</target>
+            </trans-unit>
+
+            <trans-unit id="team.invite.title">
+                <source>Invite a teammate</source>
+                <target>Teammitglied einladen</target>
+            </trans-unit>
+            <trans-unit id="team.invite.subtitle">
+                <source>WorkOS will email a one-time accept link. Optionally provide a role slug.</source>
+                <target>WorkOS verschickt einen einmaligen Annahme-Link per E-Mail. Optional kann ein Rollen-Slug angegeben werden.</target>
+            </trans-unit>
+            <trans-unit id="team.invite.role">
+                <source>Role slug (optional)</source>
+                <target>Rollen-Slug (optional)</target>
+            </trans-unit>
+            <trans-unit id="team.invite.send">
+                <source>Send invitation</source>
+                <target>Einladung senden</target>
+            </trans-unit>
+
+            <trans-unit id="team.invitations.title">
+                <source>Invitations</source>
+                <target>Einladungen</target>
+            </trans-unit>
+            <trans-unit id="team.invitations.subtitle">
+                <source>Recent invitations issued for this organization.</source>
+                <target>Aktuelle Einladungen für diese Organisation.</target>
+            </trans-unit>
+            <trans-unit id="team.invitations.empty">
+                <source>No invitations issued yet.</source>
+                <target>Noch keine Einladungen verschickt.</target>
+            </trans-unit>
+            <trans-unit id="team.invitations.expires">
+                <source>expires</source>
+                <target>läuft ab</target>
+            </trans-unit>
+            <trans-unit id="team.invitations.resend">
+                <source>Resend</source>
+                <target>Erneut senden</target>
+            </trans-unit>
+            <trans-unit id="team.invitations.revoke">
+                <source>Revoke</source>
+                <target>Widerrufen</target>
+            </trans-unit>
+            <trans-unit id="team.invitations.statePending">
+                <source>Pending</source>
+                <target>Offen</target>
+            </trans-unit>
+            <trans-unit id="team.invitations.stateAccepted">
+                <source>Accepted</source>
+                <target>Akzeptiert</target>
+            </trans-unit>
+            <trans-unit id="team.invitations.stateExpired">
+                <source>Expired</source>
+                <target>Abgelaufen</target>
+            </trans-unit>
+            <trans-unit id="team.invitations.stateRevoked">
+                <source>Revoked</source>
+                <target>Widerrufen</target>
+            </trans-unit>
+
+            <trans-unit id="team.flash.csrfInvalid">
+                <source>Security check failed. Please reload the page and try again.</source>
+                <target>Sicherheitsprüfung fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.forbidden">
+                <source>You are not allowed to manage this organization.</source>
+                <target>Sie sind nicht berechtigt, diese Organisation zu verwalten.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteSent">
+                <source>Invitation sent to {email}.</source>
+                <target>Einladung an {email} verschickt.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteFieldsRequired">
+                <source>Please enter an email address and pick an organization.</source>
+                <target>Bitte geben Sie eine E-Mail-Adresse ein und wählen Sie eine Organisation.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteInvalidEmail">
+                <source>That email address is not valid.</source>
+                <target>Diese E-Mail-Adresse ist nicht gültig.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteAlreadyExists">
+                <source>That person already has a pending invitation or account.</source>
+                <target>Diese Person hat bereits eine offene Einladung oder ein Konto.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteFailed">
+                <source>Could not send the invitation. Please try again.</source>
+                <target>Einladung konnte nicht gesendet werden. Bitte erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteResent">
+                <source>Invitation resent.</source>
+                <target>Einladung erneut gesendet.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteResendFailed">
+                <source>Could not resend the invitation. Please try again.</source>
+                <target>Einladung konnte nicht erneut gesendet werden. Bitte erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteRevoked">
+                <source>Invitation revoked.</source>
+                <target>Einladung widerrufen.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.inviteRevokeFailed">
+                <source>Could not revoke the invitation. Please try again.</source>
+                <target>Einladung konnte nicht widerrufen werden. Bitte erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.portalMissingArgs">
+                <source>Please pick an organization and a portal intent.</source>
+                <target>Bitte wählen Sie eine Organisation und einen Portal-Bereich.</target>
+            </trans-unit>
+            <trans-unit id="team.flash.portalFailed">
+                <source>Could not open the WorkOS Admin Portal. Please try again.</source>
+                <target>WorkOS Admin-Portal konnte nicht geöffnet werden. Bitte erneut versuchen.</target>
+            </trans-unit>
+            <trans-unit id="team.error.loadOrganizations">
+                <source>Your active organizations could not be loaded.</source>
+                <target>Ihre aktiven Organisationen konnten nicht geladen werden.</target>
+            </trans-unit>
+            <trans-unit id="team.error.loadInvitations">
+                <source>Invitations for this organization could not be loaded.</source>
+                <target>Einladungen für diese Organisation konnten nicht geladen werden.</target>
             </trans-unit>
         </body>
     </file>

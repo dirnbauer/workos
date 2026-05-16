@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="messages" product-name="workos_auth">
+        <header/>
+        <body>
+            <trans-unit id="tx_workosauth_identity">
+                <source>WorkOS Identity</source>
+            </trans-unit>
+            <trans-unit id="tx_workosauth_identity.login_context">
+                <source>Login context</source>
+            </trans-unit>
+            <trans-unit id="tx_workosauth_identity.workos_user_id">
+                <source>WorkOS user ID</source>
+            </trans-unit>
+            <trans-unit id="tx_workosauth_identity.email">
+                <source>Email</source>
+            </trans-unit>
+            <trans-unit id="tx_workosauth_identity.user_table">
+                <source>TYPO3 user table</source>
+            </trans-unit>
+            <trans-unit id="tx_workosauth_identity.user_uid">
+                <source>TYPO3 user UID</source>
+            </trans-unit>
+            <trans-unit id="tx_workosauth_identity.workos_profile_json">
+                <source>WorkOS profile (JSON)</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

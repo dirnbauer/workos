@@ -7,6 +7,7 @@ namespace WebConsulting\WorkosAuth\EventListener;
 use TYPO3\CMS\Backend\LoginProvider\Event\ModifyPageLayoutOnLoginProviderSelectionEvent;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderResolver;
 use TYPO3\CMS\Core\Attribute\AsEventListener;
+use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -37,28 +38,75 @@ final readonly class InjectLoginHeadingsListener
             $request,
             'be_lastLoginProvider'
         );
+        $isWorkosProvider = $providerIdentifier === self::WORKOS_PROVIDER_IDENTIFIER;
 
         $this->pageRenderer->addCssInlineBlock(
             'workos-login-heading',
             <<<'CSS'
             .workos-login-heading {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.25rem;
                 margin: 0 -1.875rem 1.25rem;
                 padding: 0.85rem 1.875rem;
                 background: var(--typo3-surface-container-color, #f3f4f6);
                 border-top: 1px solid var(--typo3-component-border-color, rgba(0, 0, 0, 0.08));
                 border-bottom: 1px solid var(--typo3-component-border-color, rgba(0, 0, 0, 0.08));
-                font-size: 1rem;
-                font-weight: 600;
                 text-align: center;
-                line-height: 1.35;
-                letter-spacing: 0.01em;
                 color: var(--typo3-text-color-base, #1f2937);
             }
-            .workos-login-heading strong { font-weight: 700; }
+            .workos-login-heading__title {
+                font-size: 1rem;
+                font-weight: 600;
+                line-height: 1.35;
+                letter-spacing: 0.01em;
+            }
+            .workos-login-heading__title strong { font-weight: 700; }
+            /* Defensive: force the relocated provider switcher to render as a
+               small inline text link, regardless of any TYPO3 backend styles
+               that target anchors inside cards/headings. */
+            a.workos-login-heading__link,
+            .workos-login-heading a.workos-login-heading__link {
+                display: inline !important;
+                width: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: transparent !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                font-size: 0.8rem !important;
+                font-weight: 400 !important;
+                line-height: 1.3 !important;
+                letter-spacing: normal !important;
+                color: inherit !important;
+                text-decoration: underline !important;
+                text-underline-offset: 0.15em !important;
+                opacity: 0.85;
+            }
+            a.workos-login-heading__link:hover,
+            a.workos-login-heading__link:focus,
+            .workos-login-heading a.workos-login-heading__link:hover,
+            .workos-login-heading a.workos-login-heading__link:focus {
+                color: inherit !important;
+                background: transparent !important;
+                border: 0 !important;
+                text-decoration: underline !important;
+                opacity: 1;
+            }
+            a.workos-login-heading__link::before {
+                content: "\203A\2009";
+                text-decoration: none;
+                display: inline-block;
+                margin-right: 0.05em;
+                opacity: 0.7;
+            }
 
-            /* The provider switcher links and "More sign-in options" link are
-               relocated into a button row right under the heading by JS.
-               Hide the originals immediately to avoid a layout flash. */
+            /* The provider switcher link is moved INSIDE the heading box as a
+               small text link, and the "More sign-in options" link is moved
+               into a button row below the heading. Hide the originals
+               immediately to avoid a layout flash. */
             .typo3-login-links { display: none !important; }
             .workos-authkit-link[data-workos-relocate] { display: none; }
 
@@ -92,9 +140,6 @@ final readonly class InjectLoginHeadingsListener
                 color: var(--typo3-text-color-base, #111827);
                 text-decoration: none;
             }
-            .workos-login-buttons__btn--switch {
-                background: color-mix(in srgb, currentColor 4%, transparent);
-            }
 
             @media (prefers-color-scheme: dark) {
                 .workos-login-heading {
@@ -114,12 +159,38 @@ final readonly class InjectLoginHeadingsListener
             JavaScriptModuleInstruction::create('@webconsulting/workos-auth/login-headings.js')
         );
 
-        if ($providerIdentifier === self::WORKOS_PROVIDER_IDENTIFIER) {
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        $languageService = $this->languageServiceFactory->createFromUserPreferences(
+            $beUser instanceof AbstractUserAuthentication ? $beUser : null
+        );
+
+        // Pre-localise the switcher-link text for both directions so the JS
+        // does not need to know which provider is active — it just picks the
+        // one matching the URL it relocates into the heading.
+        $switchKey = $isWorkosProvider
+            ? 'backend.login.switch.toClassic'
+            : 'backend.login.switch.toWorkos';
+        $switchFallback = $isWorkosProvider
+            ? 'Switch to classic sign-in'
+            : 'Switch to WorkOS sign-in';
+        $switchText = $languageService->sL(
+            'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:' . $switchKey
+        );
+        if ($switchText === '') {
+            $switchText = $switchFallback;
+        }
+
+        if ($isWorkosProvider) {
+            // The WorkOS provider renders its own heading server-side, so we
+            // only need to hand over the switcher label.
+            $this->pageRenderer->addHeaderData(sprintf(
+                '<template data-workos-login-heading data-switch-text="%s"></template>',
+                htmlspecialchars($switchText, ENT_QUOTES | ENT_HTML5, 'UTF-8')
+            ));
             return;
         }
 
-        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
-        $headingText = (string)$languageService->sL(
+        $headingText = $languageService->sL(
             'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.heading.classic'
         );
         if ($headingText === '') {
@@ -128,8 +199,9 @@ final readonly class InjectLoginHeadingsListener
 
         // Plain-HTML data carrier (no script, so no CSP concerns).
         $this->pageRenderer->addHeaderData(sprintf(
-            '<template data-workos-login-heading data-text="%s"></template>',
-            htmlspecialchars($headingText, ENT_QUOTES | ENT_HTML5, 'UTF-8')
+            '<template data-workos-login-heading data-text="%s" data-switch-text="%s"></template>',
+            htmlspecialchars($headingText, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+            htmlspecialchars($switchText, ENT_QUOTES | ENT_HTML5, 'UTF-8')
         ));
     }
 }

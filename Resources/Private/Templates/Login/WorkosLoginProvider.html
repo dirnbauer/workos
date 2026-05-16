@@ -23,39 +23,40 @@
     }
     .workos-hint {
         text-align: center;
-        margin: 0.25rem 0 0.5rem;
-        font-size: 0.8rem;
-        color: var(--typo3-text-color-base, #6b7280);
-        opacity: 0.7;
+        margin: 1rem 0 0.5rem;
+        font-size: 0.7rem;
+        color: var(--typo3-text-color-base, #9ca3af);
+        opacity: 0.65;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
+        font-weight: 500;
     }
-    .workos-social-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .workos-social-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
     .workos-social-btn {
-        flex: 1 1 calc(50% - 0.25rem);
+        flex: 1 1 calc(50% - 0.2rem);
         min-width: 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        padding: var(--typo3-btn-padding-y, 0.55rem) var(--typo3-btn-padding-x, 0.75rem);
-        border: var(--typo3-btn-border-width, 1px) solid var(--typo3-btn-border-color, #d1d5db);
-        border-radius: var(--typo3-btn-border-radius, 6px);
-        font-size: var(--typo3-btn-font-size, 0.9rem);
+        padding: 0.4rem 0.6rem;
+        border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+        border-radius: 6px;
+        font-size: 0.8rem;
         font-weight: 500;
-        color: var(--typo3-btn-color, #1f2937);
-        background: var(--typo3-btn-bg, #fff);
+        color: currentColor;
+        background: transparent;
         text-decoration: none;
-        transition: var(--typo3-btn-transition, background 0.15s, border-color 0.15s);
+        transition: background-color 0.15s ease, border-color 0.15s ease;
     }
     .workos-social-btn:hover, .workos-social-btn:focus {
-        background: var(--typo3-btn-hover-bg, #f9fafb);
-        border-color: var(--typo3-btn-hover-border-color, #9ca3af);
-        color: var(--typo3-btn-hover-color, #111827);
+        background: color-mix(in srgb, currentColor 8%, transparent);
+        border-color: color-mix(in srgb, currentColor 32%, transparent);
+        color: currentColor;
         text-decoration: none;
     }
     .workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .workos-social-btn__icon svg { display: block; }
+    .workos-social-btn__icon svg { display: block; width: 14px; height: 14px; }
     .workos-authkit-link {
         margin-top: 0.75rem;
         text-align: center;
@@ -188,6 +189,7 @@
          data-workos-magic-send-url="{magicSendUrl}"
          data-workos-magic-verify-url="{magicVerifyUrl}"
          data-workos-email-verify-url="{emailVerifyUrl}">
+        <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
         <h2 class="workos-login-heading">
             <f:format.raw><f:translate key="workos_auth.messages:backend.login.heading.workos" /></f:format.raw>
         </h2>
@@ -254,19 +256,16 @@
                                            class="form-control"
                                            required="required" />
                                 </div>
-                                <input type="hidden" id="workos-email-pending-token" name="pendingToken" value="{emailVerificationPendingToken}" />
-                                <input type="hidden" id="workos-email-verify-email" name="email" value="{emailVerificationEmail}" />
-                                <input type="hidden" id="workos-email-verify-userid" name="userId" value="{emailVerificationUserId}" />
+                                <input type="hidden" name="emailVerificationState" value="{emailVerificationState}" />
                                 <button type="button"
                                         id="workos-email-verify-submit"
                                         class="btn btn-login workos-primary-btn">
                                     <f:translate key="workos_auth.messages:backend.login.verifyEmail.submit" />
                                 </button>
-                                <f:if condition="{emailVerificationUserId}">
+                                <f:if condition="{emailVerificationCanResend}">
                                     <form action="{emailVerifyResendUrl}" method="post" style="margin:0 0 0.5rem;">
-                                        <input type="hidden" name="pendingToken" value="{emailVerificationPendingToken}" />
-                                        <input type="hidden" name="email" value="{emailVerificationEmail}" />
-                                        <input type="hidden" name="userId" value="{emailVerificationUserId}" />
+                                        <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
+                                        <input type="hidden" name="emailVerificationState" value="{emailVerificationState}" />
                                         <button type="submit" class="btn workos-secondary-btn">
                                             <f:translate key="workos_auth.messages:backend.login.verifyEmail.resend" />
                                         </button>
@@ -295,7 +294,7 @@
                                            class="form-control"
                                            required="required" />
                                 </div>
-                                <input type="hidden" id="workos-magic-userid" name="userId" value="{magicAuthUserId}" />
+                                <input type="hidden" name="magicAuthState" value="{magicAuthState}" />
                                 <button type="button"
                                         id="workos-magic-verify-submit"
                                         class="btn btn-login workos-primary-btn">
@@ -365,7 +364,15 @@
                     </f:then>
                     <f:else>
                         <div class="alert alert-warning">
-                            <f:translate key="workos_auth.messages:backend.login.notConfigured" />
+                            <f:if condition="{backendCookieSameSiteCompatible}">
+                                <f:then>
+                                    <f:translate key="workos_auth.messages:backend.login.notConfigured" />
+                                </f:then>
+                                <f:else>
+                                    <f:translate key="workos_auth.messages:backend.login.cookieSameSiteUnsupported"
+                                                 arguments="{0: backendCookieSameSite}" />
+                                </f:else>
+                            </f:if>
                             <a href="{setupUrl}"><f:translate key="workos_auth.messages:backend.login.openSetup" /></a>.
                         </div>
                     </f:else>

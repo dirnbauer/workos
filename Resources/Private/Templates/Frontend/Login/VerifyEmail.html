@@ -21,7 +21,7 @@
                     </div>
                 </f:if>
 
-                <f:form action="verifyEmailSubmit" method="post">
+                <f:form action="verifyEmailSubmit" method="post" requestToken="{requestToken}">
                     <div style="margin-bottom:1rem;">
                         <input type="text" name="code" required autofocus autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000"
                                style="width:100%; padding:0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:1.5rem; text-align:center; letter-spacing:0.5em; box-sizing:border-box; font-family:monospace;" />
@@ -34,9 +34,11 @@
                 <f:if condition="{canResend}">
                     <p style="margin-top:1rem; font-size:0.85rem; color:#6b7280;">
                         <f:translate key="workos_auth.messages:frontend.verifyEmail.noCode" />
-                        <f:link.action action="verifyEmailResend" style="color:#4f46e5; text-decoration:none;">
-                            <f:translate key="workos_auth.messages:frontend.verifyEmail.resend" />
-                        </f:link.action>
+                        <f:form action="verifyEmailResend" method="post" requestToken="{requestToken}" style="display:inline; margin:0;">
+                            <button type="submit" style="padding:0; border:none; background:none; color:#4f46e5; text-decoration:none; cursor:pointer; font:inherit;">
+                                <f:translate key="workos_auth.messages:frontend.verifyEmail.resend" />
+                            </button>
+                        </f:form>
                     </p>
                 </f:if>
 

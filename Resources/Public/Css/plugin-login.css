@@ -1,0 +1,69 @@
+.workos-social-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+.workos-social-btn {
+    flex: 1;
+    min-width: calc(50% - 0.2rem);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: currentColor;
+    background: transparent;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.workos-social-btn:hover,
+.workos-social-btn:focus {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    border-color: color-mix(in srgb, currentColor 32%, transparent);
+    color: currentColor;
+    text-decoration: none;
+}
+
+.workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.workos-social-btn__icon svg { display: block; width: 14px; height: 14px; }
+
+.workos-profile-debug__section-title {
+    margin: 0.75rem 0 0.25rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.workos-profile-debug__metadata-table {
+    width: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.workos-profile-debug__metadata-key,
+.workos-profile-debug__metadata-value {
+    padding: 0.3rem 0.5rem;
+    vertical-align: top;
+}
+
+.workos-profile-debug__metadata-key {
+    padding-left: 0;
+    padding-right: 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #666;
+}
+
+.workos-profile-debug__metadata-value {
+    padding-left: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+    .workos-social-row { gap: 0.3rem; }
+    .workos-social-btn { flex: 1; min-width: 0; padding: 0.4rem; }
+    .workos-social-btn__label { display: none; }
+}

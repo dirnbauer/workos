@@ -10,8 +10,9 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Http\JsonResponse;
-use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -20,9 +21,15 @@ use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\RequestTokenService;
+use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\IdentityService;
+use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosClientFactory;
-use WorkOS\Resource\WidgetScope;
+use WorkOS\Resource\Organization;
+use WorkOS\Resource\OrganizationMembershipStatus;
+use WorkOS\Resource\UserOrganizationMembership;
+use WorkOS\Resource\WidgetSessionTokenScopes;
 
 /**
  * Backend module that embeds the WorkOS "User Management" Widget.
@@ -41,6 +48,11 @@ final class UserManagementController implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
+    private const SESSION_WORKOS_USER_ID = 'workos_auth_user_id';
+    private const TOKEN_REQUEST_SCOPE = 'workos/backend/users/token';
+    private const JOIN_REQUEST_SCOPE = 'workos/backend/users/join';
+    private const CREATE_ORGANIZATION_REQUEST_SCOPE = 'workos/backend/users/create-organization';
+
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
         private readonly WorkosConfiguration $configuration,
@@ -50,7 +62,7 @@ final class UserManagementController implements LoggerAwareInterface
         private readonly LanguageServiceFactory $languageServiceFactory,
         private readonly PageRenderer $pageRenderer,
         private readonly FlashMessageService $flashMessageService,
-        private readonly FormProtectionFactory $formProtectionFactory,
+        private readonly RequestTokenService $requestTokenService,
     ) {}
 
     public function indexAction(ServerRequestInterface $request): ResponseInterface
@@ -73,7 +85,10 @@ final class UserManagementController implements LoggerAwareInterface
             'status' => $status,
             'availableOrganizations' => $availableOrganizations,
             'suggestedOrganizationName' => $this->suggestOrganizationName(),
-            'csrfToken' => $this->generateToken(),
+            'requestTokenName' => \TYPO3\CMS\Core\Security\RequestToken::PARAM_NAME,
+            'tokenRequestTokenValue' => $this->requestTokenService->createHashed(self::TOKEN_REQUEST_SCOPE),
+            'joinRequestTokenValue' => $this->requestTokenService->createHashed(self::JOIN_REQUEST_SCOPE),
+            'createOrganizationRequestTokenValue' => $this->requestTokenService->createHashed(self::CREATE_ORGANIZATION_REQUEST_SCOPE),
         ]);
 
         if ($status['canLoadWidget']) {
@@ -92,6 +107,14 @@ final class UserManagementController implements LoggerAwareInterface
      */
     public function tokenAction(ServerRequestInterface $request): ResponseInterface
     {
+        if (!$this->isCurrentBackendUserAdmin()) {
+            return new JsonResponse(['error' => $this->translate('module.users.error.noSession')], 403);
+        }
+
+        if (!$this->requestTokenService->validate(self::TOKEN_REQUEST_SCOPE)) {
+            return new JsonResponse(['error' => $this->translate('error.csrfTokenInvalid')], 400);
+        }
+
         $status = $this->resolveStatus();
         if (!$status['canLoadWidget']) {
             return new JsonResponse([
@@ -101,20 +124,20 @@ final class UserManagementController implements LoggerAwareInterface
 
         try {
             $widgets = $this->workosClientFactory->createWidgets();
-            $response = $widgets->getToken(
-                $status['organizationId'],
-                $status['workosUserId'],
-                [WidgetScope::UsersTableManage],
+            $response = $widgets->createToken(
+                organizationId: $status['organizationId'] ?? '',
+                userId: $status['workosUserId'] ?? '',
+                scopes: [WidgetSessionTokenScopes::WidgetsUsersTableManage],
             );
         } catch (\Throwable $exception) {
-            $this->logger?->error('WorkOS widget token error: ' . $exception->getMessage());
+            $this->logger?->error('WorkOS widget token error: ' . SecretRedactor::redact($exception->getMessage()));
             return new JsonResponse([
                 'error' => $this->translate('module.users.error.tokenFailed'),
             ], 502);
         }
 
         return new JsonResponse([
-            'token' => $response->token ?? '',
+            'token' => self::stringFromMixed($response->token),
         ]);
     }
 
@@ -123,19 +146,25 @@ final class UserManagementController implements LoggerAwareInterface
      */
     public function joinAction(ServerRequestInterface $request): ResponseInterface
     {
-        $payload = (array)($request->getParsedBody() ?? []);
-        if (!$this->isValidToken((string)($payload['csrfToken'] ?? ''))) {
+        if (!$this->isCurrentBackendUserAdmin()) {
+            $this->flash($this->translate('module.users.error.noSession'), ContextualFeedbackSeverity::ERROR);
+            return $this->redirectToIndex();
+        }
+
+        $payload = RequestBody::fromRequest($request);
+        if (!$this->requestTokenService->validate(self::JOIN_REQUEST_SCOPE)) {
             $this->flash($this->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
 
         $status = $this->resolveStatus();
-        if (($status['workosUserId'] ?? '') === '') {
+        $workosUserId = $status['workosUserId'] ?? '';
+        if ($workosUserId === '') {
             $this->flash($status['message'] ?? $this->translate('module.users.error.noWorkosIdentity'), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
 
-        $organizationId = trim((string)($payload['organizationId'] ?? ''));
+        $organizationId = $payload->trimmedString('organizationId');
         if ($organizationId === '') {
             $this->flash($this->translate('module.users.error.missingOrganization'), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
@@ -143,12 +172,12 @@ final class UserManagementController implements LoggerAwareInterface
 
         try {
             $this->workosClientFactory->createUserManagement()->createOrganizationMembership(
-                $status['workosUserId'],
+                $workosUserId,
                 $organizationId,
                 'admin',
             );
         } catch (\Throwable $exception) {
-            $this->logger?->error('WorkOS join organization failed: ' . $exception->getMessage());
+            $this->logger?->error('WorkOS join organization failed: ' . SecretRedactor::redact($exception->getMessage()));
             $this->flash(sprintf('%s %s', $this->translate('module.users.error.joinFailed'), $exception->getMessage()), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
@@ -162,19 +191,25 @@ final class UserManagementController implements LoggerAwareInterface
      */
     public function createOrganizationAction(ServerRequestInterface $request): ResponseInterface
     {
-        $payload = (array)($request->getParsedBody() ?? []);
-        if (!$this->isValidToken((string)($payload['csrfToken'] ?? ''))) {
+        if (!$this->isCurrentBackendUserAdmin()) {
+            $this->flash($this->translate('module.users.error.noSession'), ContextualFeedbackSeverity::ERROR);
+            return $this->redirectToIndex();
+        }
+
+        $payload = RequestBody::fromRequest($request);
+        if (!$this->requestTokenService->validate(self::CREATE_ORGANIZATION_REQUEST_SCOPE)) {
             $this->flash($this->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
 
         $status = $this->resolveStatus();
-        if (($status['workosUserId'] ?? '') === '') {
+        $workosUserId = $status['workosUserId'] ?? '';
+        if ($workosUserId === '') {
             $this->flash($status['message'] ?? $this->translate('module.users.error.noWorkosIdentity'), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
 
-        $name = trim((string)($payload['name'] ?? ''));
+        $name = $payload->trimmedString('name');
         if ($name === '') {
             $name = $this->suggestOrganizationName();
         }
@@ -185,18 +220,18 @@ final class UserManagementController implements LoggerAwareInterface
 
         try {
             $organization = $this->workosClientFactory->createOrganizations()->createOrganization($name);
-            $organizationId = (string)($organization->id ?? '');
+            $organizationId = $organization->id;
             if ($organizationId === '') {
                 throw new \RuntimeException('WorkOS did not return an organization id.', 1744320000);
             }
 
             $this->workosClientFactory->createUserManagement()->createOrganizationMembership(
-                $status['workosUserId'],
+                $workosUserId,
                 $organizationId,
                 'admin',
             );
         } catch (\Throwable $exception) {
-            $this->logger?->error('WorkOS create organization failed: ' . $exception->getMessage());
+            $this->logger?->error('WorkOS create organization failed: ' . SecretRedactor::redact($exception->getMessage()));
             $this->flash(sprintf('%s %s', $this->translate('module.users.error.createFailed'), $exception->getMessage()), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
@@ -224,7 +259,13 @@ final class UserManagementController implements LoggerAwareInterface
         }
 
         $beUser = $GLOBALS['BE_USER'] ?? null;
-        $beUserUid = (int)($beUser->user['uid'] ?? 0);
+        $beUserUid = 0;
+        if ($beUser instanceof BackendUserAuthentication && is_array($beUser->user)) {
+            $uid = $beUser->user['uid'] ?? null;
+            if (is_int($uid) || (is_string($uid) && ctype_digit($uid))) {
+                $beUserUid = (int)$uid;
+            }
+        }
         if ($beUserUid === 0) {
             return [
                 'canLoadWidget' => false,
@@ -232,16 +273,23 @@ final class UserManagementController implements LoggerAwareInterface
             ];
         }
 
+        if (!$beUser instanceof BackendUserAuthentication) {
+            return [
+                'canLoadWidget' => false,
+                'message' => $this->translate('module.users.error.noSession'),
+            ];
+        }
+
         $identity = $this->identityService->findIdentityByLocalUser('backend', 'be_users', $beUserUid);
-        if ($identity === null || ($identity['workos_user_id'] ?? '') === '') {
+        $workosUserId = $this->resolveCurrentWorkosUserId($beUser, $identity);
+        if ($workosUserId === '') {
             return [
                 'canLoadWidget' => false,
                 'message' => $this->translate('module.users.error.noWorkosIdentity'),
             ];
         }
 
-        $workosUserId = (string)$identity['workos_user_id'];
-        $email = (string)($identity['email'] ?? '');
+        $email = self::stringFromMixed($identity['email'] ?? null);
         $organizationId = $this->resolveOrganizationId($workosUserId);
 
         if ($organizationId === '') {
@@ -272,25 +320,25 @@ final class UserManagementController implements LoggerAwareInterface
             $userManagement = $this->workosClientFactory->createUserManagement();
             $result = $userManagement->listOrganizationMemberships(
                 userId: $workosUserId,
-                statuses: ['active'],
                 limit: 10,
             );
 
-            $memberships = $result->organization_memberships ?? $result->data ?? [];
-            if (!is_iterable($memberships)) {
-                $memberships = [];
-            }
-            foreach ($memberships as $membership) {
-                $organizationId = (string)($membership->organizationId ?? $membership->organization_id ?? '');
-                if ($organizationId !== '') {
-                    return $organizationId;
+            foreach ($result->data as $membership) {
+                if ($membership instanceof UserOrganizationMembership) {
+                    if ($membership->status !== OrganizationMembershipStatus::Active) {
+                        continue;
+                    }
+                    $organizationId = $membership->organizationId;
+                    if ($organizationId !== '') {
+                        return $organizationId;
+                    }
                 }
             }
         } catch (\Throwable $exception) {
-            $this->logger?->warning('WorkOS organization lookup failed: ' . $exception->getMessage());
+            $this->logger?->warning('WorkOS organization lookup failed: ' . SecretRedactor::redact($exception->getMessage()));
         }
 
-        return (string)($this->configuration->getAuthkitOrganizationId() ?? '');
+        return $this->configuration->getAuthkitOrganizationId() ?? '';
     }
 
     /**
@@ -302,36 +350,38 @@ final class UserManagementController implements LoggerAwareInterface
             $result = $this->workosClientFactory->createOrganizations()->listOrganizations(
                 limit: 50,
             );
-            $rows = $result->data ?? [];
-            if (!is_iterable($rows)) {
-                return [];
-            }
 
             $organizations = [];
-            foreach ($rows as $organization) {
-                $id = (string)($organization->id ?? '');
-                $name = (string)($organization->name ?? $id);
+            foreach ($result->data as $organization) {
+                if (!$organization instanceof Organization) {
+                    continue;
+                }
+                $id = $organization->id;
                 if ($id === '') {
                     continue;
                 }
-                $organizations[] = ['id' => $id, 'name' => $name];
+                $organizations[] = ['id' => $id, 'name' => $organization->name];
             }
             usort($organizations, static fn(array $a, array $b): int => strcasecmp($a['name'], $b['name']));
             return $organizations;
         } catch (\Throwable $exception) {
-            $this->logger?->warning('WorkOS list organizations failed: ' . $exception->getMessage());
+            $this->logger?->warning('WorkOS list organizations failed: ' . SecretRedactor::redact($exception->getMessage()));
             return [];
         }
     }
 
     private function suggestOrganizationName(): string
     {
-        $sitename = trim((string)($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ?? ''));
+        $conf = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $sitename = '';
+        if (is_array($conf) && isset($conf['SYS']) && is_array($conf['SYS'])) {
+            $sitename = trim(self::stringFromMixed($conf['SYS']['sitename'] ?? null));
+        }
         if ($sitename !== '') {
             return $sitename;
         }
 
-        $host = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
+        $host = trim(self::stringFromMixed($_SERVER['HTTP_HOST'] ?? null));
         if ($host !== '') {
             return $host;
         }
@@ -351,23 +401,53 @@ final class UserManagementController implements LoggerAwareInterface
             ->addMessage(new FlashMessage($body, $this->translate('module.users.flashTitle'), $severity, true));
     }
 
-    private function generateToken(): string
+    /**
+     * Explicit admin assertion that does not rely on the module's
+     * `access => 'admin'` gate. Defence in depth: if a site package ever
+     * re-registers the route outside `admin` access, the controller
+     * itself still refuses to mint widget tokens or mutate WorkOS data.
+     */
+    private function isCurrentBackendUserAdmin(): bool
     {
-        return $this->formProtectionFactory
-            ->createForType('backend')
-            ->generateToken('workosAuth', 'manageOrganizationMembership');
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        return $beUser instanceof BackendUserAuthentication && $beUser->isAdmin();
     }
 
-    private function isValidToken(string $token): bool
+    /**
+     * @param array<string, mixed>|null $identity
+     */
+    private function resolveCurrentWorkosUserId(?BackendUserAuthentication $beUser, ?array $identity): string
     {
-        return $this->formProtectionFactory
-            ->createForType('backend')
-            ->validateToken($token, 'workosAuth', 'manageOrganizationMembership');
+        if ($beUser instanceof BackendUserAuthentication) {
+            $sessionWorkosUserId = self::stringFromMixed($beUser->getSessionData(self::SESSION_WORKOS_USER_ID));
+            if ($sessionWorkosUserId !== '') {
+                return $sessionWorkosUserId;
+            }
+        }
+
+        return self::stringFromMixed($identity['workos_user_id'] ?? null);
     }
 
+    /**
+     * @param array<int|string, mixed> $arguments
+     */
     private function translate(string $key, array $arguments = []): string
     {
-        $languageService = $this->languageServiceFactory->createFromUserPreferences($GLOBALS['BE_USER'] ?? null);
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        $languageService = $this->languageServiceFactory->createFromUserPreferences(
+            $beUser instanceof AbstractUserAuthentication ? $beUser : null
+        );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
+    }
+
+    private static function stringFromMixed(mixed $value): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+        if (is_int($value) || is_float($value) || is_bool($value)) {
+            return (string)$value;
+        }
+        return '';
     }
 }
