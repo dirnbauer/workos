@@ -210,7 +210,7 @@ final class WorkosConfiguration
         if ($backendEnabled && !$this->isBackendCookieSameSiteCompatible()) {
             $errors['backendCookieSameSite'] = $this->translate(
                 'validation.backendCookieSameSiteUnsupported',
-                [$this->getBackendCookieSameSite()]
+                ['sameSite' => $this->getBackendCookieSameSite()]
             );
         }
 

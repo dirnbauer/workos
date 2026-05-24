@@ -237,7 +237,7 @@ final class UserManagementController implements LoggerAwareInterface
             return $this->redirectToIndex();
         }
 
-        $this->flash(sprintf($this->translate('module.users.message.createdAndJoined'), $name), ContextualFeedbackSeverity::OK);
+        $this->flash($this->translate('module.users.message.createdAndJoined', ['organization' => $name]), ContextualFeedbackSeverity::OK);
         return $this->redirectToIndex();
     }
 

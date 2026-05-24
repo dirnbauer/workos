@@ -4,20 +4,23 @@ The full, versioned release history is [Documentation/Changelog.rst](Documentati
 
 ## Unreleased
 
-## 14.0.0 - 2026-05-16
+## 1.0.0 - 2026-05-24
 
 ### Changed
 
-- Raised the extension release to `14.0.0` in TYPO3's Composer metadata
-  and `ext_emconf.php`.
-- Added TYPO3 14.3 classic-mode Composer metadata
-  (`extra.typo3/cms.version` and `Package.providesPackages`) while
-  keeping `ext_emconf.php` for TER/tooling compatibility.
+- Prepared the first official release as `1.0.0` in TYPO3's Composer
+  metadata.
+- Removed legacy classic-mode metadata; TYPO3 14.3+ release metadata now
+  lives in `composer.json` via `extra.typo3/cms.version` and
+  `Package.providesPackages`.
 - Dropped broad TYPO3 14 minor compatibility and now require TYPO3 `^14.3`
-  / `14.3.0-14.3.99` only.
+  packages only.
 - Updated the lock-file install to TYPO3 14.3.1 and current PHPStan 2.x
   tooling while keeping PHP 8.2 as the minimum runtime.
 - PHPStan now runs at `level: max` with `saschaegerer/phpstan-typo3` 3.0.1.
+- CI covers PHP 8.2, 8.3, 8.4, and 8.5 for static analysis, unit tests,
+  and functional tests.
+- Converted extension labels to XLIFF 2.0 and named ICU placeholders.
 
 ### Fixed
 
@@ -26,6 +29,8 @@ The full, versioned release history is [Documentation/Changelog.rst](Documentati
 - Added PHP 8.3 `#[Override]` attributes required by max-level analysis.
 - Normalized external API arrays before returning them from MCP/schema
   services.
+- Added German database labels for `tx_workosauth_identity` so all shipped
+  label files have English/German coverage.
 
 ### Added
 

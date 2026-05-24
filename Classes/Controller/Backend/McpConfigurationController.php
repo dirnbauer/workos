@@ -137,7 +137,7 @@ final class McpConfigurationController
         if ($result['errors'] !== []) {
             $this->flash(
                 $this->translate('module.mcp.schema.flash.partial', [
-                    'count' => (string)$result['appliedCount'],
+                    'count' => $result['appliedCount'],
                     'errors' => implode(' ', array_values($result['errors'])),
                 ]),
                 ContextualFeedbackSeverity::WARNING,
@@ -151,7 +151,7 @@ final class McpConfigurationController
         }
 
         $this->flash(
-            $this->translate('module.mcp.schema.flash.applied', ['count' => (string)$result['appliedCount']]),
+            $this->translate('module.mcp.schema.flash.applied', ['count' => $result['appliedCount']]),
             ContextualFeedbackSeverity::OK,
         );
 

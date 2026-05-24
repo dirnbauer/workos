@@ -7,8 +7,8 @@ TYPO3 **frontend** and the TYPO3 **backend**. It supports the full WorkOS
 AuthKit feature set: email + password, passwordless magic auth, and
 social sign-in with Google, Microsoft, GitHub, and Apple.
 
-Requirements: TYPO3 `^14.3`, PHP `^8.2` (compatible with PHP 8.2–8.5 per
-`ext_emconf.php`). Current release: **14.0.0**.
+Requirements: TYPO3 `^14.3`, PHP `^8.2`. CI covers PHP 8.2, 8.3, 8.4,
+and 8.5. Current release: **1.0.0**.
 
 ---
 
@@ -25,7 +25,7 @@ Requirements: TYPO3 `^14.3`, PHP `^8.2` (compatible with PHP 8.2–8.5 per
 | Provisioning | Create or link TYPO3 users from WorkOS identities (frontend & backend) |
 | Storage | Identity mapping table `tx_workosauth_identity` (with full WorkOS profile JSON) |
 | MCP | Streamable HTTP TYPO3 MCP endpoint with WorkOS bearer-token protection in production and anonymous development mode |
-| Localization | English and German out of the box, XLIFF 1.2 with ICU MessageFormat |
+| Localization | English and German out of the box, XLIFF 2.0 with ICU MessageFormat |
 
 ## Quick install
 
@@ -313,18 +313,15 @@ The targeted frontend login handoff review is documented in
   `composer cs:check` or `composer cs:fix`.
 - `composer ci` runs TYPO3 coding standards, PHPStan, unit tests,
   and functional tests in one command.
-- **98 unit tests** (202 assertions, 1 skipped pending a
-  `de.locallang_db.xlf` translation), including regressions for
-  every security fix, a TCA contract guard on the identity table,
-  and XLIFF parity between English and German — run
-  `composer test:unit`.
+- Unit tests include regressions for every security fix, a TCA
+  contract guard on the identity table, XLIFF 2.0 validation, and
+  English/German label parity — run `composer test:unit`.
 - **14 functional tests** cover `IdentityService` round-trips
   (including under a workspace aspect), `UserProvisioningService`
   create-or-link flows, and TYPO3 FE/BE session handoff through
-  `Typo3SessionService`. They need a TYPO3 functional-test database
-  (use `Build/Scripts/runTests.sh -s functional`; plain
-  `composer test:functional` only works when that environment is
-  already configured).
+  `Typo3SessionService`. They need a TYPO3 functional-test database;
+  for local SQLite runs use
+  `typo3DatabaseDriver=pdo_sqlite Build/Scripts/runTests.sh -s functional`.
 - Mutation testing via Infection — run `composer test:mutation`.
 - Architecture rules via `phpat` keep the
   Controllers → Services → Security boundary intact.

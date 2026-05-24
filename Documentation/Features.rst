@@ -507,15 +507,17 @@ Localization
 ============
 
 The extension ships with English and German translations in
-:file:`Resources/Private/Language/`. All files use XLIFF 1.2 and
+:file:`Resources/Private/Language/`. All files use XLIFF 2.0 and
 ICU MessageFormat for dynamic placeholders. For example:
 
 ..  code-block:: xml
     :caption: locallang.xlf
 
-    <trans-unit id="frontend.login.signedInAs">
-        <source>Signed in as {name}</source>
-    </trans-unit>
+    <unit id="frontend.login.signedInAs">
+        <segment>
+            <source>Signed in as {name}</source>
+        </segment>
+    </unit>
 
 Called from Fluid as:
 
@@ -533,6 +535,7 @@ Bundled XLIFF files:
     locallang.xlf            # English source (frontend + backend)
     de.locallang.xlf         # German translations
     locallang_db.xlf         # Database labels (TCA)
+    de.locallang_db.xlf      # German database labels
     locallang_mod.xlf        # WorkOS top-level module
     de.locallang_mod.xlf     # German module label
     locallang_mod_setup.xlf  # Setup Assistant module

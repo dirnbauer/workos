@@ -65,11 +65,11 @@
                                         <f:else>
                                             <f:for each="{availableOrganizations}" as="organization">
                                                 <p class="mb-3 text-muted">
-                                                    <f:translate key="workos_auth.messages:module.users.join.existing.single" arguments="{0: organization.name}" />
+                                                    <f:translate key="workos_auth.messages:module.users.join.existing.single" arguments="{organization: organization.name}" />
                                                 </p>
                                                 <input type="hidden" name="organizationId" value="{organization.id}" />
                                                 <button type="submit" class="btn btn-primary">
-                                                    <f:translate key="workos_auth.messages:module.users.join.existing.singleSubmit" arguments="{0: organization.name}" />
+                                                    <f:translate key="workos_auth.messages:module.users.join.existing.singleSubmit" arguments="{organization: organization.name}" />
                                                 </button>
                                             </f:for>
                                         </f:else>

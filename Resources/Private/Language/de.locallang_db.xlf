@@ -1,39 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en">
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="de">
   <file id="messages" original="messages">
     <unit id="tx_workosauth_identity">
       <segment>
         <source>WorkOS Identity</source>
+        <target>WorkOS-Identität</target>
       </segment>
     </unit>
     <unit id="tx_workosauth_identity.login_context">
       <segment>
         <source>Login context</source>
+        <target>Anmeldekontext</target>
       </segment>
     </unit>
     <unit id="tx_workosauth_identity.workos_user_id">
       <segment>
         <source>WorkOS user ID</source>
+        <target>WorkOS-Benutzer-ID</target>
       </segment>
     </unit>
     <unit id="tx_workosauth_identity.email">
       <segment>
         <source>Email</source>
+        <target>E-Mail</target>
       </segment>
     </unit>
     <unit id="tx_workosauth_identity.user_table">
       <segment>
         <source>TYPO3 user table</source>
+        <target>TYPO3-Benutzertabelle</target>
       </segment>
     </unit>
     <unit id="tx_workosauth_identity.user_uid">
       <segment>
         <source>TYPO3 user UID</source>
+        <target>TYPO3-Benutzer-UID</target>
       </segment>
     </unit>
     <unit id="tx_workosauth_identity.workos_profile_json">
       <segment>
         <source>WorkOS profile (JSON)</source>
+        <target>WorkOS-Profil (JSON)</target>
       </segment>
     </unit>
   </file>

@@ -176,7 +176,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             $details['title'] = $this->translate('backend.login.error.notLinked.title');
             $details['summary'] = $this->translate(
                 'backend.login.error.notLinked.summary',
-                [$matches[1]]
+                ['email' => $matches[1]]
             );
             $details['email'] = $matches[1];
             $details['userId'] = $matches[2];

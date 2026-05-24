@@ -242,7 +242,7 @@
                             <f:then>
                                 <div class="workos-magic-note">
                                     <f:translate key="workos_auth.messages:backend.login.verifyEmail.subtitle"
-                                                 arguments="{0: emailVerificationEmail}" />
+                                                 arguments="{email: emailVerificationEmail}" />
                                 </div>
                                 <div class="workos-field">
                                     <label for="workos-email-code"><f:translate key="workos_auth.messages:backend.login.verifyEmail.codeLabel" /></label>
@@ -280,7 +280,7 @@
                             <f:then>
                                 <div class="workos-magic-note">
                                     <f:translate key="workos_auth.messages:backend.login.magic.codeSent"
-                                                 arguments="{0: magicAuthEmail}" />
+                                                 arguments="{email: magicAuthEmail}" />
                                 </div>
                                 <div class="workos-field">
                                     <label for="workos-magic-code"><f:translate key="workos_auth.messages:backend.login.magic.codeLabel" /></label>
@@ -370,7 +370,7 @@
                                 </f:then>
                                 <f:else>
                                     <f:translate key="workos_auth.messages:backend.login.cookieSameSiteUnsupported"
-                                                 arguments="{0: backendCookieSameSite}" />
+                                                 arguments="{sameSite: backendCookieSameSite}" />
                                 </f:else>
                             </f:if>
                             <a href="{setupUrl}"><f:translate key="workos_auth.messages:backend.login.openSetup" /></a>.

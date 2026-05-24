@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-    <file source-language="en" datatype="plaintext" original="messages" product-name="workos_auth">
-        <header/>
-        <body>
-            <trans-unit id="mlang_tabs_tab">
-                <source>WorkOS</source>
-            </trans-unit>
-            <trans-unit id="mlang_labels_tablabel">
-                <source>WorkOS</source>
-            </trans-unit>
-            <trans-unit id="mlang_labels_tabdescr">
-                <source>Manage WorkOS user management, setup and identity tools.</source>
-            </trans-unit>
-        </body>
-    </file>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en">
+  <file id="messages" original="messages">
+    <unit id="mlang_tabs_tab">
+      <segment>
+        <source>WorkOS</source>
+      </segment>
+    </unit>
+    <unit id="mlang_labels_tablabel">
+      <segment>
+        <source>WorkOS</source>
+      </segment>
+    </unit>
+    <unit id="mlang_labels_tabdescr">
+      <segment>
+        <source>Manage WorkOS user management, setup and identity tools.</source>
+      </segment>
+    </unit>
+  </file>
 </xliff>

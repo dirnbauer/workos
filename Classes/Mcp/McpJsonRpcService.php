@@ -56,7 +56,7 @@ final class McpJsonRpcService implements LoggerAwareInterface
                 'serverInfo' => [
                     'name' => 'typo3-workos-auth',
                     'title' => 'TYPO3 WorkOS MCP',
-                    'version' => '14.0.0',
+                    'version' => '1.0.0',
                 ],
                 'instructions' => 'This TYPO3 MCP endpoint exposes the current TYPO3/WorkOS identity context and WorkOS-authorized MCP applications for the authenticated WorkOS user.',
             ]),

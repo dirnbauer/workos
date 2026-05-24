@@ -16,6 +16,21 @@ use PHPUnit\Framework\TestCase;
 final class XliffParityTest extends TestCase
 {
     /**
+     * @return array<int, array{file: string}>
+     */
+    public static function languageFilesProvider(): array
+    {
+        $files = glob(dirname(__DIR__, 3) . '/Resources/Private/Language/*.xlf');
+        self::assertIsArray($files);
+        sort($files);
+
+        return array_map(
+            static fn(string $file): array => ['file' => $file],
+            $files
+        );
+    }
+
+    /**
      * @return array<int, array{source: string, target: string}>
      */
     public static function pairsProvider(): array
@@ -34,10 +49,6 @@ final class XliffParityTest extends TestCase
     #[DataProvider('pairsProvider')]
     public function testGermanFileCoversAllEnglishKeys(string $source, string $target): void
     {
-        if (!file_exists($target)) {
-            self::markTestSkipped(sprintf('No German counterpart for %s.', basename($source)));
-        }
-
         $sourceKeys = self::extractKeys($source);
         $targetKeys = self::extractKeys($target);
 
@@ -45,11 +56,28 @@ final class XliffParityTest extends TestCase
             [],
             array_values(array_diff($sourceKeys, $targetKeys)),
             sprintf(
-                'German file %s is missing trans-units: %s',
+                'German file %s is missing units: %s',
                 basename($target),
                 implode(', ', array_diff($sourceKeys, $targetKeys))
             )
         );
+    }
+
+    #[DataProvider('languageFilesProvider')]
+    public function testLanguageFilesUseXliff20(string $file): void
+    {
+        $content = file_get_contents($file);
+        self::assertIsString($content);
+        self::assertStringContainsString('version="2.0"', $content, basename($file) . ' must use XLIFF 2.0.');
+        self::assertStringContainsString('urn:oasis:names:tc:xliff:document:2.0', $content, basename($file) . ' must use the XLIFF 2.0 namespace.');
+    }
+
+    #[DataProvider('languageFilesProvider')]
+    public function testLanguageFilesDoNotUseSprintfPlaceholders(string $file): void
+    {
+        $content = file_get_contents($file);
+        self::assertIsString($content);
+        self::assertDoesNotMatchRegularExpression('/%[sd]/', $content, basename($file) . ' must use named ICU placeholders.');
     }
 
     /**
@@ -59,7 +87,7 @@ final class XliffParityTest extends TestCase
     {
         $content = file_get_contents($file);
         self::assertIsString($content);
-        preg_match_all('/<trans-unit\s+id="([^"]+)"/', $content, $matches);
+        preg_match_all('/<(?:trans-unit|unit)\s+id="([^"]+)"/', $content, $matches);
         $keys = array_values(array_unique($matches[1]));
         sort($keys);
         return $keys;

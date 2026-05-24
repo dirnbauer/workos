@@ -12,7 +12,6 @@ $finder = PhpCsFixer\Finder::create()
         __DIR__ . '/Build/phpstan/stubs',
     ])
     ->append([
-        __DIR__ . '/ext_emconf.php',
         __DIR__ . '/ext_localconf.php',
     ])
 ;

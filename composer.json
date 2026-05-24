@@ -86,7 +86,7 @@
     "extra": {
         "typo3/cms": {
             "extension-key": "workos_auth",
-            "version": "14.0.0",
+            "version": "1.0.0",
             "Package": {
                 "providesPackages": {}
             }

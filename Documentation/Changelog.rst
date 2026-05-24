@@ -13,24 +13,28 @@ All notable changes to this extension are documented in this file.
 Unreleased
 ==========
 
-..  _changelog-14-0-0:
+..  _changelog-1-0-0:
 
-14.0.0 — TYPO3 14.3-only cleanup
-=================================
+1.0.0 — First official release
+==============================
 
 ..  rubric:: Changed
 
--   The extension release is now ``14.0.0`` in TYPO3's Composer
-    metadata and :file:`ext_emconf.php`.
--   TYPO3 14.3 classic-mode Composer metadata now declares
-    ``extra.typo3/cms.version`` and ``Package.providesPackages`` while
-    keeping :file:`ext_emconf.php` for TER/tooling compatibility.
--   Composer now requires TYPO3 ``^14.3`` packages only. Classic
-    extension metadata mirrors that with ``14.3.0-14.3.99``.
+-   The first official release is now ``1.0.0`` in TYPO3's Composer
+    metadata.
+-   TYPO3 14.3+ release metadata now lives in :file:`composer.json`
+    through ``extra.typo3/cms.version`` and
+    ``Package.providesPackages``.
+-   Legacy classic-mode metadata was removed from the extension.
+-   Composer now requires TYPO3 ``^14.3`` packages only.
 -   The local dependency set was refreshed to TYPO3 14.3.1 and current
     PHPStan 2.x tooling.
 -   PHPStan now runs at ``level: max`` with
     ``saschaegerer/phpstan-typo3`` 3.0.1 and no project baseline.
+-   GitHub Actions runs static analysis, unit tests, and functional
+    tests on PHP 8.2, 8.3, 8.4, and 8.5.
+-   Extension labels now use XLIFF 2.0 and named ICU placeholders for
+    dynamic editor and administrator messages.
 
 ..  rubric:: Fixed
 
@@ -40,6 +44,8 @@ Unreleased
     requires them.
 -   Normalized arrays returned from JWT, JSON-RPC, and TYPO3 schema
     APIs before exposing them through typed extension services.
+-   Added German database labels for ``tx_workosauth_identity`` so all
+    shipped label files have English/German coverage.
 
 ..  rubric:: Added
 
@@ -143,10 +149,8 @@ official TYPO3 coding standards package.
     normalization branches that Infection flagged. CI is opted into
     Node 24 to silence upcoming GitHub Actions runtime warnings.
 -   Unit coverage was expanded for configuration normalization,
-    request-token validation, and translation parity. The skipped
-    test waits for a German ``de.locallang_db.xlf`` to land.
--   Unit suite size for this release: 98 tests, 202 assertions, one
-    skipped (see ``composer test:unit``).
+    request-token validation, XLIFF 2.0 validation, and translation
+    parity.
 
 ..  _changelog-0-25-0:
 
@@ -331,8 +335,8 @@ cleanup pass.
 
 ..  rubric:: Extension upgrade polish
 
--   :file:`ext_emconf.php` stops using the removed ``$_EXTKEY``
-    superglobal; the extension key is now hard-coded.
+-   Legacy classic-mode extension metadata stops using the removed
+    ``$_EXTKEY`` superglobal; the extension key is now hard-coded.
 -   :file:`ext_localconf.php` narrows
     ``$GLOBALS['TYPO3_CONF_VARS']`` before writing the login-
     provider entry.
