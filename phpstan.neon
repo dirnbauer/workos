@@ -1,4 +1,8 @@
 parameters:
+    # Analyze against PHP 8.3 syntax rules even when CI executes PHPStan
+    # on newer runtimes. PHP 8.5 reports property #[Override] opportunities,
+    # but that attribute target is not valid on PHP 8.3 and lower.
+    phpVersion: 80300
     level: max
     paths:
         - Classes
