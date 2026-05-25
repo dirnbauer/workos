@@ -8,10 +8,10 @@
              copyright="since 2026 by webconsulting. Licensed under GPL-2.0-or-later."/>
 
     <extension class="\T3Docs\Typo3DocsTheme\DependencyInjection\Typo3DocsThemeExtension"
-               project-home="https://github.com/dirnbauer/workos"
-               project-issues="https://github.com/dirnbauer/workos/issues"
-               project-repository="https://github.com/dirnbauer/workos"
-               edit-on-github="dirnbauer/workos"
+               project-home="https://github.com/webconsulting-at/workos"
+               project-issues="https://github.com/webconsulting-at/workos/issues"
+               project-repository="https://github.com/webconsulting-at/workos"
+               edit-on-github="webconsulting-at/workos"
                edit-on-github-branch="main"
                typo3-core-preferred="main"/>
 

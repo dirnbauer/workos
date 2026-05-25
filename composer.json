@@ -12,7 +12,7 @@
         "oidc",
         "mfa"
     ],
-    "homepage": "https://github.com/dirnbauer/workos",
+    "homepage": "https://github.com/webconsulting-at/workos",
     "authors": [
         {
             "name": "webconsulting",
@@ -22,8 +22,8 @@
         }
     ],
     "support": {
-        "issues": "https://github.com/dirnbauer/workos/issues",
-        "source": "https://github.com/dirnbauer/workos"
+        "issues": "https://github.com/webconsulting-at/workos/issues",
+        "source": "https://github.com/webconsulting-at/workos"
     },
     "require": {
         "php": "^8.2",
@@ -86,7 +86,7 @@
     "extra": {
         "typo3/cms": {
             "extension-key": "workos_auth",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "Package": {
                 "providesPackages": {}
             }

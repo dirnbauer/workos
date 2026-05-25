@@ -224,7 +224,7 @@ Fix — choose one
 #.  Open :guilabel:`System` -> :guilabel:`Backend Users`, find the
     user that should be allowed to sign in via WorkOS, and set its
     :guilabel:`E-Mail` field to exactly the address shown in the
-    error card (e.g. ``dirnbauer@me.com``).
+    error card (e.g. ``editor@example.com``).
 #.  Save and try the WorkOS sign-in again. As long as
     ``backendLinkByEmail`` is enabled in :guilabel:`WorkOS` ->
     :guilabel:`Setup Assistant` -> :guilabel:`Backend login`, the
@@ -272,7 +272,7 @@ e-mail, insert a row directly. The schema matches the TCA in
          workos_profile_json, crdate, tstamp)
     VALUES
         ('backend', 'user_01KPCXE067SSBQV010XGP2A5R4',
-         'dirnbauer@me.com',
+         'editor@example.com',
          'be_users', <be_user_uid>,
          '{}', UNIX_TIMESTAMP(), UNIX_TIMESTAMP());
 

@@ -1,6 +1,6 @@
 # WorkOS Auth for TYPO3 14
 
-Source: [github.com/dirnbauer/workos](https://github.com/dirnbauer/workos)
+Source: [github.com/webconsulting-at/workos](https://github.com/webconsulting-at/workos)
 
 `workos_auth` adds [WorkOS](https://workos.com) authentication to both the
 TYPO3 **frontend** and the TYPO3 **backend**. It supports the full WorkOS
