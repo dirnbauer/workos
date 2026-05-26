@@ -13,6 +13,11 @@ All notable changes to this extension are documented in this file.
 Unreleased
 ==========
 
+..  _changelog-1-1-0:
+
+1.1.0 — Widget CORS configuration
+=================================
+
 ..  rubric:: Added
 
 -   The backend User Management widget can now register WorkOS CORS

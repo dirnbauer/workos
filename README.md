@@ -8,7 +8,7 @@ AuthKit feature set: email + password, passwordless magic auth, and
 social sign-in with Google, Microsoft, GitHub, and Apple.
 
 Requirements: TYPO3 `^14.3`, PHP `^8.2`. CI covers PHP 8.2, 8.3, 8.4,
-and 8.5. Current release: **1.0.0**.
+and 8.5. Current release: **1.1.0**.
 
 ---
 
