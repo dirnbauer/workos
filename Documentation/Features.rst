@@ -319,6 +319,11 @@ current backend user; if the user is not yet a member of any
 organization, the module offers a "join existing" or "create new"
 flow before mounting the widget.
 
+When ``widgetCorsAutoRegister`` is enabled, the widget token endpoint
+registers the current backend origin and any configured
+``widgetCorsOrigins`` with WorkOS before the browser widget fetches its
+data.
+
 All POST routes (``token``, ``join``, ``createOrganization``) are
 protected by an explicit ``isCurrentBackendUserAdmin()`` check (in
 addition to the module's ``access => 'admin'`` gate) and validate a

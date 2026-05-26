@@ -184,7 +184,8 @@ with two entries:
 - **User Management** (`/module/workos/users`) — embeds the official
   WorkOS *User Management* widget so admins can invite teammates,
   change roles, and remove users without leaving TYPO3 (admin only).
-  CSRF-protected and bound to the signed-in WorkOS session.
+  CSRF-protected, bound to the signed-in WorkOS session, and able to
+  register WorkOS widget CORS origins from extension configuration.
 - **MCP Server** (`/module/workos/mcp`) — dedicated TYPO3 backend UI
   for MCP endpoint URLs, auth mode, AuthKit domain, WorkOS discovery,
   server limit, verbose MCP logging, and WorkOS database schema status.

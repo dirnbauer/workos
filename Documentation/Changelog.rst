@@ -13,6 +13,11 @@ All notable changes to this extension are documented in this file.
 Unreleased
 ==========
 
+..  rubric:: Added
+
+-   The backend User Management widget can now register WorkOS CORS
+    origins from extension configuration before minting widget tokens.
+
 ..  _changelog-1-0-0:
 
 1.0.0 — First official release

@@ -269,6 +269,8 @@ is the complete configuration array with defaults:
             'backendLoginPath' => '/workos-auth/backend/login',
             'backendCallbackPath' => '/workos-auth/backend/callback',
             'backendSuccessPath' => '/main',
+            'widgetCorsAutoRegister' => '1',
+            'widgetCorsOrigins' => '',
 
             'authkitOrganizationId' => '',
             'authkitConnectionId' => '',
@@ -297,6 +299,9 @@ The setup assistant shows warnings but still saves. Validation rules:
 -   Frontend auto-create requires ``frontendStoragePid > 0``.
 -   Backend auto-create requires at least one entry in
     ``backendDefaultGroupUids``.
+-   ``widgetCorsOrigins`` accepts comma-separated ``http`` or ``https``
+    origins. Paths are normalized away because WorkOS stores CORS entries
+    as origins only.
 -   ``BE.cookieSameSite`` must be one of TYPO3's supported core
     values: ``strict``, ``lax`` or ``none``. The default ``strict``
     is supported and recommended.

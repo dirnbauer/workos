@@ -31,6 +31,8 @@ use WebConsulting\WorkosAuth\Service\PathUtility;
  *     backendLoginPath: string,
  *     backendCallbackPath: string,
  *     backendSuccessPath: string,
+ *     widgetCorsAutoRegister: bool,
+ *     widgetCorsOrigins: string,
  *     authkitOrganizationId: string,
  *     authkitConnectionId: string,
  *     authkitDomainHint: string,
@@ -97,6 +99,8 @@ final class WorkosConfiguration
         'backendLoginPath' => '/workos-auth/backend/login',
         'backendCallbackPath' => '/workos-auth/backend/callback',
         'backendSuccessPath' => '/main',
+        'widgetCorsAutoRegister' => true,
+        'widgetCorsOrigins' => '',
         'authkitOrganizationId' => '',
         'authkitConnectionId' => '',
         'authkitDomainHint' => '',
@@ -157,6 +161,8 @@ final class WorkosConfiguration
             'backendLoginPath' => PathUtility::normalizePath(trim(self::toString($input['backendLoginPath'] ?? self::DEFAULTS['backendLoginPath']))),
             'backendCallbackPath' => PathUtility::normalizePath(trim(self::toString($input['backendCallbackPath'] ?? self::DEFAULTS['backendCallbackPath']))),
             'backendSuccessPath' => PathUtility::normalizePath(trim(self::toString($input['backendSuccessPath'] ?? self::DEFAULTS['backendSuccessPath']))),
+            'widgetCorsAutoRegister' => (bool)($input['widgetCorsAutoRegister'] ?? self::DEFAULTS['widgetCorsAutoRegister']),
+            'widgetCorsOrigins' => implode(',', self::parseOriginList(self::toString($input['widgetCorsOrigins'] ?? self::DEFAULTS['widgetCorsOrigins']))),
             'authkitOrganizationId' => trim(self::toString($input['authkitOrganizationId'] ?? self::DEFAULTS['authkitOrganizationId'])),
             'authkitConnectionId' => trim(self::toString($input['authkitConnectionId'] ?? self::DEFAULTS['authkitConnectionId'])),
             'authkitDomainHint' => trim(self::toString($input['authkitDomainHint'] ?? self::DEFAULTS['authkitDomainHint'])),
@@ -392,6 +398,19 @@ final class WorkosConfiguration
         return $this->all()['backendSuccessPath'];
     }
 
+    public function shouldAutoRegisterWidgetCorsOrigins(): bool
+    {
+        return $this->all()['widgetCorsAutoRegister'];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getWidgetCorsOrigins(): array
+    {
+        return self::parseOriginList($this->all()['widgetCorsOrigins']);
+    }
+
     public function getAuthkitOrganizationId(): ?string
     {
         $value = trim($this->all()['authkitOrganizationId']);
@@ -521,6 +540,56 @@ final class WorkosConfiguration
         $items = $split === false ? [] : $split;
         $ints = array_map(static fn(string $item): int => (int)$item, $items);
         return array_values(array_filter($ints, static fn(int $item): bool => $item > 0));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function parseOriginList(string $value): array
+    {
+        $split = preg_split('/[,\s;]+/', $value);
+        $items = $split === false ? [] : $split;
+        $origins = [];
+        foreach ($items as $item) {
+            $origin = self::normalizeOrigin($item);
+            if ($origin !== '') {
+                $origins[$origin] = $origin;
+            }
+        }
+        return array_values($origins);
+    }
+
+    private static function normalizeOrigin(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        try {
+            $parts = parse_url($value);
+        } catch (\ValueError) {
+            return '';
+        }
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower(self::toString($parts['scheme'] ?? ''));
+        $host = strtolower(self::toString($parts['host'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
+            return '';
+        }
+
+        $origin = $scheme . '://' . $host;
+        $port = $parts['port'] ?? null;
+        if (is_int($port)
+            && $port > 0
+            && !(($scheme === 'http' && $port === 80) || ($scheme === 'https' && $port === 443))
+        ) {
+            $origin .= ':' . $port;
+        }
+        return $origin;
     }
 
     /**

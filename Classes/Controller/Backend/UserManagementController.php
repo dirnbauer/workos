@@ -26,6 +26,7 @@ use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\WorkosClientFactory;
+use WorkOS\Exception\ConflictException;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\OrganizationMembershipStatus;
 use WorkOS\Resource\UserOrganizationMembership;
@@ -124,6 +125,7 @@ final class UserManagementController implements LoggerAwareInterface
         }
 
         try {
+            $this->registerWidgetCorsOrigins($request);
             $widgets = $this->workosClientFactory->createWidgets();
             $response = $widgets->createToken(
                 organizationId: $status['organizationId'] ?? '',
@@ -340,6 +342,73 @@ final class UserManagementController implements LoggerAwareInterface
         }
 
         return $this->configuration->getAuthkitOrganizationId() ?? '';
+    }
+
+    private function registerWidgetCorsOrigins(ServerRequestInterface $request): void
+    {
+        if (!$this->configuration->shouldAutoRegisterWidgetCorsOrigins()) {
+            return;
+        }
+
+        $origins = $this->resolveWidgetCorsOrigins($request);
+        if ($origins === []) {
+            return;
+        }
+
+        try {
+            $userManagement = $this->workosClientFactory->createUserManagement();
+        } catch (\Throwable $exception) {
+            $this->logger?->warning('WorkOS widget CORS origin registration skipped: ' . SecretRedactor::redact($exception->getMessage()));
+            return;
+        }
+
+        foreach ($origins as $origin) {
+            try {
+                $userManagement->createCorsOrigin($origin);
+            } catch (ConflictException) {
+                continue;
+            } catch (\Throwable $exception) {
+                $this->logger?->warning(
+                    sprintf(
+                        'WorkOS widget CORS origin registration failed for "%s": %s',
+                        $origin,
+                        SecretRedactor::redact($exception->getMessage())
+                    )
+                );
+            }
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveWidgetCorsOrigins(ServerRequestInterface $request): array
+    {
+        $origins = $this->configuration->getWidgetCorsOrigins();
+        $requestOrigin = self::originFromRequest($request);
+        if ($requestOrigin !== '') {
+            $origins[] = $requestOrigin;
+        }
+        return array_values(array_unique($origins));
+    }
+
+    private static function originFromRequest(ServerRequestInterface $request): string
+    {
+        $uri = $request->getUri();
+        $scheme = strtolower($uri->getScheme());
+        $host = strtolower($uri->getHost());
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
+            return '';
+        }
+
+        $origin = $scheme . '://' . $host;
+        $port = $uri->getPort();
+        if ($port !== null
+            && !(($scheme === 'http' && $port === 80) || ($scheme === 'https' && $port === 443))
+        ) {
+            $origin .= ':' . $port;
+        }
+        return $origin;
     }
 
     /**

@@ -784,6 +784,24 @@
         <target>Öffnen Sie Ihr WorkOS-Dashboard, gehen Sie zu Redirects und fügen Sie jede oben aufgeführte Callback-URL hinzu. Verwenden Sie die Schaltfläche + Add, um jeweils eine URL hinzuzufügen, und klicken Sie dann auf Save changes.</target>
       </segment>
     </unit>
+    <unit id="setup.redirectUrls.instruction.openDashboard">
+      <segment>
+        <source>Open the WorkOS Dashboard and go to Redirects.</source>
+        <target>Öffnen Sie das WorkOS-Dashboard und wechseln Sie zu Redirects.</target>
+      </segment>
+    </unit>
+    <unit id="setup.redirectUrls.instruction.addUrls">
+      <segment>
+        <source>Add every callback URL listed above, one URL at a time, using + Add.</source>
+        <target>Fügen Sie jede oben aufgeführte Callback-URL einzeln über + Add hinzu.</target>
+      </segment>
+    </unit>
+    <unit id="setup.redirectUrls.instruction.saveChanges">
+      <segment>
+        <source>Click Save changes after all callback URLs have been added.</source>
+        <target>Klicken Sie auf Save changes, sobald alle Callback-URLs eingetragen sind.</target>
+      </segment>
+    </unit>
     <unit id="setup.credentials.title">
       <segment>
         <source>WorkOS credentials</source>
@@ -998,6 +1016,30 @@
       <segment>
         <source>Leave empty to allow every domain when auto-creation is enabled.</source>
         <target>Leer lassen, um bei aktivierter Auto-Erstellung jede Domain zu erlauben.</target>
+      </segment>
+    </unit>
+    <unit id="setup.backend.widgetCorsAutoRegister">
+      <segment>
+        <source>Register WorkOS widget CORS origins automatically</source>
+        <target>WorkOS-Widget-CORS-Ursprünge automatisch registrieren</target>
+      </segment>
+    </unit>
+    <unit id="setup.backend.widgetCorsAutoRegister.description">
+      <segment>
+        <source>Before minting a widget token, register the current backend origin and the additional origins below in WorkOS.</source>
+        <target>Registriert vor dem Erzeugen eines Widget-Tokens den aktuellen Backend-Ursprung und die unten angegebenen zusätzlichen Ursprünge in WorkOS.</target>
+      </segment>
+    </unit>
+    <unit id="setup.backend.widgetCorsOrigins">
+      <segment>
+        <source>Additional WorkOS widget CORS origins</source>
+        <target>Zusätzliche WorkOS-Widget-CORS-Ursprünge</target>
+      </segment>
+    </unit>
+    <unit id="setup.backend.widgetCorsOrigins.description">
+      <segment>
+        <source>Comma-separated http(s) origins for the User Management widget. The current backend origin is added automatically when automatic registration is enabled.</source>
+        <target>Kommagetrennte http(s)-Ursprünge für das User-Management-Widget. Der aktuelle Backend-Ursprung wird automatisch ergänzt, wenn die automatische Registrierung aktiviert ist.</target>
       </segment>
     </unit>
     <unit id="setup.backend.loginPath">

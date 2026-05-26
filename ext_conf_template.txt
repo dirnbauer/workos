@@ -58,6 +58,12 @@ backendCallbackPath = /workos-auth/backend/callback
 # cat=backend/routes; type=string; label=Backend success path
 backendSuccessPath = /main
 
+# cat=backend/widget; type=boolean; label=Register WorkOS widget CORS origins automatically
+widgetCorsAutoRegister = 1
+
+# cat=backend/widget; type=string; label=Additional WorkOS widget CORS origins (comma separated)
+widgetCorsOrigins =
+
 # cat=workos/options; type=string; label=Optional WorkOS organization ID
 authkitOrganizationId =
 

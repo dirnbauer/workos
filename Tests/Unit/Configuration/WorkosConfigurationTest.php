@@ -98,6 +98,28 @@ final class WorkosConfigurationTest extends TestCase
         self::assertTrue($result['mcpVerboseLogging']);
     }
 
+    public function testNormalizeInputNormalizesWidgetCorsOrigins(): void
+    {
+        $result = $this->configuration->normalizeInput([
+            'widgetCorsAutoRegister' => true,
+            'widgetCorsOrigins' => ' https://Example.test/foo, http://app.test:8080/path; ftp://invalid https://example.test:443 ',
+        ]);
+
+        self::assertTrue($result['widgetCorsAutoRegister']);
+        self::assertSame('https://example.test,http://app.test:8080', $result['widgetCorsOrigins']);
+    }
+
+    public function testGetWidgetCorsOriginsReturnsNormalizedOrigins(): void
+    {
+        $configuration = $this->createConfigurationWith([
+            'widgetCorsAutoRegister' => '0',
+            'widgetCorsOrigins' => 'https://Example.test/foo;http://app.test:8080/path;not-an-origin',
+        ]);
+
+        self::assertFalse($configuration->shouldAutoRegisterWidgetCorsOrigins());
+        self::assertSame(['https://example.test', 'http://app.test:8080'], $configuration->getWidgetCorsOrigins());
+    }
+
     public function testValidateReportsMissingCredentialsWhenAuthEnabled(): void
     {
         $errors = $this->configuration->validate([
@@ -187,6 +209,20 @@ final class WorkosConfigurationTest extends TestCase
         ]);
 
         self::assertArrayHasKey('backendCookieSameSite', $errors);
+    }
+
+    /**
+     * @param array<string, mixed> $rawConfiguration
+     */
+    private function createConfigurationWith(array $rawConfiguration): WorkosConfiguration
+    {
+        $extensionConfiguration = self::createStub(ExtensionConfiguration::class);
+        $extensionConfiguration->method('get')->willReturn($rawConfiguration);
+
+        return new WorkosConfiguration(
+            $extensionConfiguration,
+            self::createStub(LanguageServiceFactory::class),
+        );
     }
 
     private function readBackendCookieSameSite(): string|null

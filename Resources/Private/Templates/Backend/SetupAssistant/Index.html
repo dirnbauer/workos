@@ -41,13 +41,17 @@
                     </f:if>
 
                     <hr class="my-4">
-                    <h5><f:translate key="workos_auth.messages:setup.redirectUrls.whereToAdd" /></h5>
-                    <p class="text-muted">
-                        <f:translate key="workos_auth.messages:setup.redirectUrls.instruction" />
-                    </p>
+                    <div class="alert alert-info mb-3">
+                        <h5 class="alert-heading"><f:translate key="workos_auth.messages:setup.redirectUrls.whereToAdd" /></h5>
+                        <ol class="mb-0 ps-3">
+                            <li><f:translate key="workos_auth.messages:setup.redirectUrls.instruction.openDashboard" /></li>
+                            <li><f:translate key="workos_auth.messages:setup.redirectUrls.instruction.addUrls" /></li>
+                            <li><f:translate key="workos_auth.messages:setup.redirectUrls.instruction.saveChanges" /></li>
+                        </ol>
+                    </div>
                     <img src="{f:uri.resource(path: 'Images/workos-redirect-uris.png', extensionName: 'WorkosAuth')}"
                          alt="WorkOS Dashboard – Redirect URIs configuration"
-                         class="border rounded" style="max-width:420px; width:100%;" />
+                         class="img-fluid border rounded shadow-sm" style="max-width:720px; width:100%;" />
                 </div>
             </details>
         </div>
@@ -247,6 +251,23 @@
                     <input id="backendAllowedDomains" class="form-control" type="text" name="configuration[backendAllowedDomains]" value="{formValues.backendAllowedDomains}">
                     <small class="form-text text-muted">
                         <f:translate key="workos_auth.messages:setup.backend.allowedDomainsHint" />
+                    </small>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="hidden" name="configuration[widgetCorsAutoRegister]" value="0">
+                    <input id="widgetCorsAutoRegister" class="form-check-input" type="checkbox" name="configuration[widgetCorsAutoRegister]" value="1" <f:if condition="{formValues.widgetCorsAutoRegister}">checked</f:if>>
+                    <label class="form-check-label" for="widgetCorsAutoRegister"><f:translate key="workos_auth.messages:setup.backend.widgetCorsAutoRegister" /></label>
+                    <small class="form-text text-muted d-block">
+                        <f:translate key="workos_auth.messages:setup.backend.widgetCorsAutoRegister.description" />
+                    </small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="widgetCorsOrigins"><strong><f:translate key="workos_auth.messages:setup.backend.widgetCorsOrigins" /></strong></label>
+                    <input id="widgetCorsOrigins" class="form-control" type="text" name="configuration[widgetCorsOrigins]" value="{formValues.widgetCorsOrigins}" placeholder="https://example.com">
+                    <small class="form-text text-muted">
+                        <f:translate key="workos_auth.messages:setup.backend.widgetCorsOrigins.description" />
                     </small>
                 </div>
 
