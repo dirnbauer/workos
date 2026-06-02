@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Security\StateService;
 use WorkOS\Resource\User;
 use WorkOS\Resource\UserManagementAuthenticationProvider;
@@ -87,12 +88,12 @@ final class WorkosAuthenticationService
     public function handleCallback(ServerRequestInterface $request, string $expectedContext): array
     {
         $queryParameters = $request->getQueryParams();
-        $code = trim(self::stringFromMixed($queryParameters['code'] ?? null));
+        $code = trim(MixedCaster::string($queryParameters['code'] ?? null));
         if ($code === '') {
             throw new \RuntimeException('The WorkOS callback did not contain an authorization code.', 1744277801);
         }
 
-        $stateToken = $this->stateService->extractTokenFromCallbackState(self::stringFromMixed($queryParameters['state'] ?? null));
+        $stateToken = $this->stateService->extractTokenFromCallbackState(MixedCaster::string($queryParameters['state'] ?? null));
         $payload = $this->stateService->consume($request, $expectedContext, $stateToken);
 
         $userManagement = $this->workosClientFactory->createUserManagement();
@@ -104,7 +105,7 @@ final class WorkosAuthenticationService
 
         return [
             'workosUser' => $this->enrichUser($userManagement, $authenticationResponse->user),
-            'returnTo' => self::stringFromMixed($payload['returnTo'] ?? null, '/'),
+            'returnTo' => MixedCaster::string($payload['returnTo'] ?? null, '/'),
         ];
     }
 
@@ -254,19 +255,19 @@ final class WorkosAuthenticationService
 
         $decoded = json_decode($message, true);
         if (is_array($decoded)) {
-            $pendingToken = self::stringFromMixed($decoded['pending_authentication_token'] ?? null);
-            $verificationId = self::stringFromMixed($decoded['email_verification_id'] ?? null);
-            $workosEmail = self::stringFromMixed($decoded['email'] ?? $email, $email);
-            $userId = self::stringFromMixed($decoded['user_id'] ?? $decoded['userId'] ?? null);
+            $pendingToken = MixedCaster::string($decoded['pending_authentication_token'] ?? null);
+            $verificationId = MixedCaster::string($decoded['email_verification_id'] ?? null);
+            $workosEmail = MixedCaster::string($decoded['email'] ?? $email, $email);
+            $userId = MixedCaster::string($decoded['user_id'] ?? $decoded['userId'] ?? null);
         }
 
         if ($pendingToken === '') {
             $responseBody = $this->extractResponseBodyJson($exception);
             if ($responseBody !== null) {
-                $pendingToken = self::stringFromMixed($responseBody['pending_authentication_token'] ?? $pendingToken, $pendingToken);
-                $verificationId = self::stringFromMixed($responseBody['email_verification_id'] ?? $verificationId, $verificationId);
-                $workosEmail = self::stringFromMixed($responseBody['email'] ?? $workosEmail, $workosEmail);
-                $userId = self::stringFromMixed($responseBody['user_id'] ?? $responseBody['userId'] ?? $userId, $userId);
+                $pendingToken = MixedCaster::string($responseBody['pending_authentication_token'] ?? $pendingToken, $pendingToken);
+                $verificationId = MixedCaster::string($responseBody['email_verification_id'] ?? $verificationId, $verificationId);
+                $workosEmail = MixedCaster::string($responseBody['email'] ?? $workosEmail, $workosEmail);
+                $userId = MixedCaster::string($responseBody['user_id'] ?? $responseBody['userId'] ?? $userId, $userId);
             }
         }
 
@@ -368,17 +369,6 @@ final class WorkosAuthenticationService
     {
         $userAgent = trim($request->getHeaderLine('User-Agent'));
         return $userAgent !== '' ? $userAgent : null;
-    }
-
-    private static function stringFromMixed(mixed $value, string $default = ''): string
-    {
-        if (is_string($value)) {
-            return $value;
-        }
-        if (is_int($value) || is_float($value) || is_bool($value)) {
-            return (string)$value;
-        }
-        return $default;
     }
 
     /**

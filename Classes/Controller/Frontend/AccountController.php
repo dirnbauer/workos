@@ -231,7 +231,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
         $code = $body->trimmedString('code');
         try {
-            $this->accountService->verifyTotpFactor($this->stringFromMixed($pending['factorId']), $code);
+            $this->accountService->verifyTotpFactor(MixedCaster::string($pending['factorId']), $code);
             $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', null);
             $this->setFlash('success', $this->translate('account.flash.mfaActivated'));
         } catch (\Throwable $e) {
@@ -257,7 +257,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
         $pending = $this->getPendingEnrollment();
         if ($pending !== null) {
             try {
-                $this->accountService->deleteFactor($this->stringFromMixed($pending['factorId']));
+                $this->accountService->deleteFactor(MixedCaster::string($pending['factorId']));
             } catch (\Throwable $e) {
                 $this->logger?->warning('WorkOS account: delete pending factor failed: ' . SecretRedactor::redact($e->getMessage()));
             }
@@ -547,17 +547,6 @@ final class AccountController extends ActionController implements LoggerAwareInt
             $keyed[(string)$key] = $value;
         }
         return $keyed;
-    }
-
-    private function stringFromMixed(mixed $value): string
-    {
-        if (is_string($value)) {
-            return $value;
-        }
-        if (is_int($value) || is_float($value) || is_bool($value)) {
-            return (string)$value;
-        }
-        return '';
     }
 
     private function getFrontendUser(): FrontendUserAuthentication

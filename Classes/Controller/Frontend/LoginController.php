@@ -12,8 +12,10 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Security\RequestTokenService;
 use WebConsulting\WorkosAuth\Security\SecretRedactor;
+use WebConsulting\WorkosAuth\Security\WorkosErrorMessageResolver;
 use WebConsulting\WorkosAuth\Service\IdentityService;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\RequestBody;
@@ -34,6 +36,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         private readonly UserProvisioningService $userProvisioningService,
         private readonly Typo3SessionService $typo3SessionService,
         private readonly RequestTokenService $requestTokenService,
+        private readonly WorkosErrorMessageResolver $errorMessageResolver,
     ) {}
 
     public function showAction(): ResponseInterface
@@ -43,7 +46,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $currentUrl = (string)$this->request->getUri();
         $queryParams = $this->request->getQueryParams();
         $returnToUrl = $this->sanitizeReturnTo(
-            $this->stringFromMixed($queryParams['returnTo'] ?? null),
+            MixedCaster::string($queryParams['returnTo'] ?? null),
             $currentUrl
         );
 
@@ -176,18 +179,18 @@ final class LoginController extends ActionController implements LoggerAwareInter
             }
         }
 
-        $savedReturnTo = $this->stringFromMixed($savedForm['returnTo'] ?? null);
+        $savedReturnTo = MixedCaster::string($savedForm['returnTo'] ?? null);
         $returnToUrl = $this->sanitizeReturnTo(
-            $savedReturnTo !== '' ? $savedReturnTo : $this->stringFromMixed($queryParams['returnTo'] ?? null),
+            $savedReturnTo !== '' ? $savedReturnTo : MixedCaster::string($queryParams['returnTo'] ?? null),
             $currentUrl
         );
 
         $this->view->assignMultiple([
             'configured' => $this->configuration->isFrontendReady(),
             'authError' => $authError,
-            'savedEmail' => $this->stringFromMixed($savedForm['email'] ?? null),
-            'savedFirstName' => $this->stringFromMixed($savedForm['firstName'] ?? null),
-            'savedLastName' => $this->stringFromMixed($savedForm['lastName'] ?? null),
+            'savedEmail' => MixedCaster::string($savedForm['email'] ?? null),
+            'savedFirstName' => MixedCaster::string($savedForm['firstName'] ?? null),
+            'savedLastName' => MixedCaster::string($savedForm['lastName'] ?? null),
             'returnToUrl' => $returnToUrl,
             'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
@@ -323,7 +326,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
             return $this->redirectToShowWithError($this->translate('error.magicAuthSessionExpired'));
         }
 
-        $email = $this->stringFromMixed($sessionData['email'] ?? $sessionData['userId'] ?? null);
+        $email = MixedCaster::string($sessionData['email'] ?? $sessionData['userId'] ?? null);
         if ($email === '') {
             return $this->redirectToShowWithError($this->translate('error.magicAuthSessionExpired'));
         }
@@ -343,11 +346,11 @@ final class LoginController extends ActionController implements LoggerAwareInter
                 $email
             );
             $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
-            $returnTo = $this->stringFromMixed($sessionData['returnTo'] ?? '/');
+            $returnTo = MixedCaster::string($sessionData['returnTo'] ?? '/');
             $this->getFrontendUser()->setAndSaveSessionData('workos_magic_auth', null);
             return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo === '' ? '/' : $returnTo);
         } catch (EmailVerificationRequiredException $e) {
-            $returnTo = $this->stringFromMixed($sessionData['returnTo'] ?? '/');
+            $returnTo = MixedCaster::string($sessionData['returnTo'] ?? '/');
             $this->getFrontendUser()->setAndSaveSessionData('workos_magic_auth', null);
             return $this->startEmailVerificationFlow($e, $returnTo === '' ? '/' : $returnTo);
         } catch (\Throwable $e) {
@@ -378,8 +381,8 @@ final class LoginController extends ActionController implements LoggerAwareInter
 
         $this->view->assignMultiple([
             'configured' => $this->configuration->isFrontendReady(),
-            'verifyEmail' => $this->stringFromMixed($sessionData['email'] ?? null),
-            'canResend' => $this->stringFromMixed($sessionData['userId'] ?? null) !== '',
+            'verifyEmail' => MixedCaster::string($sessionData['email'] ?? null),
+            'canResend' => MixedCaster::string($sessionData['userId'] ?? null) !== '',
             'authError' => $authError,
             'notice' => $resendNotice,
             'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
@@ -413,10 +416,10 @@ final class LoginController extends ActionController implements LoggerAwareInter
             $result = $this->workosAuthenticationService->authenticateWithEmailVerification(
                 $this->request,
                 $code,
-                $this->stringFromMixed($sessionData['pendingToken'])
+                MixedCaster::string($sessionData['pendingToken'])
             );
             $frontendUser = $this->userProvisioningService->resolveFrontendUser($result['workosUser']);
-            $returnTo = $this->stringFromMixed($sessionData['returnTo'] ?? '/');
+            $returnTo = MixedCaster::string($sessionData['returnTo'] ?? '/');
             $this->getFrontendUser()->setAndSaveSessionData('workos_email_verification', null);
             return $this->typo3SessionService->createFrontendLoginResponse($this->request, $frontendUser, $returnTo === '' ? '/' : $returnTo);
         } catch (\Throwable $e) {
@@ -444,7 +447,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         }
 
         try {
-            $this->workosAuthenticationService->resendEmailVerification($this->stringFromMixed($sessionData['userId']));
+            $this->workosAuthenticationService->resendEmailVerification(MixedCaster::string($sessionData['userId']));
             $this->getFrontendUser()->setAndSaveSessionData(
                 'workos_auth_notice',
                 $this->translate('message.verificationCodeResent')
@@ -487,7 +490,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
             $fe->setAndSaveSessionData('workos_signup_form', $formData);
         }
         $arguments = [];
-        $returnTo = $this->stringFromMixed($formData['returnTo'] ?? null);
+        $returnTo = MixedCaster::string($formData['returnTo'] ?? null);
         if ($returnTo !== '') {
             $arguments['returnTo'] = $returnTo;
         }
@@ -508,17 +511,6 @@ final class LoginController extends ActionController implements LoggerAwareInter
         );
     }
 
-    private function stringFromMixed(mixed $value): string
-    {
-        if (is_string($value)) {
-            return $value;
-        }
-        if (is_int($value) || is_float($value) || is_bool($value)) {
-            return (string)$value;
-        }
-        return '';
-    }
-
     private function getFrontendUser(): FrontendUserAuthentication
     {
         $frontendUser = $this->request->getAttribute('frontend.user');
@@ -532,48 +524,14 @@ final class LoginController extends ActionController implements LoggerAwareInter
     {
         $this->logger?->error('WorkOS sign-up error: ' . SecretRedactor::redact($message));
 
-        $lower = strtolower($message);
-        if (str_contains($lower, 'password_too_short') || str_contains($lower, 'too short')) {
-            return $this->translate('error.passwordTooShort');
-        }
-        if (str_contains($lower, 'password_too_weak') || str_contains($lower, 'too weak') || str_contains($lower, 'unguessable')) {
-            return $this->translate('error.passwordTooWeak');
-        }
-        if (str_contains($lower, 'pwned') || str_contains($lower, 'breached') || str_contains($lower, 'compromised')) {
-            return $this->translate('error.passwordBreached');
-        }
-        if (str_contains($lower, 'already exists') || str_contains($lower, 'duplicate') || str_contains($lower, 'user_exists')) {
-            return $this->translate('error.userAlreadyExists');
-        }
-        if (str_contains($lower, 'password') && str_contains($lower, 'invalid')) {
-            return $this->translate('error.passwordInvalid');
-        }
-
-        return $this->translate('error.generic');
+        return $this->translate($this->errorMessageResolver->resolveSignUp($message));
     }
 
     private function sanitizeErrorMessage(string $message): string
     {
         $this->logger?->error('WorkOS auth error: ' . SecretRedactor::redact($message));
 
-        $lower = strtolower($message);
-        if (str_contains($lower, 'password') || str_contains($lower, 'credentials') || str_contains($lower, 'unauthorized')) {
-            return $this->translate('error.invalidEmailOrPassword');
-        }
-        if (str_contains($lower, 'magic') && (str_contains($lower, 'not enabled') || str_contains($lower, 'disabled'))) {
-            return $this->translate('error.magicAuthDisabled');
-        }
-        if (str_contains($lower, 'authentication_method_not_allowed') || str_contains($lower, 'method_not_allowed')) {
-            return $this->translate('error.methodNotAllowed');
-        }
-        if (str_contains($lower, 'code') && (str_contains($lower, 'expired') || str_contains($lower, 'invalid'))) {
-            return $this->translate('error.invalidOrExpiredCode');
-        }
-        if (str_contains($lower, 'user_not_found') || str_contains($lower, 'not found')) {
-            return $this->translate('error.userNotFound');
-        }
-
-        return $this->translate('error.generic');
+        return $this->translate($this->errorMessageResolver->resolveAuthentication($message));
     }
 
     /**

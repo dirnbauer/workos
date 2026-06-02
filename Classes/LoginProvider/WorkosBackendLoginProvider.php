@@ -70,7 +70,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         if ($magicAuthState !== '') {
             try {
                 $payload = $this->stateService->peek($request, self::MAGIC_AUTH_CONTEXT, $magicAuthState);
-                $magicAuthEmail = self::stringFromMixed($payload['email'] ?? null);
+                $magicAuthEmail = MixedCaster::string($payload['email'] ?? null);
                 if ($magicAuthEmail === '') {
                     $magicAuthState = '';
                 }
@@ -88,9 +88,9 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
         if ($emailVerificationState !== '') {
             try {
                 $payload = $this->stateService->peek($request, self::EMAIL_VERIFICATION_CONTEXT, $emailVerificationState);
-                $emailVerificationEmail = self::stringFromMixed($payload['email'] ?? null);
-                $pendingToken = self::stringFromMixed($payload['pendingToken'] ?? null);
-                $emailVerificationCanResend = self::stringFromMixed($payload['userId'] ?? null) !== '';
+                $emailVerificationEmail = MixedCaster::string($payload['email'] ?? null);
+                $pendingToken = MixedCaster::string($payload['pendingToken'] ?? null);
+                $emailVerificationCanResend = MixedCaster::string($payload['userId'] ?? null) !== '';
                 if ($emailVerificationEmail === '' || $pendingToken === '') {
                     $emailVerificationState = '';
                     $emailVerificationCanResend = false;
@@ -199,17 +199,6 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             $beUser instanceof AbstractUserAuthentication ? $beUser : null
         );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
-    }
-
-    private static function stringFromMixed(mixed $value): string
-    {
-        if (is_string($value)) {
-            return $value;
-        }
-        if (is_int($value) || is_float($value) || is_bool($value)) {
-            return (string)$value;
-        }
-        return '';
     }
 
     private function provideRequestTokenJwt(): string

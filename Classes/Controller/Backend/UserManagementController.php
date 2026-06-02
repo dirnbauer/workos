@@ -21,6 +21,7 @@ use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Security\RequestTokenService;
 use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Service\IdentityService;
@@ -140,7 +141,7 @@ final class UserManagementController implements LoggerAwareInterface
         }
 
         return new JsonResponse([
-            'token' => self::stringFromMixed($response->token),
+            'token' => MixedCaster::string($response->token),
         ]);
     }
 
@@ -292,7 +293,7 @@ final class UserManagementController implements LoggerAwareInterface
             ];
         }
 
-        $email = self::stringFromMixed($identity['email'] ?? null);
+        $email = MixedCaster::string($identity['email'] ?? null);
         $organizationId = $this->resolveOrganizationId($workosUserId);
 
         if ($organizationId === '') {
@@ -445,13 +446,13 @@ final class UserManagementController implements LoggerAwareInterface
         $conf = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
         $sitename = '';
         if (is_array($conf) && isset($conf['SYS']) && is_array($conf['SYS'])) {
-            $sitename = trim(self::stringFromMixed($conf['SYS']['sitename'] ?? null));
+            $sitename = trim(MixedCaster::string($conf['SYS']['sitename'] ?? null));
         }
         if ($sitename !== '') {
             return $sitename;
         }
 
-        $host = trim(self::stringFromMixed($_SERVER['HTTP_HOST'] ?? null));
+        $host = trim(MixedCaster::string($_SERVER['HTTP_HOST'] ?? null));
         if ($host !== '') {
             return $host;
         }
@@ -489,13 +490,13 @@ final class UserManagementController implements LoggerAwareInterface
     private function resolveCurrentWorkosUserId(?BackendUserAuthentication $beUser, ?array $identity): string
     {
         if ($beUser instanceof BackendUserAuthentication) {
-            $sessionWorkosUserId = self::stringFromMixed($beUser->getSessionData(self::SESSION_WORKOS_USER_ID));
+            $sessionWorkosUserId = MixedCaster::string($beUser->getSessionData(self::SESSION_WORKOS_USER_ID));
             if ($sessionWorkosUserId !== '') {
                 return $sessionWorkosUserId;
             }
         }
 
-        return self::stringFromMixed($identity['workos_user_id'] ?? null);
+        return MixedCaster::string($identity['workos_user_id'] ?? null);
     }
 
     /**
@@ -508,16 +509,5 @@ final class UserManagementController implements LoggerAwareInterface
             $beUser instanceof AbstractUserAuthentication ? $beUser : null
         );
         return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
-    }
-
-    private static function stringFromMixed(mixed $value): string
-    {
-        if (is_string($value)) {
-            return $value;
-        }
-        if (is_int($value) || is_float($value) || is_bool($value)) {
-            return (string)$value;
-        }
-        return '';
     }
 }

@@ -8,6 +8,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Authentication\AbstractAuthenticationService;
 use TYPO3\CMS\Core\Authentication\LoginType;
 
+use WebConsulting\WorkosAuth\Security\MixedCaster;
+
 final class WorkosTypo3AuthenticationService extends AbstractAuthenticationService
 {
     public const PENDING_LOGIN_ATTRIBUTE = 'workos_auth.pending_login';
@@ -62,8 +64,8 @@ final class WorkosTypo3AuthenticationService extends AbstractAuthenticationServi
             return 100;
         }
 
-        $pendingUid = self::intFromMixed($pendingUser['uid'] ?? null);
-        $candidateUid = self::intFromMixed($user['uid'] ?? null);
+        $pendingUid = MixedCaster::int($pendingUser['uid'] ?? null);
+        $candidateUid = MixedCaster::int($user['uid'] ?? null);
 
         if ($pendingUid <= 0 || $candidateUid !== $pendingUid) {
             return 0;
@@ -74,7 +76,7 @@ final class WorkosTypo3AuthenticationService extends AbstractAuthenticationServi
 
     private function isActiveLogin(): bool
     {
-        return LoginType::tryFrom(self::stringFromMixed($this->login['status'] ?? null)) === LoginType::LOGIN;
+        return LoginType::tryFrom(MixedCaster::string($this->login['status'] ?? null)) === LoginType::LOGIN;
     }
 
     private function hasPendingLoginForCurrentMode(): bool
@@ -84,7 +86,7 @@ final class WorkosTypo3AuthenticationService extends AbstractAuthenticationServi
             return false;
         }
 
-        return self::stringFromMixed($pendingLogin['context'] ?? null) === $this->resolveExpectedContext();
+        return MixedCaster::string($pendingLogin['context'] ?? null) === $this->resolveExpectedContext();
     }
 
     /**
@@ -142,21 +144,5 @@ final class WorkosTypo3AuthenticationService extends AbstractAuthenticationServi
     {
         $request = $this->authInfo['request'] ?? null;
         return $request instanceof ServerRequestInterface ? $request : null;
-    }
-
-    private static function stringFromMixed(mixed $value): string
-    {
-        if (is_string($value)) {
-            return $value;
-        }
-        if (is_int($value) || is_float($value) || is_bool($value)) {
-            return (string)$value;
-        }
-        return '';
-    }
-
-    private static function intFromMixed(mixed $value): int
-    {
-        return is_numeric($value) ? (int)$value : 0;
     }
 }

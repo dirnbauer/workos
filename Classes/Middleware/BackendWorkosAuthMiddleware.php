@@ -25,6 +25,7 @@ use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
 use WebConsulting\WorkosAuth\Security\MixedCaster;
 use WebConsulting\WorkosAuth\Security\SecretRedactor;
 use WebConsulting\WorkosAuth\Security\StateService;
+use WebConsulting\WorkosAuth\Security\WorkosErrorMessageResolver;
 use WebConsulting\WorkosAuth\Service\PathUtility;
 use WebConsulting\WorkosAuth\Service\RequestBody;
 use WebConsulting\WorkosAuth\Service\Typo3SessionService;
@@ -44,6 +45,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         private UserProvisioningService $userProvisioningService,
         private Typo3SessionService $typo3SessionService,
         private StateService $stateService,
+        private WorkosErrorMessageResolver $errorMessageResolver,
         private Context $context,
         private LanguageServiceFactory $languageServiceFactory,
     ) {}
@@ -184,7 +186,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             return new RedirectResponse(
                 PathUtility::appendQueryParameters($fallbackLoginPath, [
                     'loginProvider' => '1744276800',
-                    'workosAuthError' => $this->sanitizeErrorMessage($exception->getMessage()),
+                    'workosAuthError' => $this->translate($this->errorMessageResolver->resolveAuthentication($exception->getMessage())),
                 ]),
                 303
             );
@@ -222,7 +224,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             return $this->redirectToEmailVerification($request, $backendBasePath, $e);
         } catch (\Throwable $e) {
             $this->logger?->error('WorkOS backend password auth error: ' . SecretRedactor::redact($e->getMessage()));
-            return $this->redirectToLoginWithError($backendBasePath, $this->sanitizeErrorMessage($e->getMessage()));
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate($this->errorMessageResolver->resolveAuthentication($e->getMessage())));
         }
     }
 
@@ -260,7 +262,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             );
         } catch (\Throwable $e) {
             $this->logger?->error('WorkOS backend magic auth send error: ' . SecretRedactor::redact($e->getMessage()));
-            return $this->redirectToLoginWithError($backendBasePath, $this->sanitizeErrorMessage($e->getMessage()));
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate($this->errorMessageResolver->resolveAuthentication($e->getMessage())));
         }
     }
 
@@ -307,7 +309,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             return $this->redirectToLoginWithError($backendBasePath, $this->translate('error.invalidMagicAuthSession'));
         } catch (\Throwable $e) {
             $this->logger?->error('WorkOS backend magic auth verify error: ' . SecretRedactor::redact($e->getMessage()));
-            return $this->redirectToLoginWithError($backendBasePath, $this->sanitizeErrorMessage($e->getMessage()));
+            return $this->redirectToLoginWithError($backendBasePath, $this->translate($this->errorMessageResolver->resolveAuthentication($e->getMessage())));
         }
     }
 
@@ -371,7 +373,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
                 $backendBasePath,
                 [
                     'emailVerificationState' => $emailVerificationState,
-                    'workosAuthError' => $this->sanitizeErrorMessage($e->getMessage()),
+                    'workosAuthError' => $this->translate($this->errorMessageResolver->resolveAuthentication($e->getMessage())),
                 ]
             );
         }
@@ -422,7 +424,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             $params['workosAuthNotice'] = $this->translate('message.verificationCodeResent');
         } catch (\Throwable $e) {
             $this->logger?->error('WorkOS backend email verify resend error: ' . SecretRedactor::redact($e->getMessage()));
-            $params['workosAuthError'] = $this->sanitizeErrorMessage($e->getMessage());
+            $params['workosAuthError'] = $this->translate($this->errorMessageResolver->resolveAuthentication($e->getMessage()));
         }
 
         return $this->redirectToLogin($backendBasePath, $params);
@@ -454,27 +456,6 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
     private function redirectToLoginWithError(string $backendBasePath, string $message): ResponseInterface
     {
         return $this->redirectToLogin($backendBasePath, ['workosAuthError' => $message]);
-    }
-
-    private function sanitizeErrorMessage(string $message): string
-    {
-        $lower = strtolower($message);
-        if (str_contains($lower, 'password') || str_contains($lower, 'credentials') || str_contains($lower, 'unauthorized')) {
-            return $this->translate('error.invalidEmailOrPassword');
-        }
-        if (str_contains($lower, 'magic') && (str_contains($lower, 'not enabled') || str_contains($lower, 'disabled'))) {
-            return $this->translate('error.magicAuthDisabled');
-        }
-        if (str_contains($lower, 'authentication_method_not_allowed') || str_contains($lower, 'method_not_allowed')) {
-            return $this->translate('error.methodNotAllowed');
-        }
-        if (str_contains($lower, 'user_not_found') || str_contains($lower, 'not found')) {
-            return $this->translate('error.userNotFound');
-        }
-        // Fallback: stable, translatable generic message. The original
-        // WorkOS text is already logged via SecretRedactor, so we do not
-        // leak it into the redirect URL / browser history / access logs.
-        return $this->translate('error.generic');
     }
 
     private function errorResponse(string $message, int $statusCode): ResponseInterface
