@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Middleware;
+namespace Webconsulting\WorkosAuth\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -20,17 +20,17 @@ use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Middleware\RequestTokenMiddleware;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
-use WebConsulting\WorkosAuth\Security\StateService;
-use WebConsulting\WorkosAuth\Security\WorkosErrorMessageResolver;
-use WebConsulting\WorkosAuth\Service\PathUtility;
-use WebConsulting\WorkosAuth\Service\RequestBody;
-use WebConsulting\WorkosAuth\Service\Typo3SessionService;
-use WebConsulting\WorkosAuth\Service\UserProvisioningService;
-use WebConsulting\WorkosAuth\Service\WorkosAuthenticationService;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\SecretRedactor;
+use Webconsulting\WorkosAuth\Security\StateService;
+use Webconsulting\WorkosAuth\Security\WorkosErrorMessageResolver;
+use Webconsulting\WorkosAuth\Service\PathUtility;
+use Webconsulting\WorkosAuth\Service\RequestBody;
+use Webconsulting\WorkosAuth\Service\Typo3SessionService;
+use Webconsulting\WorkosAuth\Service\UserProvisioningService;
+use Webconsulting\WorkosAuth\Service\WorkosAuthenticationService;
 
 final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAwareInterface
 {

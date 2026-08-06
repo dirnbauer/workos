@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Controller\Backend;
+namespace Webconsulting\WorkosAuth\Controller\Backend;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -19,11 +19,11 @@ use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
-use WebConsulting\WorkosAuth\Security\RequestTokenService;
-use WebConsulting\WorkosAuth\Service\ExtensionSchemaService;
-use WebConsulting\WorkosAuth\Service\PathUtility;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\RequestTokenService;
+use Webconsulting\WorkosAuth\Service\ExtensionSchemaService;
+use Webconsulting\WorkosAuth\Service\PathUtility;
 
 final class McpConfigurationController
 {

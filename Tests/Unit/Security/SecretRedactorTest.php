@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Security;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Security;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
+use Webconsulting\WorkosAuth\Security\SecretRedactor;
 
 final class SecretRedactorTest extends TestCase
 {

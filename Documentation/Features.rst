@@ -172,7 +172,7 @@ The registration in :file:`ext_localconf.php` looks like this:
     ExtensionManagementUtility::addService(
         'workos_auth',
         'auth',
-        \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+        \Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
         [
             'title' => 'WorkOS TYPO3 Authentication Bridge',
             'description' => 'Authenticates TYPO3 FE and BE users after a successful WorkOS login flow.',
@@ -182,7 +182,7 @@ The registration in :file:`ext_localconf.php` looks like this:
             'quality' => 80,
             'os' => '',
             'exec' => '',
-            'className' => \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+            'className' => \Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
         ]
     );
 

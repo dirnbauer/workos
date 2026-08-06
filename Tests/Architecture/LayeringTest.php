@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Architecture;
+namespace Webconsulting\WorkosAuth\Tests\Architecture;
 
 use PHPat\Selector\Selector;
 use PHPat\Test\Builder\Rule;
 use PHPat\Test\PHPat;
-use WebConsulting\WorkosAuth\Controller\Backend\SetupAssistantController;
-use WebConsulting\WorkosAuth\Controller\Backend\UserManagementController;
-use WebConsulting\WorkosAuth\Controller\Frontend\AccountController;
-use WebConsulting\WorkosAuth\Controller\Frontend\LoginController;
-use WebConsulting\WorkosAuth\Controller\Frontend\TeamController;
+use Webconsulting\WorkosAuth\Controller\Backend\SetupAssistantController;
+use Webconsulting\WorkosAuth\Controller\Backend\UserManagementController;
+use Webconsulting\WorkosAuth\Controller\Frontend\AccountController;
+use Webconsulting\WorkosAuth\Controller\Frontend\LoginController;
+use Webconsulting\WorkosAuth\Controller\Frontend\TeamController;
 
 /**
  * Architecture rules enforced via phpat + PHPStan.
@@ -31,15 +31,15 @@ final class LayeringTest
     {
         return PHPat::rule()
             ->classes(
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Service'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Security'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Middleware'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\LoginProvider'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\EventListener'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Configuration'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Service'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Security'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Middleware'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\LoginProvider'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\EventListener'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Configuration'),
             )
             ->shouldNotDependOn()
-            ->classes(Selector::inNamespace('WebConsulting\\WorkosAuth\\Controller'));
+            ->classes(Selector::inNamespace('Webconsulting\\WorkosAuth\\Controller'));
     }
 
     /**
@@ -67,15 +67,15 @@ final class LayeringTest
     public function testSecurityIsSelfContained(): Rule
     {
         return PHPat::rule()
-            ->classes(Selector::inNamespace('WebConsulting\\WorkosAuth\\Security'))
+            ->classes(Selector::inNamespace('Webconsulting\\WorkosAuth\\Security'))
             ->shouldNotDependOn()
             ->classes(
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Controller'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Middleware'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\LoginProvider'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\EventListener'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Service'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Configuration'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Controller'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Middleware'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\LoginProvider'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\EventListener'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Service'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Configuration'),
             );
     }
 
@@ -87,13 +87,13 @@ final class LayeringTest
     public function testServicesDoNotDependOnOutboundLayers(): Rule
     {
         return PHPat::rule()
-            ->classes(Selector::inNamespace('WebConsulting\\WorkosAuth\\Service'))
+            ->classes(Selector::inNamespace('Webconsulting\\WorkosAuth\\Service'))
             ->shouldNotDependOn()
             ->classes(
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Controller'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\Middleware'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\LoginProvider'),
-                Selector::inNamespace('WebConsulting\\WorkosAuth\\EventListener'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Controller'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\Middleware'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\LoginProvider'),
+                Selector::inNamespace('Webconsulting\\WorkosAuth\\EventListener'),
             );
     }
 }

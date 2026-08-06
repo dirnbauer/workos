@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Security;
+namespace Webconsulting\WorkosAuth\Security;
 
 /**
  * Maps raw WorkOS / SDK error text to stable translation keys.

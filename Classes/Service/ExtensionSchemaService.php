@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Service;
+namespace Webconsulting\WorkosAuth\Service;
 
 use TYPO3\CMS\Core\Database\Schema\SchemaMigrator;
 use TYPO3\CMS\Core\Database\Schema\SqlReader;

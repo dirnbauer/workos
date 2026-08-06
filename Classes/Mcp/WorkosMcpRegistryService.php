@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Mcp;
+namespace Webconsulting\WorkosAuth\Mcp;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
-use WebConsulting\WorkosAuth\Service\WorkosClientFactory;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Security\SecretRedactor;
+use Webconsulting\WorkosAuth\Service\WorkosClientFactory;
 use WorkOS\Resource\AuthorizedConnectApplicationListData;
 
 final class WorkosMcpRegistryService implements LoggerAwareInterface

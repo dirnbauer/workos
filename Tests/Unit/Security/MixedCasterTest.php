@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Security;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Security;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
 
 final class MixedCasterTest extends TestCase
 {

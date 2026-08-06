@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use WebConsulting\WorkosAuth\Middleware\BackendWorkosAuthMiddleware;
-use WebConsulting\WorkosAuth\Middleware\FrontendWorkosAuthMiddleware;
-use WebConsulting\WorkosAuth\Middleware\McpServerMiddleware;
+use Webconsulting\WorkosAuth\Middleware\BackendWorkosAuthMiddleware;
+use Webconsulting\WorkosAuth\Middleware\FrontendWorkosAuthMiddleware;
+use Webconsulting\WorkosAuth\Middleware\McpServerMiddleware;
 
 return [
     'frontend' => [

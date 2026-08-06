@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\LoginProvider;
+namespace Webconsulting\WorkosAuth\LoginProvider;
 
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
@@ -16,10 +16,10 @@ use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\View\ViewInterface;
 use TYPO3\CMS\Fluid\View\FluidViewAdapter;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
-use WebConsulting\WorkosAuth\Security\StateService;
-use WebConsulting\WorkosAuth\Service\PathUtility;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\StateService;
+use Webconsulting\WorkosAuth\Service\PathUtility;
 
 final class WorkosBackendLoginProvider implements LoginProviderInterface
 {

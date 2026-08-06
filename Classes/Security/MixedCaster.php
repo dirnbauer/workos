@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Security;
+namespace Webconsulting\WorkosAuth\Security;
 
 /**
  * Deterministic narrowing from `mixed` to scalar types.

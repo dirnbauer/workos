@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Security;
+namespace Webconsulting\WorkosAuth\Security;
 
 /**
  * Redact secrets (WorkOS API keys, client secrets, bearer tokens)

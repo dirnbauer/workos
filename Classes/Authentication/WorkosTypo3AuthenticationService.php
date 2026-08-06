@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Authentication;
+namespace Webconsulting\WorkosAuth\Authentication;
 
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Authentication\AbstractAuthenticationService;
 use TYPO3\CMS\Core\Authentication\LoginType;
 
-use WebConsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
 
 final class WorkosTypo3AuthenticationService extends AbstractAuthenticationService
 {

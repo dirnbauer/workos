@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Middleware;
+namespace Webconsulting\WorkosAuth\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -16,13 +16,13 @@ use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Site\Entity\Site;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
-use WebConsulting\WorkosAuth\Service\PathUtility;
-use WebConsulting\WorkosAuth\Service\Typo3SessionService;
-use WebConsulting\WorkosAuth\Service\UserProvisioningService;
-use WebConsulting\WorkosAuth\Service\WorkosAuthenticationService;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\SecretRedactor;
+use Webconsulting\WorkosAuth\Service\PathUtility;
+use Webconsulting\WorkosAuth\Service\Typo3SessionService;
+use Webconsulting\WorkosAuth\Service\UserProvisioningService;
+use Webconsulting\WorkosAuth\Service\WorkosAuthenticationService;
 
 final class FrontendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAwareInterface
 {

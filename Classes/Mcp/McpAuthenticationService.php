@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Mcp;
+namespace Webconsulting\WorkosAuth\Mcp;
 
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
@@ -11,9 +11,9 @@ use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\RequestFactory;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
-use WebConsulting\WorkosAuth\Service\IdentityService;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Service\IdentityService;
 
 final class McpAuthenticationService
 {

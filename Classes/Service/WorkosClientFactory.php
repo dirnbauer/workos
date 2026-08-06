@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Service;
+namespace Webconsulting\WorkosAuth\Service;
 
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WorkOS\Service\AdminPortal;
 use WorkOS\Service\MultiFactorAuth;
 use WorkOS\Service\Organizations;

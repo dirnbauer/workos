@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Authentication;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Authentication;
 
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
-use WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
+use Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
 
 final class WorkosTypo3AuthenticationServiceTest extends TestCase
 {

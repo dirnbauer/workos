@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\EventListener;
+namespace Webconsulting\WorkosAuth\EventListener;
 
 use TYPO3\CMS\Core\Attribute\AsEventListener;
 use TYPO3\CMS\Core\Authentication\Event\BeforeRequestTokenProcessedEvent;
 use TYPO3\CMS\Core\Security\RequestToken;
-use WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
+use Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
 
 #[AsEventListener('workos-auth/allow-pending-login-request-token')]
 final class AllowPendingWorkosLoginRequestTokenListener

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Controller\Frontend;
+namespace Webconsulting\WorkosAuth\Controller\Frontend;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
@@ -10,18 +10,18 @@ use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
-use WebConsulting\WorkosAuth\Security\RequestTokenService;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
-use WebConsulting\WorkosAuth\Security\WorkosErrorMessageResolver;
-use WebConsulting\WorkosAuth\Service\IdentityService;
-use WebConsulting\WorkosAuth\Service\PathUtility;
-use WebConsulting\WorkosAuth\Service\RequestBody;
-use WebConsulting\WorkosAuth\Service\Typo3SessionService;
-use WebConsulting\WorkosAuth\Service\UserProvisioningService;
-use WebConsulting\WorkosAuth\Service\WorkosAuthenticationService;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\RequestTokenService;
+use Webconsulting\WorkosAuth\Security\SecretRedactor;
+use Webconsulting\WorkosAuth\Security\WorkosErrorMessageResolver;
+use Webconsulting\WorkosAuth\Service\IdentityService;
+use Webconsulting\WorkosAuth\Service\PathUtility;
+use Webconsulting\WorkosAuth\Service\RequestBody;
+use Webconsulting\WorkosAuth\Service\Typo3SessionService;
+use Webconsulting\WorkosAuth\Service\UserProvisioningService;
+use Webconsulting\WorkosAuth\Service\WorkosAuthenticationService;
 
 final class LoginController extends ActionController implements LoggerAwareInterface
 {

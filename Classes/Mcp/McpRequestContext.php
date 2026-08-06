@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Mcp;
+namespace Webconsulting\WorkosAuth\Mcp;
 
 final class McpRequestContext
 {

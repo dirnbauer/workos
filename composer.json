@@ -26,7 +26,7 @@
         "source": "https://github.com/dirnbauer/workos"
     },
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "typo3/cms-backend": "^14.3",
         "typo3/cms-core": "^14.3",
         "typo3/cms-extbase": "^14.3",
@@ -51,12 +51,12 @@
     },
     "autoload": {
         "psr-4": {
-            "WebConsulting\\WorkosAuth\\": "Classes/"
+            "Webconsulting\\WorkosAuth\\": "Classes/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "WebConsulting\\WorkosAuth\\Tests\\": "Tests/"
+            "Webconsulting\\WorkosAuth\\Tests\\": "Tests/"
         }
     },
     "config": {
@@ -86,7 +86,7 @@
     "extra": {
         "typo3/cms": {
             "extension-key": "workos_auth",
-            "version": "1.1.0",
+            "version": "2.0.0",
             "Package": {
                 "providesPackages": {}
             }

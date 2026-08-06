@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Service;
+namespace Webconsulting\WorkosAuth\Service;
 
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
 
 final class IdentityService
 {

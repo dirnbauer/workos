@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Configuration;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Configuration;
 
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 
 final class WorkosConfigurationTest extends TestCase
 {

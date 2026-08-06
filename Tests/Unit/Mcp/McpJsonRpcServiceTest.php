@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Mcp;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Mcp;
 
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Mcp\McpJsonRpcService;
-use WebConsulting\WorkosAuth\Mcp\McpRequestContext;
-use WebConsulting\WorkosAuth\Mcp\WorkosMcpRegistryService;
-use WebConsulting\WorkosAuth\Service\WorkosClientFactory;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Mcp\McpJsonRpcService;
+use Webconsulting\WorkosAuth\Mcp\McpRequestContext;
+use Webconsulting\WorkosAuth\Mcp\WorkosMcpRegistryService;
+use Webconsulting\WorkosAuth\Service\WorkosClientFactory;
 
 final class McpJsonRpcServiceTest extends TestCase
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Controller\Backend;
+namespace Webconsulting\WorkosAuth\Controller\Backend;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -20,13 +20,13 @@ use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
-use WebConsulting\WorkosAuth\Security\RequestTokenService;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
-use WebConsulting\WorkosAuth\Service\IdentityService;
-use WebConsulting\WorkosAuth\Service\RequestBody;
-use WebConsulting\WorkosAuth\Service\WorkosClientFactory;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\RequestTokenService;
+use Webconsulting\WorkosAuth\Security\SecretRedactor;
+use Webconsulting\WorkosAuth\Service\IdentityService;
+use Webconsulting\WorkosAuth\Service\RequestBody;
+use Webconsulting\WorkosAuth\Service\WorkosClientFactory;
 use WorkOS\Exception\ConflictException;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\OrganizationMembershipStatus;

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Functional\Service;
+namespace Webconsulting\WorkosAuth\Tests\Functional\Service;
 
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
-use WebConsulting\WorkosAuth\Service\IdentityService;
-use WebConsulting\WorkosAuth\Service\UserProvisioningService;
+use Webconsulting\WorkosAuth\Service\IdentityService;
+use Webconsulting\WorkosAuth\Service\UserProvisioningService;
 use WorkOS\Resource\User;
 
 /**

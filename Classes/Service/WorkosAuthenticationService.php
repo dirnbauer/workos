@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Service;
+namespace Webconsulting\WorkosAuth\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Site\Entity\Site;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
-use WebConsulting\WorkosAuth\Security\StateService;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\StateService;
 use WorkOS\Resource\User;
 use WorkOS\Resource\UserManagementAuthenticationProvider;
 use WorkOS\Resource\UserManagementAuthenticationScreenHint;

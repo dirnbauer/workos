@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Functional\Service;
+namespace Webconsulting\WorkosAuth\Tests\Functional\Service;
 
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\WorkspaceAspect;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
-use WebConsulting\WorkosAuth\Service\IdentityService;
+use Webconsulting\WorkosAuth\Service\IdentityService;
 
 /**
  * Verifies that identity lookups remain transparent when a workspace

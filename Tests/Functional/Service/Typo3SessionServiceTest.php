@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Functional\Service;
+namespace Webconsulting\WorkosAuth\Tests\Functional\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\NullLogger;
@@ -12,7 +12,7 @@ use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
-use WebConsulting\WorkosAuth\Service\Typo3SessionService;
+use Webconsulting\WorkosAuth\Service\Typo3SessionService;
 
 final class Typo3SessionServiceTest extends FunctionalTestCase
 {

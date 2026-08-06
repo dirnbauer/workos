@@ -13,6 +13,17 @@ All notable changes to this extension are documented in this file.
 Unreleased
 ==========
 
+..  _changelog-2-0-0:
+
+2.0.0 — PHP 8.4 and namespace normalization
+============================================
+
+..  rubric:: Changed
+
+-   Require PHP 8.4 for the TYPO3 14 runtime.
+-   Normalize the public PHP namespace to
+    ``Webconsulting\WorkosAuth``.
+
 ..  _changelog-1-1-0:
 
 1.1.0 — Widget CORS configuration
@@ -248,7 +259,7 @@ internal hardening and test coverage uplift.
 ..  rubric:: Quality
 
 -   PHPStan moves from level 9 to **level max** with zero errors.
--   New ``WebConsulting\WorkosAuth\Configuration\WorkosSettings``
+-   New ``Webconsulting\WorkosAuth\Configuration\WorkosSettings``
     array-shape alias makes ``WorkosConfiguration::all()`` return a
     fully-typed settings record so getters no longer need to cast
     ``mixed`` values.

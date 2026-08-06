@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\EventListener;
+namespace Webconsulting\WorkosAuth\Tests\Unit\EventListener;
 
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -11,8 +11,8 @@ use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
-use WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
-use WebConsulting\WorkosAuth\EventListener\AllowPendingWorkosLoginRequestTokenListener;
+use Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
+use Webconsulting\WorkosAuth\EventListener\AllowPendingWorkosLoginRequestTokenListener;
 
 final class AllowPendingWorkosLoginRequestTokenListenerTest extends TestCase
 {

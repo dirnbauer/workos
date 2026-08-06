@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Authentication;
+namespace Webconsulting\WorkosAuth\Authentication;
 
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Middleware;
+namespace Webconsulting\WorkosAuth\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -14,13 +14,13 @@ use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Site\Entity\Site;
-use WebConsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WebConsulting\WorkosAuth\Mcp\McpAuthenticationException;
-use WebConsulting\WorkosAuth\Mcp\McpAuthenticationService;
-use WebConsulting\WorkosAuth\Mcp\McpJsonRpcService;
-use WebConsulting\WorkosAuth\Mcp\McpRequestContext;
-use WebConsulting\WorkosAuth\Security\SecretRedactor;
-use WebConsulting\WorkosAuth\Service\PathUtility;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Mcp\McpAuthenticationException;
+use Webconsulting\WorkosAuth\Mcp\McpAuthenticationService;
+use Webconsulting\WorkosAuth\Mcp\McpJsonRpcService;
+use Webconsulting\WorkosAuth\Mcp\McpRequestContext;
+use Webconsulting\WorkosAuth\Security\SecretRedactor;
+use Webconsulting\WorkosAuth\Service\PathUtility;
 
 final class McpServerMiddleware implements MiddlewareInterface, LoggerAwareInterface
 {

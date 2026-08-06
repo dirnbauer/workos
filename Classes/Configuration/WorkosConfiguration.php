@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Configuration;
+namespace Webconsulting\WorkosAuth\Configuration;
 
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
-use WebConsulting\WorkosAuth\Security\MixedCaster;
-use WebConsulting\WorkosAuth\Service\PathUtility;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Service\PathUtility;
 
 /**
  * @phpstan-type WorkosSettings array{

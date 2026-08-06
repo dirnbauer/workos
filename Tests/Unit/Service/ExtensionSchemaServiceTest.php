@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Service;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Service;
 
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Database\Schema\SchemaMigrator;
 use TYPO3\CMS\Core\Database\Schema\SqlReader;
-use WebConsulting\WorkosAuth\Service\ExtensionSchemaService;
+use Webconsulting\WorkosAuth\Service\ExtensionSchemaService;
 
 final class ExtensionSchemaServiceTest extends TestCase
 {

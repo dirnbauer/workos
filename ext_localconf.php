@@ -34,10 +34,10 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
         'WorkosAuth',
         'Login',
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,signUp,signUpSubmit,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify,verifyEmail,verifyEmailSubmit,verifyEmailResend',
+            \Webconsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,signUp,signUpSubmit,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify,verifyEmail,verifyEmailSubmit,verifyEmailResend',
         ],
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,signUp,signUpSubmit,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify,verifyEmail,verifyEmailSubmit,verifyEmailResend',
+            \Webconsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,signUp,signUpSubmit,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify,verifyEmail,verifyEmailSubmit,verifyEmailResend',
         ]
     );
 
@@ -45,10 +45,10 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
         'WorkosAuth',
         'Account',
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\AccountController::class => 'dashboard,updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession',
+            \Webconsulting\WorkosAuth\Controller\Frontend\AccountController::class => 'dashboard,updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession',
         ],
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\AccountController::class => 'dashboard,updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession',
+            \Webconsulting\WorkosAuth\Controller\Frontend\AccountController::class => 'dashboard,updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession',
         ]
     );
 
@@ -56,17 +56,17 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
         'WorkosAuth',
         'Team',
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'dashboard,invite,resendInvitation,revokeInvitation,launchPortal',
+            \Webconsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'dashboard,invite,resendInvitation,revokeInvitation,launchPortal',
         ],
         [
-            \WebConsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'dashboard,invite,resendInvitation,revokeInvitation,launchPortal',
+            \Webconsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'dashboard,invite,resendInvitation,revokeInvitation,launchPortal',
         ]
     );
 
     ExtensionManagementUtility::addService(
         'workos_auth',
         'auth',
-        \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+        \Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
         [
             'title' => 'WorkOS TYPO3 Authentication Bridge',
             'description' => 'Authenticates TYPO3 FE and BE users after a successful WorkOS login flow.',
@@ -76,7 +76,7 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
             'quality' => 80,
             'os' => '',
             'exec' => '',
-            'className' => \WebConsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+            'className' => \Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
         ]
     );
 
@@ -87,7 +87,7 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
     $providers = is_array($backend['loginProviders'] ?? null) ? $backend['loginProviders'] : [];
 
     $providers[1744276800] = [
-        'provider' => \WebConsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider::class,
+        'provider' => \Webconsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider::class,
         'sorting' => 60,
         'iconIdentifier' => 'workos-auth-logo',
         'label' => 'workos_auth.messages:loginprovider.label',

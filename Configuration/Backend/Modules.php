@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use WebConsulting\WorkosAuth\Controller\Backend\McpConfigurationController;
-use WebConsulting\WorkosAuth\Controller\Backend\SetupAssistantController;
-use WebConsulting\WorkosAuth\Controller\Backend\UserManagementController;
+use Webconsulting\WorkosAuth\Controller\Backend\McpConfigurationController;
+use Webconsulting\WorkosAuth\Controller\Backend\SetupAssistantController;
+use Webconsulting\WorkosAuth\Controller\Backend\UserManagementController;
 
 return [
     // WorkOS admin modules operate on extension configuration and the

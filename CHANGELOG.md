@@ -4,6 +4,13 @@ The full, versioned release history is [Documentation/Changelog.rst](Documentati
 
 ## Unreleased
 
+## 2.0.0 - 2026-08-06
+
+### Changed
+
+- Require PHP 8.4 for the TYPO3 14 runtime.
+- Normalize the public PHP namespace to `Webconsulting\\WorkosAuth` across runtime code, configuration, tests and documentation.
+
 ## 1.0.0 - 2026-05-24
 
 ### Changed

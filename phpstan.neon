@@ -28,6 +28,6 @@ parameters:
 
 services:
     -
-        class: WebConsulting\WorkosAuth\Tests\Architecture\LayeringTest
+        class: Webconsulting\WorkosAuth\Tests\Architecture\LayeringTest
         tags:
             - phpat.test

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Security;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Security;
 
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Context\Context;
@@ -10,7 +10,7 @@ use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use WebConsulting\WorkosAuth\Security\RequestTokenService;
+use Webconsulting\WorkosAuth\Security\RequestTokenService;
 
 final class RequestTokenServiceTest extends TestCase
 {

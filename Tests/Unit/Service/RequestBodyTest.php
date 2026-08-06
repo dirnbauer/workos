@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Service;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Service;
 
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
-use WebConsulting\WorkosAuth\Service\RequestBody;
+use Webconsulting\WorkosAuth\Service\RequestBody;
 
 final class RequestBodyTest extends TestCase
 {

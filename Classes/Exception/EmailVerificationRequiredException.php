@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Exception;
+namespace Webconsulting\WorkosAuth\Exception;
 
 /**
  * Thrown when WorkOS returns `email_verification_required` during

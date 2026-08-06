@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Service;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Service;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
-use WebConsulting\WorkosAuth\Service\PathUtility;
+use Webconsulting\WorkosAuth\Service\PathUtility;
 
 final class PathUtilityTest extends TestCase
 {

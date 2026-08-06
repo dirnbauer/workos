@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebConsulting\WorkosAuth\Tests\Unit\Security;
+namespace Webconsulting\WorkosAuth\Tests\Unit\Security;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -10,7 +10,7 @@ use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
-use WebConsulting\WorkosAuth\Security\StateService;
+use Webconsulting\WorkosAuth\Security\StateService;
 
 final class StateServiceTest extends TestCase
 {
