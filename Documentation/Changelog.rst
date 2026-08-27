@@ -13,6 +13,15 @@ All notable changes to this extension are documented in this file.
 Unreleased
 ==========
 
+..  rubric:: Security
+
+-   Require WorkOS MCP bearer tokens to target the exact TYPO3 MCP
+    resource audience and carry a future expiration time.
+-   Require TYPO3 14.3.6 or newer and explicitly reject vulnerable
+    ``paragonie/sodium_compat`` versions.
+-   Update the WorkOS widget build from vulnerable esbuild 0.24 to
+    esbuild 0.28.
+
 ..  _changelog-2-0-0:
 
 2.0.0 — PHP 8.4 and namespace normalization

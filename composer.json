@@ -27,12 +27,15 @@
     },
     "require": {
         "php": "^8.4",
-        "typo3/cms-backend": "^14.3",
-        "typo3/cms-core": "^14.3",
-        "typo3/cms-extbase": "^14.3",
-        "typo3/cms-fluid": "^14.3",
-        "typo3/cms-frontend": "^14.3",
+        "typo3/cms-backend": "^14.3.6",
+        "typo3/cms-core": "^14.3.6",
+        "typo3/cms-extbase": "^14.3.6",
+        "typo3/cms-fluid": "^14.3.6",
+        "typo3/cms-frontend": "^14.3.6",
         "workos/workos-php": "^5.0.3"
+    },
+    "conflict": {
+        "paragonie/sodium_compat": "<1.24.1 || >=2.0 <2.5.1"
     },
     "require-dev": {
         "infection/infection": "^0.29",
@@ -45,7 +48,7 @@
         "phpunit/phpunit": "^11.5",
         "saschaegerer/phpstan-typo3": "^3.0",
         "symfony/stopwatch": "^7.4",
-        "typo3/cms-workspaces": "^14.3",
+        "typo3/cms-workspaces": "^14.3.6",
         "typo3/coding-standards": "^0.8",
         "typo3/testing-framework": "^9.2"
     },
@@ -86,7 +89,7 @@
     "extra": {
         "typo3/cms": {
             "extension-key": "workos_auth",
-            "version": "2.0.0",
+            "version": "2.0.1",
             "Package": {
                 "providesPackages": {}
             }

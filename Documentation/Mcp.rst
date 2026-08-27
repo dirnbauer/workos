@@ -94,7 +94,8 @@ WorkOS identity linkage belongs in ``tx_workosauth_identity``.
 The MCP request flow uses that table like this:
 
 #.  A WorkOS-authenticated MCP request arrives with a bearer token.
-#.  TYPO3 verifies the token against the configured AuthKit domain.
+#.  TYPO3 verifies the token signature, issuer, expiration and the
+    exact MCP resource audience against the configured AuthKit domain.
 #.  TYPO3 reads the WorkOS user id from the token subject.
 #.  TYPO3 looks for matching ``tx_workosauth_identity`` rows in both
     contexts:

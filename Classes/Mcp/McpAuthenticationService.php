@@ -14,6 +14,7 @@ use TYPO3\CMS\Core\Http\RequestFactory;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Service\IdentityService;
+use Webconsulting\WorkosAuth\Service\PathUtility;
 
 final class McpAuthenticationService
 {
@@ -22,6 +23,7 @@ final class McpAuthenticationService
         private readonly RequestFactory $requestFactory,
         private readonly IdentityService $identityService,
         private readonly ConnectionPool $connectionPool,
+        private readonly McpTokenClaimsValidator $tokenClaimsValidator,
     ) {}
 
     public function authenticate(ServerRequestInterface $request): McpRequestContext
@@ -50,7 +52,11 @@ final class McpAuthenticationService
             );
         }
 
-        $claims = $this->verifyToken($bearerToken, $authkitDomain);
+        $claims = $this->verifyToken(
+            $bearerToken,
+            $authkitDomain,
+            PathUtility::buildAbsoluteUrlFromRequest($request, $this->configuration->getMcpServerPath()),
+        );
         $workosUserId = $this->extractWorkosUserId($claims);
         if ($workosUserId === '') {
             throw McpAuthenticationException::invalidToken();
@@ -104,7 +110,7 @@ final class McpAuthenticationService
     /**
      * @return array<string, mixed>
      */
-    private function verifyToken(string $token, string $authkitDomain): array
+    private function verifyToken(string $token, string $authkitDomain, string $expectedAudience): array
     {
         try {
             $jwks = $this->fetchJwks($authkitDomain);
@@ -124,8 +130,7 @@ final class McpAuthenticationService
             $normalizedClaims[(string)$key] = $value;
         }
 
-        $issuer = MixedCaster::string($claims['iss'] ?? null);
-        if (rtrim($issuer, '/') !== rtrim($authkitDomain, '/')) {
+        if (!$this->tokenClaimsValidator->isValid($normalizedClaims, $authkitDomain, $expectedAudience)) {
             throw McpAuthenticationException::invalidToken();
         }
 
