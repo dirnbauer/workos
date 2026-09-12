@@ -1,8 +1,10 @@
 parameters:
-    # Analyze against PHP 8.3 syntax rules even when CI executes PHPStan
-    # on newer runtimes. PHP 8.5 reports property #[Override] opportunities,
-    # but that attribute target is not valid on PHP 8.3 and lower.
-    phpVersion: 80300
+    # Analyze against the minimum supported runtime (composer.json: php ^8.4)
+    # even when CI executes PHPStan on newer PHP versions, so 8.5-only
+    # constructs are reported instead of silently accepted.
+    phpVersion: 80400
+    # Quality policy: the extension must stay green at level 8 or higher.
+    # It currently passes at "max"; do not lower below 8.
     level: max
     paths:
         - Classes

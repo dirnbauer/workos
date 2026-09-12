@@ -72,19 +72,25 @@
         }
     },
     "scripts": {
-        "cs:fix": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --using-cache=no",
-        "cs:check": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no",
+        "audit": "@composer audit --abandoned=ignore",
         "ci": [
+            "@validate",
+            "@lint",
             "@cs:check",
             "@phpstan",
             "@test:unit",
-            "@test:functional"
+            "@test:functional",
+            "@test:architecture"
         ],
+        "cs:check": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no",
+        "cs:fix": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --using-cache=no",
+        "lint": "Build/Scripts/runTests.sh -s lint",
         "phpstan": "phpstan analyse --memory-limit=1G",
-        "phpstan:baseline": "phpstan analyse --generate-baseline --memory-limit=1G",
-        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml",
+        "test:architecture": "Build/Scripts/runTests.sh -s architecture",
         "test:functional": "phpunit -c Build/phpunit/FunctionalTests.xml",
-        "test:mutation": "infection --threads=4 --no-progress"
+        "test:mutation": "infection --threads=4 --no-progress",
+        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml",
+        "validate": "@composer validate --strict"
     },
     "extra": {
         "typo3/cms": {
