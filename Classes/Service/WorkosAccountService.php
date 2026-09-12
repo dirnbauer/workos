@@ -20,7 +20,7 @@ use WorkOS\Service\PasswordPlaintext;
  * the Account Center plugin: profile updates, password changes,
  * TOTP/MFA enrollment, sessions and organization memberships.
  */
-final class WorkosAccountService
+final readonly class WorkosAccountService
 {
     public function __construct(
         private WorkosConfiguration $configuration,
@@ -155,9 +155,7 @@ final class WorkosAccountService
     public function listOrganizationMemberships(string $workosUserId): array
     {
         $this->assertConfigured();
-        $userManagement = $this->workosClientFactory->createUserManagement();
-
-        $response = $userManagement->listOrganizationMemberships(
+        $response = $this->workosClientFactory->createOrganizationMembership()->listOrganizationMemberships(
             userId: $workosUserId,
             limit: 50,
         );

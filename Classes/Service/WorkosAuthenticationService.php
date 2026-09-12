@@ -6,18 +6,21 @@ namespace Webconsulting\WorkosAuth\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\HttpFoundation\Cookie;
+use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Security\StateService;
+use WorkOS\Exception\ApiException;
+use WorkOS\Resource\RadarStandaloneAssessRequestAction;
 use WorkOS\Resource\User;
+use WorkOS\Resource\UserCreateResponse;
 use WorkOS\Resource\UserManagementAuthenticationProvider;
-use WorkOS\Resource\UserManagementAuthenticationScreenHint;
 use WorkOS\Service\PasswordPlaintext;
 use WorkOS\Service\UserManagement;
 
-final class WorkosAuthenticationService
+final readonly class WorkosAuthenticationService
 {
     public function __construct(
         private WorkosConfiguration $configuration,
@@ -158,22 +161,24 @@ final class WorkosAuthenticationService
         return $value !== null && $value !== '' ? $value : null;
     }
 
+    /**
+     * Only the social providers the login templates offer are forwarded;
+     * everything else falls back to the hosted AuthKit screen.
+     */
     private function resolveProvider(?string $provider): UserManagementAuthenticationProvider
     {
-        return match ($provider) {
-            'AppleOAuth' => UserManagementAuthenticationProvider::AppleOAuth,
-            'GitHubOAuth' => UserManagementAuthenticationProvider::GitHubOAuth,
-            'GoogleOAuth' => UserManagementAuthenticationProvider::GoogleOAuth,
-            'MicrosoftOAuth' => UserManagementAuthenticationProvider::MicrosoftOAuth,
-            default => UserManagementAuthenticationProvider::Authkit,
-        };
+        return $provider !== null && in_array($provider, WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS, true)
+            ? UserManagementAuthenticationProvider::from($provider)
+            : UserManagementAuthenticationProvider::Authkit;
     }
 
-    private function resolveScreenHint(string $screenHint): UserManagementAuthenticationScreenHint
+    /**
+     * workos-php 7.0 replaced the dedicated screen-hint enum with the shared
+     * `RadarStandaloneAssessRequestAction` (`sign-in` / `sign-up`).
+     */
+    private function resolveScreenHint(string $screenHint): RadarStandaloneAssessRequestAction
     {
-        return $screenHint === UserManagementAuthenticationScreenHint::SignUp->value
-            ? UserManagementAuthenticationScreenHint::SignUp
-            : UserManagementAuthenticationScreenHint::SignIn;
+        return RadarStandaloneAssessRequestAction::tryFrom($screenHint) ?? RadarStandaloneAssessRequestAction::SignIn;
     }
 
     /**
@@ -235,51 +240,38 @@ final class WorkosAuthenticationService
     }
 
     /**
-     * Inspect a WorkOS exception and, if it is a
+     * Inspect a WorkOS API exception and, if it is an
      * `email_verification_required` error, re-throw a typed
      * EmailVerificationRequiredException carrying the handshake data.
+     *
+     * The SDK exposes the full decoded error body via `ApiException::$rawBody`;
+     * the pending token lives there, not in the human-readable message.
      */
     private function rethrowEmailVerificationException(\Throwable $exception, string $email): void
     {
+        if (!$exception instanceof ApiException) {
+            return;
+        }
+
         $message = $exception->getMessage();
-        if (!str_contains($message, 'email_verification_required')
+        if ($exception->errorCode !== 'email_verification_required'
+            && !str_contains($message, 'email_verification_required')
             && !str_contains($message, 'Email ownership must be verified')
         ) {
             return;
         }
 
-        $pendingToken = '';
-        $verificationId = '';
-        $workosEmail = $email;
-        $userId = '';
-
-        $decoded = json_decode($message, true);
-        if (is_array($decoded)) {
-            $pendingToken = MixedCaster::string($decoded['pending_authentication_token'] ?? null);
-            $verificationId = MixedCaster::string($decoded['email_verification_id'] ?? null);
-            $workosEmail = MixedCaster::string($decoded['email'] ?? $email, $email);
-            $userId = MixedCaster::string($decoded['user_id'] ?? $decoded['userId'] ?? null);
-        }
-
-        if ($pendingToken === '') {
-            $responseBody = $this->extractResponseBodyJson($exception);
-            if ($responseBody !== null) {
-                $pendingToken = MixedCaster::string($responseBody['pending_authentication_token'] ?? $pendingToken, $pendingToken);
-                $verificationId = MixedCaster::string($responseBody['email_verification_id'] ?? $verificationId, $verificationId);
-                $workosEmail = MixedCaster::string($responseBody['email'] ?? $workosEmail, $workosEmail);
-                $userId = MixedCaster::string($responseBody['user_id'] ?? $responseBody['userId'] ?? $userId, $userId);
-            }
-        }
-
+        $body = $exception->rawBody ?? [];
+        $pendingToken = MixedCaster::string($body['pending_authentication_token'] ?? null);
         if ($pendingToken === '') {
             return;
         }
 
         throw new EmailVerificationRequiredException(
             pendingAuthenticationToken: $pendingToken,
-            email: $workosEmail,
-            emailVerificationId: $verificationId,
-            userId: $userId,
+            email: MixedCaster::string($body['email'] ?? null, $email),
+            emailVerificationId: MixedCaster::string($body['email_verification_id'] ?? null),
+            userId: MixedCaster::string($body['user_id'] ?? $body['userId'] ?? null),
         );
     }
 
@@ -321,7 +313,11 @@ final class WorkosAuthenticationService
         return ['workosUser' => $this->enrichUser($userManagement, $response->user)];
     }
 
-    public function createUser(string $email, string $password, string $firstName = '', string $lastName = ''): User
+    /**
+     * workos-php 8.0 returns a dedicated `UserCreateResponse` (same shape as
+     * `User` plus `radarAuthAttemptId`) from the create endpoint.
+     */
+    public function createUser(string $email, string $password, string $firstName = '', string $lastName = ''): UserCreateResponse
     {
         $this->assertBaseConfiguration();
         $userManagement = $this->workosClientFactory->createUserManagement();
@@ -357,45 +353,13 @@ final class WorkosAuthenticationService
     private function getRemoteAddress(ServerRequestInterface $request): ?string
     {
         $normalizedParams = $request->getAttribute('normalizedParams');
-        if (is_object($normalizedParams) && method_exists($normalizedParams, 'getRemoteAddress')) {
-            $value = $normalizedParams->getRemoteAddress();
-            return is_string($value) && $value !== '' ? $value : null;
-        }
-
-        return null;
+        return $normalizedParams instanceof NormalizedParams
+            ? self::nullIfEmpty($normalizedParams->getRemoteAddress())
+            : null;
     }
 
     private function getUserAgent(ServerRequestInterface $request): ?string
     {
-        $userAgent = trim($request->getHeaderLine('User-Agent'));
-        return $userAgent !== '' ? $userAgent : null;
-    }
-
-    /**
-     * WorkOS SDK exceptions expose a dynamic `$response` object with a
-     * `$body` string. Both are undeclared on the base `\Throwable`, so
-     * narrow via closure-based property access.
-     *
-     * @return array<mixed>|null
-     */
-    private function extractResponseBodyJson(\Throwable $exception): ?array
-    {
-        if (!property_exists($exception, 'response')) {
-            return null;
-        }
-        $response = (static fn(\Throwable $e) => $e->{'response'} ?? null)($exception);
-        if (!is_object($response) || !property_exists($response, 'body')) {
-            return null;
-        }
-        $body = (static fn(object $r) => $r->{'body'} ?? null)($response);
-        if (!is_string($body) || $body === '') {
-            return null;
-        }
-        try {
-            $decoded = json_decode($body, true);
-            return is_array($decoded) ? $decoded : null;
-        } catch (\Throwable) {
-            return null;
-        }
+        return self::nullIfEmpty(trim($request->getHeaderLine('User-Agent')));
     }
 }

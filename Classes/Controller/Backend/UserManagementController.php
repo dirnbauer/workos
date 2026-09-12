@@ -175,7 +175,7 @@ final class UserManagementController implements LoggerAwareInterface
         }
 
         try {
-            $this->workosClientFactory->createUserManagement()->createOrganizationMembership(
+            $this->workosClientFactory->createOrganizationMembership()->createOrganizationMembership(
                 $workosUserId,
                 $organizationId,
                 new RoleSingle('admin'),
@@ -229,7 +229,7 @@ final class UserManagementController implements LoggerAwareInterface
                 throw new \RuntimeException('WorkOS did not return an organization id.', 1744320000);
             }
 
-            $this->workosClientFactory->createUserManagement()->createOrganizationMembership(
+            $this->workosClientFactory->createOrganizationMembership()->createOrganizationMembership(
                 $workosUserId,
                 $organizationId,
                 new RoleSingle('admin'),
@@ -321,8 +321,7 @@ final class UserManagementController implements LoggerAwareInterface
     private function resolveOrganizationId(string $workosUserId): string
     {
         try {
-            $userManagement = $this->workosClientFactory->createUserManagement();
-            $result = $userManagement->listOrganizationMemberships(
+            $result = $this->workosClientFactory->createOrganizationMembership()->listOrganizationMemberships(
                 userId: $workosUserId,
                 limit: 10,
             );

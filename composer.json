@@ -32,7 +32,7 @@
         "typo3/cms-extbase": "^14.3.6",
         "typo3/cms-fluid": "^14.3.6",
         "typo3/cms-frontend": "^14.3.6",
-        "workos/workos-php": "^5.0.3"
+        "workos/workos-php": "^9.3"
     },
     "conflict": {
         "paragonie/sodium_compat": "<1.24.1 || >=2.0 <2.5.1"

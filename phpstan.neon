@@ -9,9 +9,6 @@ parameters:
         - Configuration
         - Tests
         - ext_localconf.php
-    stubFiles:
-        - Build/phpstan/stubs/WorkOsResources.stub
-        - Build/phpstan/stubs/WorkOsClients.stub
     tmpDir: var/cache/phpstan
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true
@@ -19,6 +16,7 @@ parameters:
     typo3:
         containerXmlPath: null
         requestGetAttributeMapping:
+            'backend.user': 'TYPO3\CMS\Core\Authentication\BackendUserAuthentication'
             'frontend.user': 'TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication'
             normalizedParams: 'TYPO3\CMS\Core\Http\NormalizedParams'
             site: 'TYPO3\CMS\Core\Site\Entity\Site'

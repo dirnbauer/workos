@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Webconsulting\WorkosAuth\Service;
 
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use WorkOS\Resource\EventsOrder;
 use WorkOS\Resource\GenerateLinkIntent;
 use WorkOS\Resource\Invitation;
 use WorkOS\Resource\Organization;
 use WorkOS\Resource\OrganizationMembershipStatus;
+use WorkOS\Resource\PaginationOrder;
 use WorkOS\Resource\PortalLinkResponse;
 use WorkOS\Resource\UserInvite;
 use WorkOS\Resource\UserOrganizationMembership;
@@ -20,7 +20,7 @@ use WorkOS\Resource\UserOrganizationMembership;
  * customer admins can self-serve SSO, Directory Sync, Audit Logs,
  * Domain Verification and certificate renewal.
  */
-final class WorkosTeamService
+final readonly class WorkosTeamService
 {
     /**
      * The Team plugin exposes invitation + Admin Portal management
@@ -59,10 +59,9 @@ final class WorkosTeamService
     public function listAdminOrganizations(string $workosUserId): array
     {
         $this->assertConfigured();
-        $userManagement = $this->workosClientFactory->createUserManagement();
         $organizations = $this->workosClientFactory->createOrganizations();
 
-        $response = $userManagement->listOrganizationMemberships(
+        $response = $this->workosClientFactory->createOrganizationMembership()->listOrganizationMemberships(
             userId: $workosUserId,
             limit: 50,
         );
@@ -107,7 +106,7 @@ final class WorkosTeamService
             throw new \RuntimeException('forbidden_organization', 1744278100);
         }
         $this->assertConfigured();
-        $response = $this->workosClientFactory->createUserManagement()->listOrganizationMemberships(
+        $response = $this->workosClientFactory->createOrganizationMembership()->listOrganizationMemberships(
             userId: $workosUserId,
             organizationId: $organizationId,
             limit: 1,
@@ -151,7 +150,7 @@ final class WorkosTeamService
         $response = $this->workosClientFactory->createUserManagement()->listInvitations(
             organizationId: $organizationId,
             limit: $limit,
-            order: EventsOrder::Desc,
+            order: PaginationOrder::Desc,
         );
         return array_values(array_filter(
             $response->data,
