@@ -1,9 +1,23 @@
 # Changelog
 
-## Unreleased
+## 2.1.0 - 2026-09-12
 
-- Security: Require WorkOS MCP bearer tokens to target the exact TYPO3 MCP resource audience and carry a future expiration time.
-- Security: Update TYPO3 and `paragonie/sodium_compat` to their patched releases and update the widget build dependency.
+### Changed
+
+- Require `workos/workos-php` `^9.3` (was `^5.0.3`) and adapt the wrapper services to the regenerated SDK: organization memberships via `OrganizationMembershipService`, AuthKit screen hint via `RadarStandaloneAssessRequestAction`, `PaginationOrder` instead of `EventsOrder`, `createUser()` returns `UserCreateResponse`, email-verification handshake data read from `ApiException::$rawBody`. The hand-written PHPStan SDK stubs are gone.
+- Modernized the code for PHP 8.4 / TYPO3 14: shared `LabelTranslator`, `AbstractFrontendController` and `ResponseUtility`, readonly services with typed constants, `#[Autoconfigure(public: true)]` instead of `Services.yaml` entries, request attributes instead of `$GLOBALS['BE_USER']` / `$_SERVER` in the backend User Management module.
+- Bundled WorkOS User Management widget updated to `@workos-inc/widgets` 1.18.0.
+- Single `ci.yml` workflow: lint, coding standards, PHPStan (level max, policy minimum level 8), unit (PHP 8.4, PHP 8.5 allowed to fail), functional (MariaDB 10.11), architecture.
+- README slimmed to a quick start; details moved into `Documentation/`.
+
+### Removed
+
+- Unreferenced `WorkosBackendUserAuthentication` / `WorkosFrontendUserAuthentication` classes and five unused `backend.login.*` labels.
+
+### Security
+
+- Require WorkOS MCP bearer tokens to target the exact TYPO3 MCP resource audience and carry a future expiration time.
+- Update TYPO3 and `paragonie/sodium_compat` to their patched releases and update the widget build dependency.
 
 The full, versioned release history is [Documentation/Changelog.rst](Documentation/Changelog.rst).
 

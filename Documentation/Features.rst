@@ -79,6 +79,21 @@ the pending magic-auth session is cleared and the
 ``pending_authentication_token`` is carried only in the TYPO3
 frontend session for the dedicated email-verification form.
 
+..  _features-template-ownership:
+
+Template ownership
+------------------
+
+The extension ships functional Fluid templates for the WorkOS login,
+account and team plugins. They are authentication UIs, not page-layout
+templates, and must not render TYPO3 page content areas with
+``f:render.contentArea`` or ``f:mark.contentArea``.
+
+Project-specific Bootstrap 5.3 or shadcn/ui styling belongs in the
+consuming sitepackage, where these templates can be overridden alongside
+the rest of the website. Keep ``workos_auth`` focused on the WorkOS
+flow, the TYPO3 session hand-off and safe default markup.
+
 ..  _features-sign-up:
 
 Sign-up form
@@ -278,8 +293,8 @@ Backend modules
 ===============
 
 The extension installs a top-level :guilabel:`WorkOS` menu in the
-TYPO3 backend (registered next to :guilabel:`System`) with two
-admin-only entries. Both modules are limited to the LIVE workspace
+TYPO3 backend (registered next to :guilabel:`System`) with three
+admin-only entries. All modules are limited to the LIVE workspace
 via ``workspaces => 'live'``.
 
 Setup Assistant
@@ -328,6 +343,27 @@ All POST routes (``token``, ``join``, ``createOrganization``) are
 protected by an explicit ``isCurrentBackendUserAdmin()`` check (in
 addition to the module's ``access => 'admin'`` gate) and validate a
 scoped TYPO3 request token before talking to WorkOS.
+
+..  note::
+
+    If the signed-in backend user authenticated with WorkOS but no
+    matching ``be_users`` record exists and ``backendAutoCreateUsers``
+    is off, the login screen shows the "account not linked" card. See
+    :ref:`troubleshooting-not-linked`.
+
+MCP Server
+----------
+
+-   Module identifier: ``workos_mcp``
+-   Path: ``/module/workos/mcp``
+-   Controller: ``McpConfigurationController`` (``indexAction``,
+    ``saveAction``, ``applySchemaAction``)
+
+Dedicated UI for the :ref:`TYPO3 MCP server <mcp>`: endpoint URLs per
+site, authentication mode, AuthKit domain, WorkOS discovery, server
+limit, verbose logging and the WorkOS database schema status. The
+schema action delegates to TYPO3's schema migrator against the
+configured TYPO3 database; no separate WorkOS database is created.
 
 ..  _features-account-center:
 
@@ -547,6 +583,8 @@ Bundled XLIFF files:
     de.locallang_mod_setup.xlf
     locallang_mod_users.xlf  # User Management module
     de.locallang_mod_users.xlf
+    locallang_mod_mcp.xlf    # MCP Server module
+    de.locallang_mod_mcp.xlf
 
 To add another language, create :file:`xx.locallang.xlf` alongside
 the English source — TYPO3 picks it up automatically.
@@ -554,3 +592,50 @@ the English source — TYPO3 picks it up automatically.
 A unit test (``Tests/Unit/Configuration/XliffParityTest``) fails the
 build when an English translation key is missing its German
 counterpart (or vice versa).
+
+..  _features-security:
+
+Security guarantees
+===================
+
+The extension takes an auth-first stance:
+
+-   **Authorization on Team actions**: every Team plugin action verifies
+    that the signed-in WorkOS user is an active organization admin/owner
+    before calling the SDK. Cross-tenant invite, revoke or Admin-Portal
+    link mints via crafted POST bodies are rejected; regular members
+    cannot use the admin workflow.
+-   **CSRF tokens** are enforced on every state-changing action of the
+    Account Center and Team plugins, on every frontend auth POST flow
+    (password, sign-up, magic auth, email verification) and on the
+    backend User Management module's widget-token, join and
+    create-organization routes.
+-   **TYPO3 login-token hand-off stays narrow**: after a WorkOS login
+    succeeds, the extension only swaps to TYPO3's ``core/user-auth/fe``
+    or ``core/user-auth/be`` scope when the request carries the
+    server-created pending-login attribute. Invalid request-token
+    states are never converted.
+-   **Pending WorkOS auth state is session-bound**: frontend
+    email-verification tokens stay in the TYPO3 frontend session;
+    backend magic-auth / email-verification state is stored server-side
+    and bound to an HttpOnly state cookie. Tokens never appear in
+    redirect URLs.
+-   **Object ownership checks**: Account Center factor deletion and
+    session revocation confirm that the posted WorkOS id belongs to the
+    linked WorkOS user before using the API key.
+-   **Admin guard**: the backend ``UserManagementController`` asserts
+    admin rights itself, in addition to the module's
+    ``access => 'admin'`` gate.
+-   **No open redirects**: ``returnTo`` only accepts strict relative
+    paths or absolute URLs on the same scheme, host and port as the
+    request. Protocol-relative and backslash variants fall back to the
+    configured default redirect.
+-   **Secrets never hit logs**: every log entry runs through
+    ``SecretRedactor`` (WorkOS API keys, client ids, bearer tokens,
+    JWTs). Unknown WorkOS error bodies map to a translated
+    ``error.generic``.
+-   **Workspaces-safe**: the identity table is ``adminOnly``,
+    ``hideTable`` and ``versioningWS=false``; the backend modules are
+    ``workspaces => 'live'``.
+
+Audit snapshots are kept in the repository under :file:`docs/audits/`.

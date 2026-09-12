@@ -8,10 +8,44 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
-..  _changelog-unreleased:
+..  _changelog-2-1-0:
 
-Unreleased
-==========
+2.1.0 — WorkOS SDK 9 and modernization
+======================================
+
+..  rubric:: Changed
+
+-   Require ``workos/workos-php`` ``^9.3`` (previously ``^5.0.3``). The
+    wrapper services follow the regenerated SDK surface: organization
+    memberships go through ``OrganizationMembershipService``, the
+    AuthKit screen hint uses ``RadarStandaloneAssessRequestAction``,
+    invitation ordering uses ``PaginationOrder``,
+    ``WorkosAuthenticationService::createUser()`` returns
+    ``UserCreateResponse`` and the ``email_verification_required``
+    handshake data is read from ``ApiException::$rawBody``. The
+    hand-written PHPStan SDK stubs were removed.
+-   Modernized the extension code for PHP 8.4 / TYPO3 14: shared
+    ``LabelTranslator``, ``AbstractFrontendController`` and
+    ``ResponseUtility`` replace duplicated helpers, services are
+    ``readonly`` with typed constants, public services use
+    ``#[Autoconfigure(public: true)]`` instead of ``Services.yaml``
+    entries, and the backend User Management module reads the backend
+    user and host from the PSR-7 request.
+-   Updated the bundled WorkOS User Management widget to
+    ``@workos-inc/widgets`` 1.18.0.
+-   Continuous integration runs from a single :file:`ci.yml` with lint,
+    coding standards, PHPStan (level max, policy minimum level 8), unit
+    (PHP 8.4, PHP 8.5 allowed to fail), functional (MariaDB 10.11) and
+    architecture jobs.
+-   The README is now a short quick start; configuration matrices,
+    dynamic AuthKit parameters, security guarantees and MCP details live
+    in this manual.
+
+..  rubric:: Removed
+
+-   The unreferenced ``WorkosBackendUserAuthentication`` and
+    ``WorkosFrontendUserAuthentication`` classes and five unused
+    ``backend.login.*`` labels.
 
 ..  rubric:: Security
 
