@@ -17,7 +17,7 @@
 ### Security
 
 - Require WorkOS MCP bearer tokens to target the exact TYPO3 MCP resource audience and carry a future expiration time.
-- Update TYPO3 and `paragonie/sodium_compat` to their patched releases and update the widget build dependency.
+- Require TYPO3 14.3.7 or newer (TYPO3-CORE-SA-2026-022) and `paragonie/sodium_compat` patched releases; update the widget build dependency.
 
 The full, versioned release history is [Documentation/Changelog.rst](Documentation/Changelog.rst).
 

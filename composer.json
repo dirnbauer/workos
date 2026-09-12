@@ -27,11 +27,11 @@
     },
     "require": {
         "php": "^8.4",
-        "typo3/cms-backend": "^14.3.6",
-        "typo3/cms-core": "^14.3.6",
-        "typo3/cms-extbase": "^14.3.6",
-        "typo3/cms-fluid": "^14.3.6",
-        "typo3/cms-frontend": "^14.3.6",
+        "typo3/cms-backend": "^14.3.7",
+        "typo3/cms-core": "^14.3.7",
+        "typo3/cms-extbase": "^14.3.7",
+        "typo3/cms-fluid": "^14.3.7",
+        "typo3/cms-frontend": "^14.3.7",
         "workos/workos-php": "^9.3"
     },
     "conflict": {
@@ -48,7 +48,7 @@
         "phpunit/phpunit": "^11.5",
         "saschaegerer/phpstan-typo3": "^3.0",
         "symfony/stopwatch": "^7.4",
-        "typo3/cms-workspaces": "^14.3.6",
+        "typo3/cms-workspaces": "^14.3.7",
         "typo3/coding-standards": "^0.8",
         "typo3/testing-framework": "^9.2"
     },

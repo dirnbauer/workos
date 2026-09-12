@@ -18,7 +18,7 @@ backend widget and a WorkOS-protected **TYPO3 MCP server**.
 
 ## Requirements
 
-- TYPO3 `^14.3.6`, PHP `^8.4`
+- TYPO3 `^14.3.7`, PHP `^8.4`
 - `workos/workos-php` `^9.3` (installed by Composer)
 - A WorkOS account with AuthKit enabled
 
