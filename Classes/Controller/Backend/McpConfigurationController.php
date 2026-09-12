@@ -6,14 +6,13 @@ namespace Webconsulting\WorkosAuth\Controller\Backend;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Security\RequestToken;
@@ -23,23 +22,25 @@ use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Security\RequestTokenService;
 use Webconsulting\WorkosAuth\Service\ExtensionSchemaService;
+use Webconsulting\WorkosAuth\Service\LabelTranslator;
 use Webconsulting\WorkosAuth\Service\PathUtility;
 
-final class McpConfigurationController
+#[Autoconfigure(public: true)]
+final readonly class McpConfigurationController
 {
-    private const REQUEST_TOKEN_SCOPE = 'workos/backend/mcp';
+    private const string REQUEST_TOKEN_SCOPE = 'workos/backend/mcp';
 
     public function __construct(
-        private readonly ModuleTemplateFactory $moduleTemplateFactory,
-        private readonly WorkosConfiguration $configuration,
-        private readonly ExtensionConfiguration $extensionConfiguration,
-        private readonly RequestTokenService $requestTokenService,
-        private readonly UriBuilder $uriBuilder,
-        private readonly FlashMessageService $flashMessageService,
-        private readonly CacheManager $cacheManager,
-        private readonly SiteFinder $siteFinder,
-        private readonly LanguageServiceFactory $languageServiceFactory,
-        private readonly ExtensionSchemaService $extensionSchemaService,
+        private ModuleTemplateFactory $moduleTemplateFactory,
+        private WorkosConfiguration $configuration,
+        private ExtensionConfiguration $extensionConfiguration,
+        private RequestTokenService $requestTokenService,
+        private UriBuilder $uriBuilder,
+        private FlashMessageService $flashMessageService,
+        private CacheManager $cacheManager,
+        private SiteFinder $siteFinder,
+        private LabelTranslator $translator,
+        private ExtensionSchemaService $extensionSchemaService,
     ) {}
 
     public function indexAction(ServerRequestInterface $request): ResponseInterface
@@ -60,7 +61,7 @@ final class McpConfigurationController
             'endpointUrls' => $this->buildEndpointUrls($request, $formValues),
             'modeOptions' => $this->buildModeOptions(MixedCaster::string($formValues['mcpAuthenticationMode'] ?? null)),
         ]);
-        $moduleTemplate->setTitle($this->translate('module.mcp.title'));
+        $moduleTemplate->setTitle($this->translator->translate('module.mcp.title'));
 
         return $moduleTemplate->renderResponse('Backend/McpConfiguration/Index');
     }
@@ -68,7 +69,7 @@ final class McpConfigurationController
     public function saveAction(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE)) {
-            $this->flash($this->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
+            $this->flash($this->translator->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
 
@@ -99,7 +100,7 @@ final class McpConfigurationController
             $this->cacheManager->flushCachesInGroup('system');
         } catch (\Throwable $exception) {
             $this->flash(
-                $this->translate('flash.configSaveError', ['error' => $exception->getMessage()]),
+                $this->translator->translate('flash.configSaveError', ['error' => $exception->getMessage()]),
                 ContextualFeedbackSeverity::ERROR,
             );
             return $this->redirectToIndex();
@@ -107,11 +108,11 @@ final class McpConfigurationController
 
         if ($mcpErrors !== []) {
             $this->flash(
-                $this->translate('module.mcp.flash.savedWithWarnings', ['errors' => implode(' ', $mcpErrors)]),
+                $this->translator->translate('module.mcp.flash.savedWithWarnings', ['errors' => implode(' ', $mcpErrors)]),
                 ContextualFeedbackSeverity::WARNING,
             );
         } else {
-            $this->flash($this->translate('module.mcp.flash.saved'), ContextualFeedbackSeverity::OK);
+            $this->flash($this->translator->translate('module.mcp.flash.saved'), ContextualFeedbackSeverity::OK);
         }
 
         return $this->redirectToIndex();
@@ -120,7 +121,7 @@ final class McpConfigurationController
     public function applySchemaAction(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE)) {
-            $this->flash($this->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
+            $this->flash($this->translator->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
             return $this->redirectToIndex();
         }
 
@@ -128,7 +129,7 @@ final class McpConfigurationController
             $result = $this->extensionSchemaService->applyPendingUpdates();
         } catch (\Throwable $exception) {
             $this->flash(
-                $this->translate('module.mcp.schema.flash.error', ['error' => $exception->getMessage()]),
+                $this->translator->translate('module.mcp.schema.flash.error', ['error' => $exception->getMessage()]),
                 ContextualFeedbackSeverity::ERROR,
             );
             return $this->redirectToIndex();
@@ -136,7 +137,7 @@ final class McpConfigurationController
 
         if ($result['errors'] !== []) {
             $this->flash(
-                $this->translate('module.mcp.schema.flash.partial', [
+                $this->translator->translate('module.mcp.schema.flash.partial', [
                     'count' => $result['appliedCount'],
                     'errors' => implode(' ', array_values($result['errors'])),
                 ]),
@@ -146,12 +147,12 @@ final class McpConfigurationController
         }
 
         if ($result['appliedCount'] === 0) {
-            $this->flash($this->translate('module.mcp.schema.flash.upToDate'), ContextualFeedbackSeverity::OK);
+            $this->flash($this->translator->translate('module.mcp.schema.flash.upToDate'), ContextualFeedbackSeverity::OK);
             return $this->redirectToIndex();
         }
 
         $this->flash(
-            $this->translate('module.mcp.schema.flash.applied', ['count' => $result['appliedCount']]),
+            $this->translator->translate('module.mcp.schema.flash.applied', ['count' => $result['appliedCount']]),
             ContextualFeedbackSeverity::OK,
         );
 
@@ -190,7 +191,7 @@ final class McpConfigurationController
     private function buildEndpointUrls(ServerRequestInterface $request, array $formValues): array
     {
         $urls = [[
-            'label' => $this->translate('module.mcp.endpoints.currentHost'),
+            'label' => $this->translator->translate('module.mcp.endpoints.currentHost'),
             'endpoint' => PathUtility::buildAbsoluteUrlFromRequest($request, MixedCaster::string($formValues['mcpServerPath'] ?? null)),
             'protectedResource' => PathUtility::buildAbsoluteUrlFromRequest($request, $this->configuration->getMcpProtectedResourceMetadataPath()),
             'authorizationServer' => PathUtility::buildAbsoluteUrlFromRequest($request, $this->configuration->getMcpAuthorizationServerMetadataPath()),
@@ -222,20 +223,20 @@ final class McpConfigurationController
         return [
             [
                 'value' => WorkosConfiguration::MCP_AUTHENTICATION_AUTO,
-                'label' => $this->translate('setup.mcp.authenticationMode.auto'),
-                'description' => $this->translate('module.mcp.mode.auto.description'),
+                'label' => $this->translator->translate('setup.mcp.authenticationMode.auto'),
+                'description' => $this->translator->translate('module.mcp.mode.auto.description'),
                 'selected' => $selectedMode === WorkosConfiguration::MCP_AUTHENTICATION_AUTO,
             ],
             [
                 'value' => WorkosConfiguration::MCP_AUTHENTICATION_WORKOS,
-                'label' => $this->translate('setup.mcp.authenticationMode.workos'),
-                'description' => $this->translate('module.mcp.mode.workos.description'),
+                'label' => $this->translator->translate('setup.mcp.authenticationMode.workos'),
+                'description' => $this->translator->translate('module.mcp.mode.workos.description'),
                 'selected' => $selectedMode === WorkosConfiguration::MCP_AUTHENTICATION_WORKOS,
             ],
             [
                 'value' => WorkosConfiguration::MCP_AUTHENTICATION_ANONYMOUS,
-                'label' => $this->translate('setup.mcp.authenticationMode.anonymous'),
-                'description' => $this->translate('module.mcp.mode.anonymous.description'),
+                'label' => $this->translator->translate('setup.mcp.authenticationMode.anonymous'),
+                'description' => $this->translator->translate('module.mcp.mode.anonymous.description'),
                 'selected' => $selectedMode === WorkosConfiguration::MCP_AUTHENTICATION_ANONYMOUS,
             ],
         ];
@@ -254,23 +255,11 @@ final class McpConfigurationController
     {
         $this->flashMessageService
             ->getMessageQueueByIdentifier('workos-auth-mcp')
-            ->addMessage(new FlashMessage($message, $this->translate('module.mcp.flashTitle'), $severity, true));
+            ->addMessage(new FlashMessage($message, $this->translator->translate('module.mcp.flashTitle'), $severity, true));
     }
 
     private function redirectToIndex(): ResponseInterface
     {
         return new RedirectResponse($this->uriBuilder->buildUriFromRoute('workos_mcp'));
-    }
-
-    /**
-     * @param array<int|string, mixed> $arguments
-     */
-    private function translate(string $key, array $arguments = []): string
-    {
-        $beUser = $GLOBALS['BE_USER'] ?? null;
-        $languageService = $this->languageServiceFactory->createFromUserPreferences(
-            $beUser instanceof AbstractUserAuthentication ? $beUser : null
-        );
-        return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
     }
 }

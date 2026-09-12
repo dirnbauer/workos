@@ -10,6 +10,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Http\Response;
@@ -22,6 +23,7 @@ use Webconsulting\WorkosAuth\Mcp\McpRequestContext;
 use Webconsulting\WorkosAuth\Security\SecretRedactor;
 use Webconsulting\WorkosAuth\Service\PathUtility;
 
+#[Autoconfigure(public: true)]
 final class McpServerMiddleware implements MiddlewareInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;

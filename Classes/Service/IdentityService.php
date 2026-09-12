@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Service;
 
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 
-final class IdentityService
+final readonly class IdentityService
 {
-    private const TABLE = 'tx_workosauth_identity';
+    private const string TABLE = 'tx_workosauth_identity';
 
     public function __construct(
         private ConnectionPool $connectionPool,
+        private Context $context,
     ) {}
 
     /**
@@ -53,7 +55,7 @@ final class IdentityService
         if ($existingIdentity === null) {
             $existingIdentity = $this->findIdentityByLocalUser($context, $userTable, $userUid);
         }
-        $timestamp = MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time());
+        $timestamp = $this->currentTimestamp();
 
         $data = [
             'tstamp' => $timestamp,
@@ -152,6 +154,11 @@ final class IdentityService
         } catch (\JsonException) {
             return null;
         }
+    }
+
+    private function currentTimestamp(): int
+    {
+        return MixedCaster::int($this->context->getPropertyFromAspect('date', 'timestamp'), time());
     }
 
     private function deleteDuplicateLocalUserIdentities(string $context, string $userTable, int $userUid, int $keepUid): void

@@ -14,20 +14,14 @@ use Psr\Http\Message\ServerRequestInterface;
  * collapses that to array<string, mixed> and provides typed getters
  * so callers never cast mixed values on their own.
  */
-final class RequestBody
+final readonly class RequestBody
 {
-    /**
-     * @var array<string, mixed>
-     */
-    private array $body;
-
     /**
      * @param array<string, mixed> $body
      */
-    private function __construct(array $body)
-    {
-        $this->body = $body;
-    }
+    private function __construct(
+        private array $body,
+    ) {}
 
     public static function fromRequest(ServerRequestInterface $request): self
     {

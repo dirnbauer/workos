@@ -7,8 +7,8 @@ namespace Webconsulting\WorkosAuth\Controller\Frontend;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
@@ -26,22 +26,26 @@ use WorkOS\Resource\UserSessionsListItem;
  * their WorkOS profile, password, MFA factors, sessions and
  * organization memberships without leaving the TYPO3 site.
  */
-final class AccountController extends ActionController implements LoggerAwareInterface
+#[Autoconfigure(public: true)]
+final class AccountController extends AbstractFrontendController implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    private const REQUEST_TOKEN_SCOPE = 'workos/frontend/account';
+    protected const string REQUEST_TOKEN_SCOPE = 'workos/frontend/account';
+    protected const string SESSION_FLASH = 'workos_account_flash';
 
     public function __construct(
-        private readonly WorkosConfiguration $configuration,
-        private readonly IdentityService $identityService,
+        WorkosConfiguration $configuration,
+        IdentityService $identityService,
+        RequestTokenService $requestTokenService,
         private readonly WorkosAccountService $accountService,
-        private readonly RequestTokenService $requestTokenService,
-    ) {}
+    ) {
+        parent::__construct($configuration, $identityService, $requestTokenService);
+    }
 
     public function dashboardAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -87,8 +91,8 @@ final class AccountController extends ActionController implements LoggerAwareInt
         $this->view->assignMultiple([
             'workosUser' => $workosUser,
             'factors' => $factors,
-            'sessions' => array_map(fn($s) => $this->prepareSessionRow($s), $sessions),
-            'memberships' => array_map(fn($m) => $this->prepareMembershipRow($m), $memberships),
+            'sessions' => array_map($this->prepareSessionRow(...), $sessions),
+            'memberships' => array_map($this->prepareMembershipRow(...), $memberships),
             'pendingEnrollment' => $pendingEnrollment,
             'flash' => $flash,
             'sectionErrors' => $errors,
@@ -100,7 +104,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
 
     public function updateProfileAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -130,7 +134,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
 
     public function changePasswordAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -169,7 +173,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
 
     public function startMfaEnrollmentAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -213,7 +217,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
 
     public function verifyMfaEnrollmentAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -244,7 +248,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
 
     public function cancelMfaEnrollmentAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -270,7 +274,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
 
     public function deleteFactorAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -303,7 +307,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
 
     public function revokeSessionAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -332,52 +336,6 @@ final class AccountController extends ActionController implements LoggerAwareInt
         }
 
         return $this->redirect('dashboard');
-    }
-
-    /**
-     * @return array{response: ?ResponseInterface, workosUserId: string, displayName: string}
-     */
-    private function resolveContext(): array
-    {
-        $frontendUser = $this->request->getAttribute('frontend.user');
-        $isLoggedIn = $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user ?? null);
-
-        if (!$this->configuration->isFrontendReady() || !$isLoggedIn) {
-            $this->view->assignMultiple([
-                'configured' => $this->configuration->isFrontendReady(),
-                'isLoggedIn' => $isLoggedIn,
-            ]);
-            return ['response' => $this->htmlResponse(), 'workosUserId' => '', 'displayName' => ''];
-        }
-
-        $identity = $this->identityService->findIdentityByLocalUser(
-            'frontend',
-            'fe_users',
-            MixedCaster::int($frontendUser->user['uid'] ?? null)
-        );
-
-        $workosUserId = is_array($identity) ? MixedCaster::string($identity['workos_user_id'] ?? null) : '';
-        if ($workosUserId === '') {
-            $this->view->assignMultiple([
-                'configured' => true,
-                'isLoggedIn' => true,
-                'noWorkosLink' => true,
-            ]);
-            return ['response' => $this->htmlResponse(), 'workosUserId' => '', 'displayName' => ''];
-        }
-
-        $displayName = MixedCaster::string(
-            $frontendUser->user['name'] ?? $frontendUser->user['username'] ?? $frontendUser->user['email'] ?? null
-        );
-
-        $this->view->assignMultiple([
-            'configured' => true,
-            'isLoggedIn' => true,
-            'displayName' => $displayName,
-            'workosUserId' => $workosUserId,
-        ]);
-
-        return ['response' => null, 'workosUserId' => $workosUserId, 'displayName' => $displayName];
     }
 
     /**
@@ -425,16 +383,6 @@ final class AccountController extends ActionController implements LoggerAwareInt
         ];
     }
 
-    private function hasValidRequestToken(): bool
-    {
-        return $this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE);
-    }
-
-    private function formatDateTime(\DateTimeImmutable $value): string
-    {
-        return $value->format('Y-m-d H:i');
-    }
-
     private function summarizeUserAgent(string $userAgent): string
     {
         if ($userAgent === '') {
@@ -464,7 +412,7 @@ final class AccountController extends ActionController implements LoggerAwareInt
     private function detectIssuer(): string
     {
         $site = $this->request->getAttribute('site');
-        if ($site instanceof \TYPO3\CMS\Core\Site\Entity\Site) {
+        if ($site instanceof Site) {
             $host = $site->getBase()->getHost();
             if ($host !== '') {
                 return $host;
@@ -524,40 +472,6 @@ final class AccountController extends ActionController implements LoggerAwareInt
         return false;
     }
 
-    private function setFlash(string $type, string $message): void
-    {
-        $this->getFrontendUser()->setAndSaveSessionData('workos_account_flash', [
-            'type' => $type,
-            'message' => $message,
-        ]);
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function consumeFlash(): ?array
-    {
-        $flash = $this->getFrontendUser()->getSessionData('workos_account_flash');
-        if (!is_array($flash) || !isset($flash['message']) || $flash['message'] === '') {
-            return null;
-        }
-        $this->getFrontendUser()->setAndSaveSessionData('workos_account_flash', null);
-        $keyed = [];
-        foreach ($flash as $key => $value) {
-            $keyed[(string)$key] = $value;
-        }
-        return $keyed;
-    }
-
-    private function getFrontendUser(): FrontendUserAuthentication
-    {
-        $frontendUser = $this->request->getAttribute('frontend.user');
-        if (!$frontendUser instanceof FrontendUserAuthentication) {
-            throw new \RuntimeException('No frontend user session available.', 1744277960);
-        }
-        return $frontendUser;
-    }
-
     private function mapPasswordError(string $message): string
     {
         $lower = strtolower($message);
@@ -571,13 +485,5 @@ final class AccountController extends ActionController implements LoggerAwareInt
             return $this->translate('account.flash.passwordBreached');
         }
         return $this->translate('account.flash.passwordFailed');
-    }
-
-    /**
-     * @param array<int|string, mixed> $arguments
-     */
-    private function translate(string $key, array $arguments = []): string
-    {
-        return LocalizationUtility::translate($key, 'WorkosAuth', $arguments !== [] ? $arguments : null) ?? $key;
     }
 }

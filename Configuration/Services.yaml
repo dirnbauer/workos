@@ -6,36 +6,3 @@ services:
 
   Webconsulting\WorkosAuth\:
     resource: '../Classes/*'
-
-  Webconsulting\WorkosAuth\Controller\Backend\SetupAssistantController:
-    public: true
-
-  Webconsulting\WorkosAuth\Controller\Backend\UserManagementController:
-    public: true
-
-  Webconsulting\WorkosAuth\Controller\Backend\McpConfigurationController:
-    public: true
-
-  Webconsulting\WorkosAuth\Controller\Frontend\LoginController:
-    public: true
-
-  Webconsulting\WorkosAuth\Controller\Frontend\AccountController:
-    public: true
-
-  Webconsulting\WorkosAuth\Controller\Frontend\TeamController:
-    public: true
-
-  Webconsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider:
-    public: true
-
-  Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService:
-    public: true
-
-  Webconsulting\WorkosAuth\Middleware\FrontendWorkosAuthMiddleware:
-    public: true
-
-  Webconsulting\WorkosAuth\Middleware\BackendWorkosAuthMiddleware:
-    public: true
-
-  Webconsulting\WorkosAuth\Middleware\McpServerMiddleware:
-    public: true

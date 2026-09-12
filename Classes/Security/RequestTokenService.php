@@ -7,10 +7,18 @@ namespace Webconsulting\WorkosAuth\Security;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Security\RequestToken;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-final class RequestTokenService
+final readonly class RequestTokenService
 {
+    /**
+     * TYPO3 core scope of the backend login form token.
+     */
+    public const string BACKEND_LOGIN_SCOPE = 'core/user-auth/be';
+
+    public function __construct(
+        private Context $context,
+    ) {}
+
     public function create(string $scope): RequestToken
     {
         return RequestToken::create($scope);
@@ -45,8 +53,6 @@ final class RequestTokenService
 
     private function getSecurityAspect(): SecurityAspect
     {
-        return SecurityAspect::provideIn(
-            GeneralUtility::makeInstance(Context::class)
-        );
+        return SecurityAspect::provideIn($this->context);
     }
 }

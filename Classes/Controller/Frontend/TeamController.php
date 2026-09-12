@@ -7,12 +7,9 @@ namespace Webconsulting\WorkosAuth\Controller\Frontend;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
-use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
-use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Security\RequestTokenService;
 use Webconsulting\WorkosAuth\Security\SecretRedactor;
 use Webconsulting\WorkosAuth\Service\IdentityService;
@@ -26,24 +23,28 @@ use WorkOS\Resource\UserInvite;
  * invitations and launch one-time WorkOS Admin Portal sessions for
  * SSO, Directory Sync, Audit Logs, Domain Verification, etc.
  */
-final class TeamController extends ActionController implements LoggerAwareInterface
+#[Autoconfigure(public: true)]
+final class TeamController extends AbstractFrontendController implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    private const SESSION_FLASH = 'workos_team_flash';
-    private const SESSION_ORG = 'workos_team_org';
-    private const REQUEST_TOKEN_SCOPE = 'workos/frontend/team';
+    protected const string REQUEST_TOKEN_SCOPE = 'workos/frontend/team';
+    protected const string SESSION_FLASH = 'workos_team_flash';
+
+    private const string SESSION_ORG = 'workos_team_org';
 
     public function __construct(
-        private readonly WorkosConfiguration $configuration,
-        private readonly IdentityService $identityService,
+        WorkosConfiguration $configuration,
+        IdentityService $identityService,
+        RequestTokenService $requestTokenService,
         private readonly WorkosTeamService $teamService,
-        private readonly RequestTokenService $requestTokenService,
-    ) {}
+    ) {
+        parent::__construct($configuration, $identityService, $requestTokenService);
+    }
 
     public function dashboardAction(?string $organizationId = null): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -99,7 +100,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
                 'id' => $selectedOrg->id,
                 'name' => $selectedOrg->name,
             ] : null,
-            'invitations' => array_map(fn(UserInvite $i) => $this->prepareInvitationRow($i), $invitations),
+            'invitations' => array_map($this->prepareInvitationRow(...), $invitations),
             'portalIntents' => $portalIntents,
             'flash' => $this->consumeFlash(),
             'sectionErrors' => $sectionErrors,
@@ -111,7 +112,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
 
     public function inviteAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -149,7 +150,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
 
     public function resendInvitationAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -180,7 +181,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
 
     public function revokeInvitationAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -211,7 +212,7 @@ final class TeamController extends ActionController implements LoggerAwareInterf
 
     public function launchPortalAction(): ResponseInterface
     {
-        $context = $this->resolveContext();
+        $context = $this->resolveLinkedWorkosContext();
         if ($context['response'] !== null) {
             return $context['response'];
         }
@@ -326,75 +327,6 @@ final class TeamController extends ActionController implements LoggerAwareInterf
         return $this->redirect('dashboard');
     }
 
-    /**
-     * @return array{response: ?ResponseInterface, workosUserId: string}
-     */
-    private function resolveContext(): array
-    {
-        $frontendUser = $this->request->getAttribute('frontend.user');
-        $isLoggedIn = $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user ?? null);
-
-        if (!$this->configuration->isFrontendReady() || !$isLoggedIn) {
-            $this->view->assignMultiple([
-                'configured' => $this->configuration->isFrontendReady(),
-                'isLoggedIn' => $isLoggedIn,
-            ]);
-            return ['response' => $this->htmlResponse(), 'workosUserId' => ''];
-        }
-
-        $identity = $this->identityService->findIdentityByLocalUser(
-            'frontend',
-            'fe_users',
-            MixedCaster::int($frontendUser->user['uid'] ?? null)
-        );
-
-        $workosUserId = is_array($identity) ? MixedCaster::string($identity['workos_user_id'] ?? null) : '';
-        if ($workosUserId === '') {
-            $this->view->assignMultiple([
-                'configured' => true,
-                'isLoggedIn' => true,
-                'noWorkosLink' => true,
-            ]);
-            return ['response' => $this->htmlResponse(), 'workosUserId' => ''];
-        }
-
-        return ['response' => null, 'workosUserId' => $workosUserId];
-    }
-
-    private function getFrontendUser(): FrontendUserAuthentication
-    {
-        $frontendUser = $this->request->getAttribute('frontend.user');
-        if (!$frontendUser instanceof FrontendUserAuthentication) {
-            throw new \RuntimeException('No frontend user session available.', 1744278060);
-        }
-        return $frontendUser;
-    }
-
-    private function setFlash(string $type, string $message): void
-    {
-        $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_FLASH, [
-            'type' => $type,
-            'message' => $message,
-        ]);
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function consumeFlash(): ?array
-    {
-        $flash = $this->getFrontendUser()->getSessionData(self::SESSION_FLASH);
-        if (!is_array($flash) || !isset($flash['message']) || $flash['message'] === '') {
-            return null;
-        }
-        $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_FLASH, null);
-        $keyed = [];
-        foreach ($flash as $key => $value) {
-            $keyed[(string)$key] = $value;
-        }
-        return $keyed;
-    }
-
     private function mapInvitationError(string $message): string
     {
         $lower = strtolower($message);
@@ -408,23 +340,5 @@ final class TeamController extends ActionController implements LoggerAwareInterf
             return $this->translate('team.flash.inviteInvalidEmail');
         }
         return $this->translate('team.flash.inviteFailed');
-    }
-
-    private function hasValidRequestToken(): bool
-    {
-        return $this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE);
-    }
-
-    private function formatDateTime(\DateTimeImmutable $value): string
-    {
-        return $value->format('Y-m-d H:i');
-    }
-
-    /**
-     * @param array<int|string, mixed> $arguments
-     */
-    private function translate(string $key, array $arguments = []): string
-    {
-        return LocalizationUtility::translate($key, 'WorkosAuth', $arguments !== [] ? $arguments : null) ?? $key;
     }
 }

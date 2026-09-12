@@ -11,6 +11,7 @@ use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Mcp\McpJsonRpcService;
 use Webconsulting\WorkosAuth\Mcp\McpRequestContext;
 use Webconsulting\WorkosAuth\Mcp\WorkosMcpRegistryService;
+use Webconsulting\WorkosAuth\Service\LabelTranslator;
 use Webconsulting\WorkosAuth\Service\WorkosClientFactory;
 
 final class McpJsonRpcServiceTest extends TestCase
@@ -101,7 +102,7 @@ final class McpJsonRpcServiceTest extends TestCase
 
         return new WorkosConfiguration(
             $extensionConfiguration,
-            self::createStub(LanguageServiceFactory::class),
+            new LabelTranslator(self::createStub(LanguageServiceFactory::class)),
         );
     }
 

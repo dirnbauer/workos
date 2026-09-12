@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Mcp;
 
-final class McpRequestContext
+final readonly class McpRequestContext
 {
     /**
      * @param array<string, mixed> $claims
@@ -12,15 +12,15 @@ final class McpRequestContext
      * @param list<int> $backendGroupUids
      */
     public function __construct(
-        public readonly string $authenticationMode,
-        public readonly bool $workosRequired,
-        public readonly ?string $workosUserId = null,
-        public readonly ?string $email = null,
-        public readonly ?int $frontendUserUid = null,
-        public readonly array $frontendGroupUids = [],
-        public readonly ?int $backendUserUid = null,
-        public readonly array $backendGroupUids = [],
-        public readonly array $claims = [],
+        public string $authenticationMode,
+        public bool $workosRequired,
+        public ?string $workosUserId = null,
+        public ?string $email = null,
+        public ?int $frontendUserUid = null,
+        public array $frontendGroupUids = [],
+        public ?int $backendUserUid = null,
+        public array $backendGroupUids = [],
+        public array $claims = [],
     ) {}
 
     public function isWorkosAuthenticated(): bool

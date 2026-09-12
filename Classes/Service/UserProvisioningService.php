@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Service;
 
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -11,13 +12,14 @@ use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use WorkOS\Resource\User;
 
-final class UserProvisioningService
+final readonly class UserProvisioningService
 {
     public function __construct(
         private ConnectionPool $connectionPool,
         private IdentityService $identityService,
         private PasswordHashFactory $passwordHashFactory,
         private WorkosConfiguration $configuration,
+        private Context $context,
     ) {}
 
     /**
@@ -104,8 +106,8 @@ final class UserProvisioningService
         $connection = $this->connectionPool->getConnectionForTable('fe_users');
         $connection->insert('fe_users', [
             'pid' => $storagePid,
-            'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
-            'crdate' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
+            'tstamp' => $this->currentTimestamp(),
+            'crdate' => $this->currentTimestamp(),
             'disable' => 0,
             'username' => $this->generateUniqueUsername('fe_users', 'fe', $workosUser->id),
             'password' => $this->hashRandomPassword('FE'),
@@ -138,8 +140,8 @@ final class UserProvisioningService
         $connection = $this->connectionPool->getConnectionForTable('be_users');
         $connection->insert('be_users', [
             'pid' => 0,
-            'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
-            'crdate' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
+            'tstamp' => $this->currentTimestamp(),
+            'crdate' => $this->currentTimestamp(),
             'disable' => 0,
             'admin' => 0,
             'username' => $this->generateUniqueUsername('be_users', 'be', $workosUser->id),
@@ -161,7 +163,7 @@ final class UserProvisioningService
     {
         $connection = $this->connectionPool->getConnectionForTable('fe_users');
         $connection->update('fe_users', [
-            'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
+            'tstamp' => $this->currentTimestamp(),
             'email' => strtolower(trim($workosUser->email)),
             'name' => $this->buildDisplayName($workosUser),
             'first_name' => trim($workosUser->firstName ?? ''),
@@ -181,7 +183,7 @@ final class UserProvisioningService
     {
         $connection = $this->connectionPool->getConnectionForTable('be_users');
         $connection->update('be_users', [
-            'tstamp' => MixedCaster::int($GLOBALS['EXEC_TIME'] ?? null, time()),
+            'tstamp' => $this->currentTimestamp(),
             'email' => strtolower(trim($workosUser->email)),
             'realName' => $this->buildDisplayName($workosUser),
         ], [
@@ -276,6 +278,11 @@ final class UserProvisioningService
         }
 
         return $hash;
+    }
+
+    private function currentTimestamp(): int
+    {
+        return MixedCaster::int($this->context->getPropertyFromAspect('date', 'timestamp'), time());
     }
 
     private function buildDisplayName(User $workosUser): string

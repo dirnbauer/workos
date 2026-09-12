@@ -7,8 +7,8 @@ namespace Webconsulting\WorkosAuth\Controller\Frontend;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
@@ -23,26 +23,29 @@ use Webconsulting\WorkosAuth\Service\Typo3SessionService;
 use Webconsulting\WorkosAuth\Service\UserProvisioningService;
 use Webconsulting\WorkosAuth\Service\WorkosAuthenticationService;
 
-final class LoginController extends ActionController implements LoggerAwareInterface
+#[Autoconfigure(public: true)]
+final class LoginController extends AbstractFrontendController implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    private const REQUEST_TOKEN_SCOPE = 'workos/frontend/login';
+    protected const string REQUEST_TOKEN_SCOPE = 'workos/frontend/login';
 
     public function __construct(
-        private readonly WorkosConfiguration $configuration,
-        private readonly IdentityService $identityService,
+        WorkosConfiguration $configuration,
+        IdentityService $identityService,
+        RequestTokenService $requestTokenService,
         private readonly WorkosAuthenticationService $workosAuthenticationService,
         private readonly UserProvisioningService $userProvisioningService,
         private readonly Typo3SessionService $typo3SessionService,
-        private readonly RequestTokenService $requestTokenService,
         private readonly WorkosErrorMessageResolver $errorMessageResolver,
-    ) {}
+    ) {
+        parent::__construct($configuration, $identityService, $requestTokenService);
+    }
 
     public function showAction(): ResponseInterface
     {
         $site = $this->request->getAttribute('site');
-        $siteBasePath = $site instanceof \TYPO3\CMS\Core\Site\Entity\Site ? $site->getBase()->getPath() : '';
+        $siteBasePath = $site instanceof Site ? $site->getBase()->getPath() : '';
         $currentUrl = (string)$this->request->getUri();
         $queryParams = $this->request->getQueryParams();
         $returnToUrl = $this->sanitizeReturnTo(
@@ -51,7 +54,7 @@ final class LoginController extends ActionController implements LoggerAwareInter
         );
 
         $frontendUser = $this->request->getAttribute('frontend.user');
-        $isLoggedIn = $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user ?? null);
+        $isLoggedIn = $this->isFrontendUserLoggedIn();
         $displayName = '';
         if ($isLoggedIn && $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user)) {
             foreach (['name', 'username', 'email'] as $candidate) {
@@ -153,11 +156,10 @@ final class LoginController extends ActionController implements LoggerAwareInter
 
     public function signUpAction(): ResponseInterface
     {
-        $frontendUser = $this->request->getAttribute('frontend.user');
-        $isLoggedIn = $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user ?? null);
-        if ($isLoggedIn) {
+        if ($this->isFrontendUserLoggedIn()) {
             return $this->redirect('show');
         }
+        $frontendUser = $this->request->getAttribute('frontend.user');
 
         $currentUrl = (string)$this->request->getUri();
         $queryParams = $this->request->getQueryParams();
@@ -497,11 +499,6 @@ final class LoginController extends ActionController implements LoggerAwareInter
         return $this->redirect('signUp', null, null, $arguments);
     }
 
-    private function hasValidRequestToken(): bool
-    {
-        return $this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE);
-    }
-
     private function sanitizeReturnTo(string $candidate, string $fallback): string
     {
         return PathUtility::sanitizeReturnTo(
@@ -509,15 +506,6 @@ final class LoginController extends ActionController implements LoggerAwareInter
             $candidate !== '' ? $candidate : null,
             $fallback
         );
-    }
-
-    private function getFrontendUser(): FrontendUserAuthentication
-    {
-        $frontendUser = $this->request->getAttribute('frontend.user');
-        if (!$frontendUser instanceof FrontendUserAuthentication) {
-            throw new \RuntimeException('No frontend user session available.', 1744277820);
-        }
-        return $frontendUser;
     }
 
     private function sanitizeSignUpError(string $message): string
@@ -532,13 +520,5 @@ final class LoginController extends ActionController implements LoggerAwareInter
         $this->logger?->error('WorkOS auth error: ' . SecretRedactor::redact($message));
 
         return $this->translate($this->errorMessageResolver->resolveAuthentication($message));
-    }
-
-    /**
-     * @param array<int|string, mixed> $arguments
-     */
-    private function translate(string $key, array $arguments = []): string
-    {
-        return LocalizationUtility::translate($key, 'WorkosAuth', $arguments !== [] ? $arguments : null) ?? $key;
     }
 }

@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Service\LabelTranslator;
 
 final class WorkosConfigurationTest extends TestCase
 {
@@ -26,7 +27,7 @@ final class WorkosConfigurationTest extends TestCase
 
         $this->configuration = new WorkosConfiguration(
             $extensionConfiguration,
-            self::createStub(LanguageServiceFactory::class),
+            new LabelTranslator(self::createStub(LanguageServiceFactory::class)),
         );
     }
 
@@ -221,7 +222,7 @@ final class WorkosConfigurationTest extends TestCase
 
         return new WorkosConfiguration(
             $extensionConfiguration,
-            self::createStub(LanguageServiceFactory::class),
+            new LabelTranslator(self::createStub(LanguageServiceFactory::class)),
         );
     }
 

@@ -14,10 +14,10 @@ use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
 
-final class Typo3SessionService
+final readonly class Typo3SessionService
 {
     public function __construct(
-        private readonly LoggerInterface $logger,
+        private LoggerInterface $logger,
     ) {}
 
     /**

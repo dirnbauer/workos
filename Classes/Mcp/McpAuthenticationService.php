@@ -16,14 +16,14 @@ use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Service\IdentityService;
 use Webconsulting\WorkosAuth\Service\PathUtility;
 
-final class McpAuthenticationService
+final readonly class McpAuthenticationService
 {
     public function __construct(
-        private readonly WorkosConfiguration $configuration,
-        private readonly RequestFactory $requestFactory,
-        private readonly IdentityService $identityService,
-        private readonly ConnectionPool $connectionPool,
-        private readonly McpTokenClaimsValidator $tokenClaimsValidator,
+        private WorkosConfiguration $configuration,
+        private RequestFactory $requestFactory,
+        private IdentityService $identityService,
+        private ConnectionPool $connectionPool,
+        private McpTokenClaimsValidator $tokenClaimsValidator,
     ) {}
 
     public function authenticate(ServerRequestInterface $request): McpRequestContext

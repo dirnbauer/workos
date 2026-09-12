@@ -7,7 +7,7 @@ namespace Webconsulting\WorkosAuth\Service;
 use TYPO3\CMS\Core\Database\Schema\SchemaMigrator;
 use TYPO3\CMS\Core\Database\Schema\SqlReader;
 
-final class ExtensionSchemaService
+final readonly class ExtensionSchemaService
 {
     /**
      * @var list<string>
@@ -24,8 +24,8 @@ final class ExtensionSchemaService
     ];
 
     public function __construct(
-        private readonly SqlReader $sqlReader,
-        private readonly SchemaMigrator $schemaMigrator,
+        private SqlReader $sqlReader,
+        private SchemaMigrator $schemaMigrator,
     ) {}
 
     /**

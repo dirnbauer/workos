@@ -293,16 +293,6 @@
         <source>switch to login with WorkOS</source>
       </segment>
     </unit>
-    <unit id="backend.login.signInWithEmail">
-      <segment>
-        <source>Sign in with email</source>
-      </segment>
-    </unit>
-    <unit id="backend.login.emailLoginCode">
-      <segment>
-        <source>Email a login code</source>
-      </segment>
-    </unit>
     <unit id="backend.login.socialHint">
       <segment>
         <source>Or sign in with</source>
@@ -393,11 +383,6 @@
         <source>Open WorkOS setup assistant</source>
       </segment>
     </unit>
-    <unit id="backend.login.verifyEmail.title">
-      <segment>
-        <source>Verify your email</source>
-      </segment>
-    </unit>
     <unit id="backend.login.verifyEmail.subtitle">
       <segment>
         <source>We sent a verification code to {email}. Enter it below to finish signing in.</source>
@@ -416,16 +401,6 @@
     <unit id="backend.login.verifyEmail.resend">
       <segment>
         <source>Resend verification code</source>
-      </segment>
-    </unit>
-    <unit id="backend.login.emailPlaceholder">
-      <segment>
-        <source>Email address</source>
-      </segment>
-    </unit>
-    <unit id="backend.login.passwordPlaceholder">
-      <segment>
-        <source>Password</source>
       </segment>
     </unit>
     <unit id="backend.login.notConfigured">

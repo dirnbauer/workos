@@ -6,37 +6,39 @@ namespace Webconsulting\WorkosAuth\Controller\Backend;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Security\RequestTokenService;
+use Webconsulting\WorkosAuth\Service\LabelTranslator;
 use Webconsulting\WorkosAuth\Service\PathUtility;
 
-final class SetupAssistantController
+#[Autoconfigure(public: true)]
+final readonly class SetupAssistantController
 {
-    private const REQUEST_TOKEN_SCOPE = 'workos/backend/setup';
+    private const string REQUEST_TOKEN_SCOPE = 'workos/backend/setup';
 
     public function __construct(
-        private readonly ModuleTemplateFactory $moduleTemplateFactory,
-        private readonly WorkosConfiguration $configuration,
-        private readonly ExtensionConfiguration $extensionConfiguration,
-        private readonly SiteFinder $siteFinder,
-        private readonly RequestTokenService $requestTokenService,
-        private readonly UriBuilder $uriBuilder,
-        private readonly FlashMessageService $flashMessageService,
-        private readonly CacheManager $cacheManager,
-        private readonly PageRenderer $pageRenderer,
-        private readonly LanguageServiceFactory $languageServiceFactory,
+        private ModuleTemplateFactory $moduleTemplateFactory,
+        private WorkosConfiguration $configuration,
+        private ExtensionConfiguration $extensionConfiguration,
+        private SiteFinder $siteFinder,
+        private RequestTokenService $requestTokenService,
+        private UriBuilder $uriBuilder,
+        private FlashMessageService $flashMessageService,
+        private CacheManager $cacheManager,
+        private PageRenderer $pageRenderer,
+        private LabelTranslator $translator,
     ) {}
 
     public function indexAction(ServerRequestInterface $request): ResponseInterface
@@ -89,7 +91,7 @@ final class SetupAssistantController
         $moduleTemplate->assignMultiple([
             'formValues' => $formValues,
             'errors' => $errors,
-            'requestTokenName' => \TYPO3\CMS\Core\Security\RequestToken::PARAM_NAME,
+            'requestTokenName' => RequestToken::PARAM_NAME,
             'requestTokenValue' => $this->requestTokenService->createHashed(self::REQUEST_TOKEN_SCOPE),
             'saveUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_setup.save'),
             'backendUrls' => $backendUrls,
@@ -100,7 +102,7 @@ final class SetupAssistantController
             'backendCookieSameSiteCompatible' => $this->configuration->isBackendCookieSameSiteCompatible(),
             'mcpAuthenticationModes' => WorkosConfiguration::MCP_AUTHENTICATION_MODES,
         ]);
-        $moduleTemplate->setTitle($this->translate('setup.title'));
+        $moduleTemplate->setTitle($this->translator->translate('setup.title'));
         $this->pageRenderer->loadJavaScriptModule('@webconsulting/workos-auth/copy-urls.js');
 
         return $moduleTemplate->renderResponse('Backend/SetupAssistant/Index');
@@ -130,7 +132,7 @@ final class SetupAssistantController
 
         if (!$this->requestTokenService->validate(self::REQUEST_TOKEN_SCOPE)) {
             $this->enqueueFlashMessage(
-                $this->translate('error.csrfTokenInvalid'),
+                $this->translator->translate('error.csrfTokenInvalid'),
                 ContextualFeedbackSeverity::ERROR,
             );
             return new RedirectResponse($this->uriBuilder->buildUriFromRoute('workos_setup'));
@@ -143,7 +145,7 @@ final class SetupAssistantController
             $this->cacheManager->flushCachesInGroup('system');
         } catch (\Throwable $e) {
             $this->enqueueFlashMessage(
-                $this->translate('flash.configSaveError', ['error' => $e->getMessage()]),
+                $this->translator->translate('flash.configSaveError', ['error' => $e->getMessage()]),
                 ContextualFeedbackSeverity::ERROR,
             );
             return new RedirectResponse($this->uriBuilder->buildUriFromRoute('workos_setup'));
@@ -151,12 +153,12 @@ final class SetupAssistantController
 
         if ($errors !== []) {
             $this->enqueueFlashMessage(
-                $this->translate('flash.configSavedNotReady', ['errors' => implode(' ', $errors)]),
+                $this->translator->translate('flash.configSavedNotReady', ['errors' => implode(' ', $errors)]),
                 ContextualFeedbackSeverity::WARNING,
             );
         } else {
             $this->enqueueFlashMessage(
-                $this->translate('flash.configSaved'),
+                $this->translator->translate('flash.configSaved'),
                 ContextualFeedbackSeverity::OK,
             );
         }
@@ -168,24 +170,11 @@ final class SetupAssistantController
     {
         $this->flashMessageService
             ->getMessageQueueByIdentifier('workos-auth-setup')
-            ->addMessage(new FlashMessage($body, $this->translate('setup.flashTitle'), $severity, true));
-    }
-
-    /**
-     * @param array<int|string, mixed> $arguments
-     */
-    private function translate(string $key, array $arguments = []): string
-    {
-        $beUser = $GLOBALS['BE_USER'] ?? null;
-        $languageService = $this->languageServiceFactory->createFromUserPreferences(
-            $beUser instanceof AbstractUserAuthentication ? $beUser : null
-        );
-        return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
+            ->addMessage(new FlashMessage($body, $this->translator->translate('setup.flashTitle'), $severity, true));
     }
 
     private function generateCookiePassword(): string
     {
         return rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '=');
     }
-
 }

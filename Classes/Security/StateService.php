@@ -8,14 +8,14 @@ use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Cache\CacheManager;
 
-final class StateService
+final readonly class StateService
 {
     private const CACHE_IDENTIFIER = 'workos_auth_state';
     private const COOKIE_PREFIX = 'workos_auth_state_';
     private const TTL = 600;
 
     public function __construct(
-        private readonly CacheManager $cacheManager,
+        private CacheManager $cacheManager,
     ) {}
 
     /**

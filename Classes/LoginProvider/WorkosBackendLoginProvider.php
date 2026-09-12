@@ -5,32 +5,32 @@ declare(strict_types=1);
 namespace Webconsulting\WorkosAuth\LoginProvider;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
-use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
-use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Context\SecurityAspect;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Security\RequestToken;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\View\ViewInterface;
 use TYPO3\CMS\Fluid\View\FluidViewAdapter;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Security\RequestTokenService;
 use Webconsulting\WorkosAuth\Security\StateService;
+use Webconsulting\WorkosAuth\Service\LabelTranslator;
 use Webconsulting\WorkosAuth\Service\PathUtility;
 
-final class WorkosBackendLoginProvider implements LoginProviderInterface
+#[Autoconfigure(public: true)]
+final readonly class WorkosBackendLoginProvider implements LoginProviderInterface
 {
-    private const EMAIL_VERIFICATION_CONTEXT = 'backend_email_verification';
-    private const MAGIC_AUTH_CONTEXT = 'backend_magic_auth';
+    private const string EMAIL_VERIFICATION_CONTEXT = 'backend_email_verification';
+    private const string MAGIC_AUTH_CONTEXT = 'backend_magic_auth';
 
     public function __construct(
-        private readonly WorkosConfiguration $configuration,
-        private readonly StateService $stateService,
-        private readonly LanguageServiceFactory $languageServiceFactory,
-        private readonly PageRenderer $pageRenderer,
+        private WorkosConfiguration $configuration,
+        private StateService $stateService,
+        private LabelTranslator $translator,
+        private PageRenderer $pageRenderer,
+        private RequestTokenService $requestTokenService,
     ) {}
 
     #[\Override]
@@ -77,7 +77,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             } catch (\RuntimeException) {
                 $magicAuthState = '';
                 if ($authError === '') {
-                    $authError = $this->translate('error.invalidMagicAuthSession');
+                    $authError = $this->translator->translate('error.invalidMagicAuthSession');
                 }
             }
         }
@@ -99,17 +99,17 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
                 $emailVerificationState = '';
                 $emailVerificationCanResend = false;
                 if ($authError === '') {
-                    $authError = $this->translate('error.verificationSessionExpired');
+                    $authError = $this->translator->translate('error.verificationSessionExpired');
                 }
             }
         }
         $authErrorDetails = $this->buildAuthErrorDetails($authError, $backendBasePath);
 
         $socialProviders = [
-            ['key' => 'GoogleOAuth', 'label' => $this->translate('provider.google'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GoogleOAuth'])],
-            ['key' => 'MicrosoftOAuth', 'label' => $this->translate('provider.microsoft'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'MicrosoftOAuth'])],
-            ['key' => 'GitHubOAuth', 'label' => $this->translate('provider.github'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GitHubOAuth'])],
-            ['key' => 'AppleOAuth', 'label' => $this->translate('provider.apple'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'AppleOAuth'])],
+            ['key' => 'GoogleOAuth', 'label' => $this->translator->translate('provider.google'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GoogleOAuth'])],
+            ['key' => 'MicrosoftOAuth', 'label' => $this->translator->translate('provider.microsoft'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'MicrosoftOAuth'])],
+            ['key' => 'GitHubOAuth', 'label' => $this->translator->translate('provider.github'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'GitHubOAuth'])],
+            ['key' => 'AppleOAuth', 'label' => $this->translator->translate('provider.apple'), 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => 'AppleOAuth'])],
         ];
 
         if ($this->configuration->isBackendEnabled() && $this->configuration->isBackendReady()) {
@@ -140,7 +140,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             'backendCookieSameSite' => $this->configuration->getBackendCookieSameSite(),
             'backendCookieSameSiteCompatible' => $this->configuration->isBackendCookieSameSiteCompatible(),
             'requestTokenName' => RequestToken::PARAM_NAME,
-            'requestTokenValue' => $this->provideRequestTokenJwt(),
+            'requestTokenValue' => $this->requestTokenService->createHashed(RequestTokenService::BACKEND_LOGIN_SCOPE),
         ]);
 
         return 'Login/WorkosLoginProvider';
@@ -158,7 +158,7 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
 
         $setupUrl = PathUtility::joinBaseAndPath($backendBasePath, '/module/workos/setup');
         $details = [
-            'title' => $this->translate('backend.login.error.title'),
+            'title' => $this->translator->translate('backend.login.error.title'),
             'summary' => $rawMessage,
             'email' => '',
             'userId' => '',
@@ -173,40 +173,19 @@ final class WorkosBackendLoginProvider implements LoginProviderInterface
             $rawMessage,
             $matches
         ) === 1) {
-            $details['title'] = $this->translate('backend.login.error.notLinked.title');
-            $details['summary'] = $this->translate(
+            $details['title'] = $this->translator->translate('backend.login.error.notLinked.title');
+            $details['summary'] = $this->translator->translate(
                 'backend.login.error.notLinked.summary',
                 ['email' => $matches[1]]
             );
             $details['email'] = $matches[1];
             $details['userId'] = $matches[2];
-            $details['hint'] = $this->translate('backend.login.error.notLinked.hint');
+            $details['hint'] = $this->translator->translate('backend.login.error.notLinked.hint');
             $details['actionUrl'] = $setupUrl;
-            $details['actionLabel'] = $this->translate('backend.login.error.notLinked.action');
+            $details['actionLabel'] = $this->translator->translate('backend.login.error.notLinked.action');
             $details['isProvisioningDisabled'] = true;
         }
 
         return $details;
-    }
-
-    /**
-     * @param array<int|string, mixed> $arguments
-     */
-    private function translate(string $key, array $arguments = []): string
-    {
-        $beUser = $GLOBALS['BE_USER'] ?? null;
-        $languageService = $this->languageServiceFactory->createFromUserPreferences(
-            $beUser instanceof AbstractUserAuthentication ? $beUser : null
-        );
-        return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
-    }
-
-    private function provideRequestTokenJwt(): string
-    {
-        $nonce = SecurityAspect::provideIn(
-            GeneralUtility::makeInstance(Context::class)
-        )->provideNonce();
-
-        return RequestToken::create('core/user-auth/be')->toHashSignedJwt($nonce);
     }
 }

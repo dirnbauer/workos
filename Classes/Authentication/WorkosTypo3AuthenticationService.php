@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace Webconsulting\WorkosAuth\Authentication;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Core\Authentication\AbstractAuthenticationService;
 use TYPO3\CMS\Core\Authentication\LoginType;
-
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 
+#[Autoconfigure(public: true)]
 final class WorkosTypo3AuthenticationService extends AbstractAuthenticationService
 {
-    public const PENDING_LOGIN_ATTRIBUTE = 'workos_auth.pending_login';
+    public const string PENDING_LOGIN_ATTRIBUTE = 'workos_auth.pending_login';
 
-    private const PLACEHOLDER_USERNAME = '__workos__';
-    private const PLACEHOLDER_PASSWORD = '__workos__';
+    private const string PLACEHOLDER_USERNAME = '__workos__';
+    private const string PLACEHOLDER_PASSWORD = '__workos__';
 
     /**
      * @param array<string, mixed> $loginData

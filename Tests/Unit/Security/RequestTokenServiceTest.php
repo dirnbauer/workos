@@ -32,7 +32,7 @@ final class RequestTokenServiceTest extends TestCase
         GeneralUtility::setSingletonInstance(Context::class, $this->context);
 
         $this->securityAspect = SecurityAspect::provideIn($this->context);
-        $this->subject = new RequestTokenService();
+        $this->subject = new RequestTokenService($this->context);
     }
 
     #[\Override]

@@ -7,10 +7,9 @@ namespace Webconsulting\WorkosAuth\EventListener;
 use TYPO3\CMS\Backend\LoginProvider\Event\ModifyPageLayoutOnLoginProviderSelectionEvent;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderResolver;
 use TYPO3\CMS\Core\Attribute\AsEventListener;
-use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use Webconsulting\WorkosAuth\Service\LabelTranslator;
 
 #[AsEventListener('workos-auth/inject-classic-login-heading')]
 final readonly class InjectLoginHeadingsListener
@@ -23,11 +22,11 @@ final readonly class InjectLoginHeadingsListener
      * provider switcher) are loaded for both providers so the visual treatment is
      * consistent regardless of which login screen is active.
      */
-    private const WORKOS_PROVIDER_IDENTIFIER = '1744276800';
+    private const string WORKOS_PROVIDER_IDENTIFIER = '1744276800';
 
     public function __construct(
         private PageRenderer $pageRenderer,
-        private LanguageServiceFactory $languageServiceFactory,
+        private LabelTranslator $translator,
         private LoginProviderResolver $loginProviderResolver,
     ) {}
 
@@ -159,26 +158,12 @@ final readonly class InjectLoginHeadingsListener
             JavaScriptModuleInstruction::create('@webconsulting/workos-auth/login-headings.js')
         );
 
-        $beUser = $GLOBALS['BE_USER'] ?? null;
-        $languageService = $this->languageServiceFactory->createFromUserPreferences(
-            $beUser instanceof AbstractUserAuthentication ? $beUser : null
-        );
-
         // Pre-localise the switcher-link text for both directions so the JS
         // does not need to know which provider is active — it just picks the
         // one matching the URL it relocates into the heading.
-        $switchKey = $isWorkosProvider
-            ? 'backend.login.switch.toClassic'
-            : 'backend.login.switch.toWorkos';
-        $switchFallback = $isWorkosProvider
-            ? 'Switch to classic sign-in'
-            : 'Switch to WorkOS sign-in';
-        $switchText = $languageService->sL(
-            'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:' . $switchKey
+        $switchText = $this->translator->translate(
+            $isWorkosProvider ? 'backend.login.switch.toClassic' : 'backend.login.switch.toWorkos'
         );
-        if ($switchText === '') {
-            $switchText = $switchFallback;
-        }
 
         if ($isWorkosProvider) {
             // The WorkOS provider renders its own heading server-side, so we
@@ -190,12 +175,7 @@ final readonly class InjectLoginHeadingsListener
             return;
         }
 
-        $headingText = $languageService->sL(
-            'LLL:EXT:workos_auth/Resources/Private/Language/locallang.xlf:backend.login.heading.classic'
-        );
-        if ($headingText === '') {
-            $headingText = 'Classic sign-in';
-        }
+        $headingText = $this->translator->translate('backend.login.heading.classic');
 
         // Plain-HTML data carrier (no script, so no CSP concerns).
         $this->pageRenderer->addHeaderData(sprintf(

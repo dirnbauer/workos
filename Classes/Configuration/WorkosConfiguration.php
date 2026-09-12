@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Configuration;
 
-use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Core\Environment;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
+use Webconsulting\WorkosAuth\Service\LabelTranslator;
 use Webconsulting\WorkosAuth\Service\PathUtility;
 
 /**
@@ -48,10 +48,10 @@ use Webconsulting\WorkosAuth\Service\PathUtility;
  */
 final class WorkosConfiguration
 {
-    public const EXTENSION_KEY = 'workos_auth';
-    public const MCP_AUTHENTICATION_AUTO = 'auto';
-    public const MCP_AUTHENTICATION_WORKOS = 'workos';
-    public const MCP_AUTHENTICATION_ANONYMOUS = 'anonymous';
+    public const string EXTENSION_KEY = 'workos_auth';
+    public const string MCP_AUTHENTICATION_AUTO = 'auto';
+    public const string MCP_AUTHENTICATION_WORKOS = 'workos';
+    public const string MCP_AUTHENTICATION_ANONYMOUS = 'anonymous';
 
     /**
      * @var list<string>
@@ -121,7 +121,7 @@ final class WorkosConfiguration
 
     public function __construct(
         private readonly ExtensionConfiguration $extensionConfiguration,
-        private readonly LanguageServiceFactory $languageServiceFactory,
+        private readonly LabelTranslator $translator,
     ) {}
 
     /**
@@ -189,33 +189,33 @@ final class WorkosConfiguration
         $authEnabled = $frontendEnabled || $backendEnabled;
 
         if ($authEnabled && trim(MixedCaster::string($configuration['apiKey'] ?? '')) === '') {
-            $errors['apiKey'] = $this->translate('validation.apiKeyRequired');
+            $errors['apiKey'] = $this->translator->translate('validation.apiKeyRequired');
         }
 
         if ($authEnabled && trim(MixedCaster::string($configuration['clientId'] ?? '')) === '') {
-            $errors['clientId'] = $this->translate('validation.clientIdRequired');
+            $errors['clientId'] = $this->translator->translate('validation.clientIdRequired');
         }
 
         if ($authEnabled && mb_strlen(trim(MixedCaster::string($configuration['cookiePassword'] ?? ''))) < 32) {
-            $errors['cookiePassword'] = $this->translate('validation.cookiePasswordTooShort');
+            $errors['cookiePassword'] = $this->translator->translate('validation.cookiePasswordTooShort');
         }
 
         if ($frontendEnabled
             && (bool)($configuration['frontendAutoCreateUsers'] ?? false)
             && MixedCaster::int($configuration['frontendStoragePid'] ?? 0) <= 0
         ) {
-            $errors['frontendStoragePid'] = $this->translate('validation.frontendStoragePidRequired');
+            $errors['frontendStoragePid'] = $this->translator->translate('validation.frontendStoragePidRequired');
         }
 
         if ($backendEnabled
             && (bool)($configuration['backendAutoCreateUsers'] ?? false)
             && trim(MixedCaster::string($configuration['backendDefaultGroupUids'] ?? '')) === ''
         ) {
-            $errors['backendDefaultGroupUids'] = $this->translate('validation.backendGroupUidsRequired');
+            $errors['backendDefaultGroupUids'] = $this->translator->translate('validation.backendGroupUidsRequired');
         }
 
         if ($backendEnabled && !$this->isBackendCookieSameSiteCompatible()) {
-            $errors['backendCookieSameSite'] = $this->translate(
+            $errors['backendCookieSameSite'] = $this->translator->translate(
                 'validation.backendCookieSameSiteUnsupported',
                 ['sameSite' => $this->getBackendCookieSameSite()]
             );
@@ -224,12 +224,12 @@ final class WorkosConfiguration
         if ((bool)($configuration['mcpEnabled'] ?? false)) {
             $mcpMode = MixedCaster::string($configuration['mcpAuthenticationMode'] ?? self::MCP_AUTHENTICATION_AUTO);
             if (!in_array($mcpMode, self::MCP_AUTHENTICATION_MODES, true)) {
-                $errors['mcpAuthenticationMode'] = $this->translate('validation.mcpAuthenticationModeInvalid');
+                $errors['mcpAuthenticationMode'] = $this->translator->translate('validation.mcpAuthenticationModeInvalid');
             }
             if ($this->mcpRequiresWorkosForConfiguration($configuration)
                 && trim(MixedCaster::string($configuration['mcpAuthkitDomain'] ?? '')) === ''
             ) {
-                $errors['mcpAuthkitDomain'] = $this->translate('validation.mcpAuthkitDomainRequired');
+                $errors['mcpAuthkitDomain'] = $this->translator->translate('validation.mcpAuthkitDomainRequired');
             }
         }
 
@@ -526,7 +526,7 @@ final class WorkosConfiguration
         }
 
         try {
-            return \TYPO3\CMS\Core\Core\Environment::getContext()->isProduction();
+            return Environment::getContext()->isProduction();
         } catch (\Throwable) {
             return false;
         }
@@ -591,18 +591,6 @@ final class WorkosConfiguration
             $origin .= ':' . $port;
         }
         return $origin;
-    }
-
-    /**
-     * @param array<int|string, mixed> $arguments
-     */
-    private function translate(string $key, array $arguments = []): string
-    {
-        $beUser = $GLOBALS['BE_USER'] ?? null;
-        $languageService = $this->languageServiceFactory->createFromUserPreferences(
-            $beUser instanceof AbstractUserAuthentication ? $beUser : null
-        );
-        return (string)$languageService->label('workos_auth.messages:' . $key, $arguments, $key);
     }
 
 }

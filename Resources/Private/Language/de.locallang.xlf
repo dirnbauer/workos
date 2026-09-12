@@ -350,18 +350,6 @@
         <target>Zur WorkOS-Anmeldung wechseln</target>
       </segment>
     </unit>
-    <unit id="backend.login.signInWithEmail">
-      <segment>
-        <source>Sign in with email</source>
-        <target>Mit E-Mail anmelden</target>
-      </segment>
-    </unit>
-    <unit id="backend.login.emailLoginCode">
-      <segment>
-        <source>Email a login code</source>
-        <target>Anmeldecode per E-Mail senden</target>
-      </segment>
-    </unit>
     <unit id="backend.login.socialHint">
       <segment>
         <source>Or sign in with</source>
@@ -470,12 +458,6 @@
         <target>WorkOS-Einrichtungsassistent öffnen</target>
       </segment>
     </unit>
-    <unit id="backend.login.verifyEmail.title">
-      <segment>
-        <source>Verify your email</source>
-        <target>E-Mail-Adresse bestätigen</target>
-      </segment>
-    </unit>
     <unit id="backend.login.verifyEmail.subtitle">
       <segment>
         <source>We sent a verification code to {email}. Enter it below to finish signing in.</source>
@@ -498,18 +480,6 @@
       <segment>
         <source>Resend verification code</source>
         <target>Bestätigungscode erneut senden</target>
-      </segment>
-    </unit>
-    <unit id="backend.login.emailPlaceholder">
-      <segment>
-        <source>Email address</source>
-        <target>E-Mail-Adresse</target>
-      </segment>
-    </unit>
-    <unit id="backend.login.passwordPlaceholder">
-      <segment>
-        <source>Password</source>
-        <target>Passwort</target>
       </segment>
     </unit>
     <unit id="backend.login.notConfigured">
