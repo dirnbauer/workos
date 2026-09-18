@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.2.0 - 2026-09-18
+
+### Changed
+
+- Require `workos/workos-php` `^9.4`; refreshed the `@workos-inc/widgets` bundle build (`npm update`, lockfile committed, CI `assets` job rebuilds and diffs it).
+- Typed domain model: `LoginContext`, `SocialProvider` and `McpAuthenticationMode` enums replace the frontend/backend + `fe_users`/`be_users` string pairs, the social provider constant list and the MCP mode constants. `IdentityService` and `UserProvisioningService::resolve()` take a `LoginContext`; the redundant `userTable` parameters are gone.
+- `WorkosClientFactory::client()` is the only SDK entry point and enforces configured credentials (three `assertConfigured()` copies removed). `UserProvisioningService` resolves link → email → create in one flow instead of three duplicated branches.
+- `WorkosConfiguration::save()` persists and flushes for both backend modules; `validate()` works on normalized settings; MCP "requires WorkOS" is decided in one place.
+- Backend login endpoints and multi-step state contexts are constants of `BackendWorkosAuthMiddleware`; the provider identifier is `WorkosBackendLoginProvider::IDENTIFIER`. Backend login CSS moved from PHP/Fluid into `Resources/Public/Css/Backend/`.
+- `WorkosErrorMessageResolver` now also maps password-change and invitation errors (was duplicated in the controllers).
+- Tooling: `.Build/` Composer layout, PHPUnit 12, PHPStan level 8 (portfolio policy), testing-framework bootstraps, `.gitignore`, single `ci.yml` with an `assets` job.
+- Documentation restructured into Introduction, Installation, Configuration, Usage, Developer; README is a short quick start.
+
+### Fixed
+
+- Team plugin: organization domains were never shown (the SDK returns `OrganizationDomain` objects, not arrays).
+- Backend login: "Back to sign in" now returns to the login form instead of starting the hosted AuthKit flow.
+
+### Removed
+
+- The unused `cookiePassword` setting (validated but never used); stale values in `settings.php` are ignored.
+- Raw (non-JSON) OAuth `state` fallback, `WorkosTeamService::describePortalIntents()`, `*DefaultGroupCsv()` getters, the `architecture` CI job (phpat rules already run inside PHPStan), `docs/audits/` snapshots, duplicate PNGs under `Resources/Public/Images/`.
+
+### Added
+
+- Unit tests for the domain enums, `MixedCaster::stringKeyedArray()`, `RequestBody::group()`, `PathUtility::originFromRequest()/normalizeOrigin()/siteBaseUrl()`, `WorkosConfiguration::save()`, `WorkosClientFactory`, the MCP JSON-RPC dispatcher and `McpServerMiddleware` (batches, notifications, discovery documents, 401 hint); functional tests for backend provisioning and the `ext_localconf.php` plugin / login provider registration.
+
 ## 2.1.0 - 2026-09-12
 
 ### Changed

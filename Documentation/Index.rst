@@ -2,9 +2,9 @@
 
 ..  _start:
 
-==========
+===========
 WorkOS Auth
-==========
+===========
 
 :Extension key:
     workos_auth
@@ -29,61 +29,18 @@ WorkOS Auth
 
 ----
 
-`WorkOS Auth <https://workos.com>`_ for TYPO3 adds
-WorkOS-powered authentication to both the TYPO3 frontend and the
-backend. It supports the full AuthKit feature set — email +
-password, passwordless magic auth, and social sign-in with Google,
-Microsoft, GitHub and Apple — plus self-service Account Center and
-Team management plugins for signed-in users.
-
-..  card-grid::
-    :columns: 1
-    :columns-md: 2
-    :gap: 4
-    :class: pb-4
-    :card-height: 100
-
-    ..  card:: :ref:`Configuration <configuration>`
-
-        Every configuration key, the setup assistant walk-through,
-        and how the extension behaves under TYPO3 Workspaces.
-
-    ..  card:: :ref:`Features <features>`
-
-        Frontend and backend login flows, the Account Center and
-        Team plugins, the WorkOS backend modules, profile display,
-        the identity data model, and dynamic AuthKit query
-        parameters.
-
-    ..  card:: :ref:`TYPO3 MCP server <mcp>`
-
-        Streamable HTTP MCP endpoint, WorkOS bearer-token protection,
-        WorkOS-authorized MCP application discovery, and TYPO3
-        frontend/backend user group mapping.
-
-    ..  card:: :ref:`WorkOS Dashboard <workos-dashboard>`
-
-        Adding redirect URIs and enabling the authentication methods
-        your TYPO3 site needs.
-
-    ..  card:: :ref:`Troubleshooting <troubleshooting>`
-
-        Common error messages and how to fix them — including the
-        backend "account not linked" screen, frontend email-code
-        handoff failures, and CSRF flash messages.
-
-..  _toc:
-
-Table of contents
-=================
+`WorkOS <https://workos.com>`_ AuthKit sign-in for the TYPO3 frontend and
+backend: email + password, magic-auth codes, social sign-in and enterprise
+SSO, plus self-service Account Center and Team plugins, a User Management
+backend module and a WorkOS-protected TYPO3 MCP server.
 
 ..  toctree::
     :maxdepth: 2
     :titlesonly:
 
+    Introduction
+    Installation
     Configuration
-    Features
-    Mcp
-    WorkosDashboard
-    Troubleshooting
+    Usage
+    Developer
     Changelog

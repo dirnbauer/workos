@@ -8,6 +8,47 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
+..  _changelog-2-2-0:
+
+2.2.0 - Thermo-nuclear cleanup
+==============================
+
+..  rubric:: Changed
+
+-   ``workos/workos-php`` ``^9.4``; ``@workos-inc/widgets`` build refreshed.
+-   Typed domain model: ``LoginContext``, ``SocialProvider`` and
+    ``McpAuthenticationMode`` enums replace string pairs and constant lists;
+    ``IdentityService`` and ``UserProvisioningService::resolve()`` take a
+    ``LoginContext``.
+-   ``WorkosClientFactory::client()`` is the single SDK entry point and
+    enforces configured credentials; the per-service ``assertConfigured()``
+    copies are gone.
+-   ``WorkosConfiguration::save()`` persists settings and flushes caches for
+    both backend modules; ``validate()`` works on normalized settings.
+-   Backend login endpoints are constants of ``BackendWorkosAuthMiddleware``;
+    the login provider identifier is ``WorkosBackendLoginProvider::IDENTIFIER``.
+-   Backend login CSS moved from PHP / Fluid into
+    :file:`Resources/Public/Css/Backend/`.
+-   Tooling: ``.Build/`` layout, PHPUnit 12, PHPStan level 8 (portfolio
+    policy), CI ``assets`` job that rebuilds the widget bundle, testing
+    framework bootstrap files.
+-   Documentation restructured into Introduction, Installation,
+    Configuration, Usage and Developer.
+
+..  rubric:: Fixed
+
+-   Team plugin: organization domains were never shown (the SDK returns
+    ``OrganizationDomain`` objects).
+-   Backend login: "Back to sign in" returned to the login form instead of
+    starting the hosted AuthKit flow.
+
+..  rubric:: Removed
+
+-   The unused ``cookiePassword`` setting (it was only validated, never
+    used); existing values in :file:`settings.php` are ignored.
+-   Raw (non-JSON) OAuth ``state`` fallback, ``describePortalIntents()``,
+    ``*DefaultGroupCsv()`` getters, the audit snapshots in ``docs/``.
+
 ..  _changelog-2-1-0:
 
 2.1.0 — WorkOS SDK 9 and modernization
