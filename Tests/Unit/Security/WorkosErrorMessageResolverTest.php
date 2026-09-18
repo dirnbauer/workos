@@ -15,6 +15,7 @@ final class WorkosErrorMessageResolverTest extends TestCase
     #[\Override]
     protected function setUp(): void
     {
+        parent::setUp();
         $this->resolver = new WorkosErrorMessageResolver();
     }
 
@@ -60,5 +61,44 @@ final class WorkosErrorMessageResolverTest extends TestCase
     public function testResolveSignUp(string $message, string $expectedKey): void
     {
         self::assertSame($expectedKey, $this->resolver->resolveSignUp($message));
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function passwordChangeProvider(): array
+    {
+        return [
+            'too short' => ['password_too_short', 'account.flash.passwordTooShort'],
+            'too weak' => ['too weak', 'account.flash.passwordTooWeak'],
+            'breached' => ['compromised password', 'account.flash.passwordBreached'],
+            'anything else' => ['The password field is invalid', 'account.flash.passwordFailed'],
+        ];
+    }
+
+    #[DataProvider('passwordChangeProvider')]
+    public function testResolvePasswordChange(string $message, string $expectedKey): void
+    {
+        self::assertSame($expectedKey, $this->resolver->resolvePasswordChange($message));
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function invitationProvider(): array
+    {
+        return [
+            'forbidden organization' => ['forbidden_organization', 'team.flash.forbidden'],
+            'already invited' => ['User already invited', 'team.flash.inviteAlreadyExists'],
+            'already exists' => ['Member already exists', 'team.flash.inviteAlreadyExists'],
+            'invalid email' => ['invalid_email', 'team.flash.inviteInvalidEmail'],
+            'generic fallback' => ['boom', 'team.flash.inviteFailed'],
+        ];
+    }
+
+    #[DataProvider('invitationProvider')]
+    public function testResolveInvitation(string $message, string $expectedKey): void
+    {
+        self::assertSame($expectedKey, $this->resolver->resolveInvitation($message));
     }
 }

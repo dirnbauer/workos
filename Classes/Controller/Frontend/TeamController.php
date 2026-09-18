@@ -12,16 +12,17 @@ use TYPO3\CMS\Core\Http\RedirectResponse;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Security\RequestTokenService;
 use Webconsulting\WorkosAuth\Security\SecretRedactor;
+use Webconsulting\WorkosAuth\Security\WorkosErrorMessageResolver;
 use Webconsulting\WorkosAuth\Service\IdentityService;
 use Webconsulting\WorkosAuth\Service\RequestBody;
 use Webconsulting\WorkosAuth\Service\WorkosTeamService;
 use WorkOS\Resource\Organization;
+use WorkOS\Resource\OrganizationDomain;
 use WorkOS\Resource\UserInvite;
 
 /**
- * "WorkOS Team" plugin: lets a signed-in admin manage organization
- * invitations and launch one-time WorkOS Admin Portal sessions for
- * SSO, Directory Sync, Audit Logs, Domain Verification, etc.
+ * "WorkOS Team" plugin: organization invitations and one-time WorkOS Admin
+ * Portal links for signed-in organization admins.
  */
 #[Autoconfigure(public: true)]
 final class TeamController extends AbstractFrontendController implements LoggerAwareInterface
@@ -38,21 +39,20 @@ final class TeamController extends AbstractFrontendController implements LoggerA
         IdentityService $identityService,
         RequestTokenService $requestTokenService,
         private readonly WorkosTeamService $teamService,
+        private readonly WorkosErrorMessageResolver $errorMessageResolver,
     ) {
         parent::__construct($configuration, $identityService, $requestTokenService);
     }
 
     public function dashboardAction(?string $organizationId = null): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
+        $workosUserId = $this->resolveLinkedWorkosUserId();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
-        $workosUserId = $context['workosUserId'];
         $organizations = [];
         $sectionErrors = [];
-
         try {
             $organizations = $this->teamService->listAdminOrganizations($workosUserId);
         } catch (\Throwable $e) {
@@ -62,18 +62,16 @@ final class TeamController extends AbstractFrontendController implements LoggerA
 
         if ($organizations === []) {
             $this->view->assignMultiple([
-                'configured' => true,
-                'isLoggedIn' => true,
-                'workosUserId' => $workosUserId,
                 'noOrganizations' => true,
                 'sectionErrors' => $sectionErrors,
                 'flash' => $this->consumeFlash(),
             ]);
+
             return $this->htmlResponse();
         }
 
         $selectedOrgId = $this->resolveSelectedOrganization($organizationId, $organizations);
-        $selectedOrg = $organizations[$selectedOrgId] ?? null;
+        $selectedOrg = $organizations[$selectedOrgId];
 
         $invitations = [];
         try {
@@ -83,25 +81,18 @@ final class TeamController extends AbstractFrontendController implements LoggerA
             $sectionErrors['invitations'] = $this->translate('team.error.loadInvitations');
         }
 
-        $portalIntents = array_map(
-            fn(array $intent) => [
-                'slug' => $intent['slug'],
-                'label' => $this->translate($intent['labelKey']),
-            ],
-            $this->teamService->describePortalIntents(),
-        );
-
         $this->view->assignMultiple([
-            'configured' => true,
-            'isLoggedIn' => true,
-            'workosUserId' => $workosUserId,
-            'organizations' => $this->prepareOrganizations($organizations, $selectedOrgId),
-            'selectedOrganization' => $selectedOrg !== null ? [
-                'id' => $selectedOrg->id,
-                'name' => $selectedOrg->name,
-            ] : null,
+            'organizations' => array_map(
+                fn(Organization $organization): array => $this->prepareOrganizationRow($organization, $selectedOrgId),
+                array_values($organizations)
+            ),
+            'selectedOrganization' => ['id' => $selectedOrg->id, 'name' => $selectedOrg->name],
             'invitations' => array_map($this->prepareInvitationRow(...), $invitations),
-            'portalIntents' => $portalIntents,
+            'portalIntents' => array_map(
+                fn(string $slug, string $labelKey): array => ['slug' => $slug, 'label' => $this->translate($labelKey)],
+                array_keys(WorkosTeamService::PORTAL_INTENTS),
+                WorkosTeamService::PORTAL_INTENTS
+            ),
             'flash' => $this->consumeFlash(),
             'sectionErrors' => $sectionErrors,
             'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
@@ -112,37 +103,27 @@ final class TeamController extends AbstractFrontendController implements LoggerA
 
     public function inviteAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
+        $body = RequestBody::fromRequest($this->request);
+        $organizationId = $body->trimmedString('organizationId');
+        $workosUserId = $this->authorizeAction($organizationId);
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
-        $body = RequestBody::fromRequest($this->request);
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
-            return $this->redirectToDashboard($body->trimmedString('organizationId'));
-        }
         $email = $body->trimmedString('email');
         $roleSlug = $body->trimmedString('roleSlug');
-        $organizationId = $body->trimmedString('organizationId');
-
         if ($email === '' || $organizationId === '') {
             $this->setFlash('danger', $this->translate('team.flash.inviteFieldsRequired'));
             return $this->redirectToDashboard($organizationId);
         }
 
         try {
-            $this->teamService->assertMemberOfOrganization($context['workosUserId'], $organizationId);
-            $this->teamService->sendInvitation(
-                email: $email,
-                organizationId: $organizationId,
-                inviterUserId: $context['workosUserId'],
-                roleSlug: $roleSlug !== '' ? $roleSlug : null,
-            );
+            $this->teamService->assertMemberOfOrganization($workosUserId, $organizationId);
+            $this->teamService->sendInvitation($email, $organizationId, $workosUserId, $roleSlug !== '' ? $roleSlug : null);
             $this->setFlash('success', $this->translate('team.flash.inviteSent', ['email' => $email]));
         } catch (\Throwable $e) {
             $this->logger?->error('WorkOS team: send invitation failed: ' . SecretRedactor::redact($e->getMessage()));
-            $this->setFlash('danger', $this->mapInvitationError($e->getMessage()));
+            $this->setFlash('danger', $this->translate($this->errorMessageResolver->resolveInvitation($e->getMessage())));
         }
 
         return $this->redirectToDashboard($organizationId);
@@ -150,136 +131,117 @@ final class TeamController extends AbstractFrontendController implements LoggerA
 
     public function resendInvitationAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
-        }
-
-        $body = RequestBody::fromRequest($this->request);
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
-            return $this->redirectToDashboard($body->trimmedString('organizationId'));
-        }
-        $invitationId = $body->trimmedString('invitationId');
-        $organizationId = $body->trimmedString('organizationId');
-
-        if ($invitationId !== '') {
-            try {
-                $invitation = $this->teamService->findInvitation($invitationId);
-                $invitationOrgId = $invitation === null ? '' : $invitation->organizationId ?? '';
-                $this->teamService->assertMemberOfOrganization($context['workosUserId'], $invitationOrgId);
-                $this->teamService->resendInvitation($invitationId);
-                $this->setFlash('success', $this->translate('team.flash.inviteResent'));
-            } catch (\Throwable $e) {
-                $this->logger?->error('WorkOS team: resend invitation failed: ' . SecretRedactor::redact($e->getMessage()));
-                $this->setFlash('danger', $this->translate('team.flash.inviteResendFailed'));
-            }
-        }
-
-        return $this->redirectToDashboard($organizationId);
+        return $this->handleInvitationAction(
+            fn(string $invitationId): UserInvite => $this->teamService->resendInvitation($invitationId),
+            'team.flash.inviteResent',
+            'team.flash.inviteResendFailed'
+        );
     }
 
     public function revokeInvitationAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
-        }
-
-        $body = RequestBody::fromRequest($this->request);
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
-            return $this->redirectToDashboard($body->trimmedString('organizationId'));
-        }
-        $invitationId = $body->trimmedString('invitationId');
-        $organizationId = $body->trimmedString('organizationId');
-
-        if ($invitationId !== '') {
-            try {
-                $invitation = $this->teamService->findInvitation($invitationId);
-                $invitationOrgId = $invitation === null ? '' : $invitation->organizationId ?? '';
-                $this->teamService->assertMemberOfOrganization($context['workosUserId'], $invitationOrgId);
-                $this->teamService->revokeInvitation($invitationId);
-                $this->setFlash('success', $this->translate('team.flash.inviteRevoked'));
-            } catch (\Throwable $e) {
-                $this->logger?->error('WorkOS team: revoke invitation failed: ' . SecretRedactor::redact($e->getMessage()));
-                $this->setFlash('danger', $this->translate('team.flash.inviteRevokeFailed'));
-            }
-        }
-
-        return $this->redirectToDashboard($organizationId);
+        return $this->handleInvitationAction(
+            fn(string $invitationId) => $this->teamService->revokeInvitation($invitationId),
+            'team.flash.inviteRevoked',
+            'team.flash.inviteRevokeFailed'
+        );
     }
 
     public function launchPortalAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
-        }
-
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
-            return $this->redirectToDashboard($body->trimmedString('organizationId'));
-        }
-        $intent = $body->trimmedString('intent');
         $organizationId = $body->trimmedString('organizationId');
+        $workosUserId = $this->authorizeAction($organizationId);
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
+        }
 
+        $intent = $body->trimmedString('intent');
         if ($intent === '' || $organizationId === '') {
             $this->setFlash('danger', $this->translate('team.flash.portalMissingArgs'));
             return $this->redirectToDashboard($organizationId);
         }
 
-        $returnUrl = (string)$this->request->getUri();
-
         try {
-            $this->teamService->assertMemberOfOrganization($context['workosUserId'], $organizationId);
-            $portalLink = $this->teamService->generatePortalLink(
-                organizationId: $organizationId,
-                intent: $intent,
-                returnUrl: $returnUrl !== '' ? $returnUrl : null,
-            );
-            $link = $portalLink->link;
+            $this->teamService->assertMemberOfOrganization($workosUserId, $organizationId);
+            $link = $this->teamService->generatePortalLink($organizationId, $intent, (string)$this->request->getUri())->link;
             if ($link === '') {
                 throw new \RuntimeException('Empty portal link returned.', 1744278050);
             }
+
             return new RedirectResponse($link, 303);
         } catch (\Throwable $e) {
             $this->logger?->error('WorkOS team: generate portal link failed: ' . SecretRedactor::redact($e->getMessage()));
             $this->setFlash('danger', $this->translate('team.flash.portalFailed'));
+
             return $this->redirectToDashboard($organizationId);
         }
     }
 
     /**
-     * @param array<string, Organization> $organizations
-     * @return array<int, array{id:string,name:string,domains:string,selected:bool}>
+     * Resend / revoke share the same shape: authorize against the
+     * invitation's organization (never the posted one), then act.
+     *
+     * @param callable(string): mixed $operation
      */
-    private function prepareOrganizations(array $organizations, string $selectedOrgId): array
+    private function handleInvitationAction(callable $operation, string $successKey, string $failureKey): ResponseInterface
     {
-        $rows = [];
-        foreach ($organizations as $organization) {
-            $domains = '';
-            $orgDomains = $organization->domains;
-            if (is_array($orgDomains)) {
-                $names = [];
-                foreach ($orgDomains as $entry) {
-                    $domain = is_array($entry) ? ($entry['domain'] ?? '') : '';
-                    if (is_string($domain) && $domain !== '') {
-                        $names[] = $domain;
-                    }
-                }
-                $domains = implode(', ', $names);
-            }
-            $orgId = $organization->id;
-            $rows[] = [
-                'id' => $orgId,
-                'name' => $organization->name,
-                'domains' => $domains,
-                'selected' => $orgId === $selectedOrgId,
-            ];
+        $body = RequestBody::fromRequest($this->request);
+        $organizationId = $body->trimmedString('organizationId');
+        $workosUserId = $this->authorizeAction($organizationId);
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
-        return $rows;
+
+        $invitationId = $body->trimmedString('invitationId');
+        if ($invitationId !== '') {
+            try {
+                $this->teamService->assertMemberOfOrganization($workosUserId, $this->teamService->findInvitationOrganizationId($invitationId));
+                $operation($invitationId);
+                $this->setFlash('success', $this->translate($successKey));
+            } catch (\Throwable $e) {
+                $this->logger?->error('WorkOS team: invitation action failed: ' . SecretRedactor::redact($e->getMessage()));
+                $this->setFlash('danger', $this->translate($failureKey));
+            }
+        }
+
+        return $this->redirectToDashboard($organizationId);
+    }
+
+    /**
+     * Guard of every state-changing action: linked WorkOS user plus a valid
+     * request token. Returns the WorkOS user id or the response to send instead.
+     */
+    private function authorizeAction(string $organizationId): ResponseInterface|string
+    {
+        $workosUserId = $this->resolveLinkedWorkosUserId();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
+        }
+        if (!$this->hasValidRequestToken()) {
+            $this->setFlash('danger', $this->translate('team.flash.csrfInvalid'));
+            return $this->redirectToDashboard($organizationId);
+        }
+
+        return $workosUserId;
+    }
+
+    /**
+     * @return array{id: string, name: string, domains: string, selected: bool}
+     */
+    private function prepareOrganizationRow(Organization $organization, string $selectedOrgId): array
+    {
+        $domains = array_map(
+            static fn(OrganizationDomain $domain): string => $domain->domain,
+            array_filter($organization->domains, static fn(mixed $domain): bool => $domain instanceof OrganizationDomain)
+        );
+
+        return [
+            'id' => $organization->id,
+            'name' => $organization->name,
+            'domains' => implode(', ', $domains),
+            'selected' => $organization->id === $selectedOrgId,
+        ];
     }
 
     /**
@@ -301,44 +263,25 @@ final class TeamController extends AbstractFrontendController implements LoggerA
     }
 
     /**
-     * @param array<string, Organization> $organizations
+     * The requested organization wins and is remembered in the session;
+     * otherwise the remembered one, otherwise the first.
+     *
+     * @param non-empty-array<string, Organization> $organizations
      */
     private function resolveSelectedOrganization(?string $requested, array $organizations): string
     {
-        if ($requested !== null && $requested !== '' && isset($organizations[$requested])) {
+        if ($requested !== null && isset($organizations[$requested])) {
             $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_ORG, $requested);
             return $requested;
         }
 
         $stored = $this->getFrontendUser()->getSessionData(self::SESSION_ORG);
-        if (is_string($stored) && isset($organizations[$stored])) {
-            return $stored;
-        }
 
-        $firstKey = array_key_first($organizations);
-        return $firstKey !== null ? $firstKey : '';
+        return is_string($stored) && isset($organizations[$stored]) ? $stored : array_key_first($organizations);
     }
 
-    private function redirectToDashboard(string $organizationId = ''): ResponseInterface
+    private function redirectToDashboard(string $organizationId): ResponseInterface
     {
-        if ($organizationId !== '') {
-            return $this->redirect('dashboard', null, null, ['organizationId' => $organizationId]);
-        }
-        return $this->redirect('dashboard');
-    }
-
-    private function mapInvitationError(string $message): string
-    {
-        $lower = strtolower($message);
-        if (str_contains($lower, 'forbidden_organization')) {
-            return $this->translate('team.flash.forbidden');
-        }
-        if (str_contains($lower, 'already') && (str_contains($lower, 'invited') || str_contains($lower, 'exists'))) {
-            return $this->translate('team.flash.inviteAlreadyExists');
-        }
-        if (str_contains($lower, 'invalid_email') || str_contains($lower, 'invalid email')) {
-            return $this->translate('team.flash.inviteInvalidEmail');
-        }
-        return $this->translate('team.flash.inviteFailed');
+        return $this->redirect('dashboard', null, null, $organizationId !== '' ? ['organizationId' => $organizationId] : []);
     }
 }

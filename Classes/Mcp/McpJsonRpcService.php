@@ -9,11 +9,18 @@ use Psr\Log\LoggerAwareTrait;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 
+/**
+ * JSON-RPC 2.0 dispatcher for the MCP methods TYPO3 supports:
+ * initialize, ping, tools/list and tools/call.
+ */
 final class McpJsonRpcService implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    private const PROTOCOL_VERSION = '2025-11-25';
+    public const string PROTOCOL_VERSION = '2025-11-25';
+
+    private const string TOOL_CONTEXT = 'workos.mcp_context';
+    private const string TOOL_AUTHORIZED_SERVERS = 'workos.authorized_mcp_servers';
 
     public function __construct(
         private readonly WorkosConfiguration $configuration,
@@ -22,7 +29,7 @@ final class McpJsonRpcService implements LoggerAwareInterface
 
     /**
      * @param array<string, mixed> $message
-     * @return array<string, mixed>|null
+     * @return array<string, mixed>|null null for notifications (messages without an id)
      */
     public function handle(array $message, McpRequestContext $context): ?array
     {
@@ -30,15 +37,11 @@ final class McpJsonRpcService implements LoggerAwareInterface
         $method = MixedCaster::string($message['method'] ?? null);
 
         if ($method === '') {
-            return $this->error($id, -32600, 'Invalid JSON-RPC request.');
+            return self::error($id, -32600, 'Invalid JSON-RPC request.');
         }
 
-        if ($this->configuration->shouldLogMcpVerbously()) {
-            $this->logger?->info(sprintf(
-                'TYPO3 MCP method "%s" called by %s.',
-                $method,
-                $context->workosUserId ?? 'anonymous'
-            ));
+        if ($this->configuration->shouldLogMcpVerbosely()) {
+            $this->logger?->info(sprintf('TYPO3 MCP method "%s" called by %s.', $method, $context->workosUserId ?? 'anonymous'));
         }
 
         if (!array_key_exists('id', $message)) {
@@ -46,68 +49,38 @@ final class McpJsonRpcService implements LoggerAwareInterface
         }
 
         return match ($method) {
-            'initialize' => $this->success($id, [
+            'initialize' => self::success($id, [
                 'protocolVersion' => self::PROTOCOL_VERSION,
-                'capabilities' => [
-                    'tools' => [
-                        'listChanged' => false,
-                    ],
-                ],
-                'serverInfo' => [
-                    'name' => 'typo3-workos-auth',
-                    'title' => 'TYPO3 WorkOS MCP',
-                    'version' => '1.0.0',
-                ],
+                'capabilities' => ['tools' => ['listChanged' => false]],
+                'serverInfo' => ['name' => 'typo3-workos-auth', 'title' => 'TYPO3 WorkOS MCP', 'version' => '1.0.0'],
                 'instructions' => 'This TYPO3 MCP endpoint exposes the current TYPO3/WorkOS identity context and WorkOS-authorized MCP applications for the authenticated WorkOS user.',
             ]),
-            'ping' => $this->success($id, new \stdClass()),
-            'tools/list' => $this->success($id, ['tools' => $this->tools()]),
-            'tools/call' => $this->callTool($id, $this->normalizeParams($message['params'] ?? null), $context),
-            default => $this->error($id, -32601, sprintf('Unsupported MCP method "%s".', $method)),
+            'ping' => self::success($id, new \stdClass()),
+            'tools/list' => self::success($id, ['tools' => self::tools()]),
+            'tools/call' => $this->callTool($id, MixedCaster::stringKeyedArray($message['params'] ?? null) ?? [], $context),
+            default => self::error($id, -32601, sprintf('Unsupported MCP method "%s".', $method)),
         };
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function normalizeParams(mixed $params): array
-    {
-        if (!is_array($params)) {
-            return [];
-        }
-
-        $normalized = [];
-        foreach ($params as $key => $value) {
-            if (is_string($key)) {
-                $normalized[$key] = $value;
-            }
-        }
-        return $normalized;
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    private function tools(): array
+    private static function tools(): array
     {
+        $noArguments = ['type' => 'object', 'additionalProperties' => false];
+
         return [
             [
-                'name' => 'workos.mcp_context',
+                'name' => self::TOOL_CONTEXT,
                 'title' => 'TYPO3 WorkOS identity context',
                 'description' => 'Shows whether the MCP request is anonymous or WorkOS-authenticated and which TYPO3 frontend/backend user and groups are linked.',
-                'inputSchema' => [
-                    'type' => 'object',
-                    'additionalProperties' => false,
-                ],
+                'inputSchema' => $noArguments,
             ],
             [
-                'name' => 'workos.authorized_mcp_servers',
+                'name' => self::TOOL_AUTHORIZED_SERVERS,
                 'title' => 'Authorized WorkOS MCP applications',
                 'description' => 'Lists up to the configured limit of WorkOS Connect applications the current WorkOS user has authorized.',
-                'inputSchema' => [
-                    'type' => 'object',
-                    'additionalProperties' => false,
-                ],
+                'inputSchema' => $noArguments,
             ],
         ];
     }
@@ -119,41 +92,30 @@ final class McpJsonRpcService implements LoggerAwareInterface
     private function callTool(mixed $id, array $params, McpRequestContext $context): array
     {
         $name = MixedCaster::string($params['name'] ?? null);
+
         return match ($name) {
-            'workos.mcp_context' => $this->success($id, [
-                'content' => [
-                    [
-                        'type' => 'text',
-                        'text' => json_encode($context->toPublicArray(), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-                    ],
-                ],
-                'structuredContent' => $context->toPublicArray(),
+            self::TOOL_CONTEXT => self::toolResult($id, $context->toPublicArray()),
+            self::TOOL_AUTHORIZED_SERVERS => self::toolResult($id, [
+                'servers' => $this->registryService->listAuthorizedServers($context),
+                'limit' => $this->configuration->getMcpServerLimit(),
+                'workosDiscoveryEnabled' => $this->configuration->shouldDiscoverWorkosMcpServers(),
+                'requiresWorkosUser' => true,
             ]),
-            'workos.authorized_mcp_servers' => $this->authorizedServers($id, $context),
-            default => $this->error($id, -32602, sprintf('Unknown tool "%s".', $name)),
+            default => self::error($id, -32602, sprintf('Unknown tool "%s".', $name)),
         };
     }
 
     /**
+     * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
-    private function authorizedServers(mixed $id, McpRequestContext $context): array
+    private static function toolResult(mixed $id, array $payload): array
     {
-        $servers = $this->registryService->listAuthorizedServers($context);
-        $payload = [
-            'servers' => $servers,
-            'limit' => $this->configuration->getMcpServerLimit(),
-            'workosDiscoveryEnabled' => $this->configuration->shouldDiscoverWorkosMcpServers(),
-            'requiresWorkosUser' => true,
-        ];
-
-        return $this->success($id, [
-            'content' => [
-                [
-                    'type' => 'text',
-                    'text' => json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-                ],
-            ],
+        return self::success($id, [
+            'content' => [[
+                'type' => 'text',
+                'text' => json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            ]],
             'structuredContent' => $payload,
         ]);
     }
@@ -161,27 +123,16 @@ final class McpJsonRpcService implements LoggerAwareInterface
     /**
      * @return array<string, mixed>
      */
-    private function success(mixed $id, mixed $result): array
+    private static function success(mixed $id, mixed $result): array
     {
-        return [
-            'jsonrpc' => '2.0',
-            'id' => $id,
-            'result' => $result,
-        ];
+        return ['jsonrpc' => '2.0', 'id' => $id, 'result' => $result];
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function error(mixed $id, int $code, string $message): array
+    public static function error(mixed $id, int $code, string $message): array
     {
-        return [
-            'jsonrpc' => '2.0',
-            'id' => $id,
-            'error' => [
-                'code' => $code,
-                'message' => $message,
-            ],
-        ];
+        return ['jsonrpc' => '2.0', 'id' => $id, 'error' => ['code' => $code, 'message' => $message]];
     }
 }

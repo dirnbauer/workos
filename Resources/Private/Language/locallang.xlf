@@ -660,21 +660,6 @@
         <source>Client ID</source>
       </segment>
     </unit>
-    <unit id="setup.credentials.cookiePassword">
-      <segment>
-        <source>Cookie password</source>
-      </segment>
-    </unit>
-    <unit id="setup.credentials.cookiePasswordHint">
-      <segment>
-        <source>WorkOS requires a strong cookie password with at least 32 characters.</source>
-      </segment>
-    </unit>
-    <unit id="setup.credentials.generateCookiePassword">
-      <segment>
-        <source>Generate a fresh cookie password on save</source>
-      </segment>
-    </unit>
     <unit id="setup.frontend.title">
       <segment>
         <source>Frontend login</source>
@@ -1374,11 +1359,6 @@
         <source>A WorkOS client ID is required when frontend or backend login is enabled.</source>
       </segment>
     </unit>
-    <unit id="validation.cookiePasswordTooShort">
-      <segment>
-        <source>The WorkOS cookie password must be at least 32 characters long.</source>
-      </segment>
-    </unit>
     <unit id="validation.frontendStoragePidRequired">
       <segment>
         <source>Automatic frontend user creation needs a storage PID greater than 0.</source>
@@ -1392,11 +1372,6 @@
     <unit id="validation.backendCookieSameSiteUnsupported">
       <segment>
         <source>Backend WorkOS login requires TYPO3 backend cookies to use one of the core SameSite values "strict", "lax", or "none". The current TYPO3 core value is "{sameSite}".</source>
-      </segment>
-    </unit>
-    <unit id="validation.mcpAuthenticationModeInvalid">
-      <segment>
-        <source>Choose a valid MCP authentication mode.</source>
       </segment>
     </unit>
     <unit id="validation.mcpAuthkitDomainRequired">

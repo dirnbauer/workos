@@ -7,39 +7,49 @@ namespace Webconsulting\WorkosAuth\Security;
 /**
  * Deterministic narrowing from `mixed` to scalar types.
  *
- * PHP / PSR-7 boundaries routinely return `mixed` (parsed request
- * bodies, query params, session data, `$GLOBALS`, database rows,
- * JSON-decoded payloads). Cast helpers keep that narrowing in one
- * place so PHPStan at max level can track the flow without needing
- * an explicit cast in every call site.
+ * PSR-7 request data, session data, `$GLOBALS` and JSON payloads are
+ * `mixed`. These helpers keep the narrowing rules in one place instead of
+ * repeating `is_string() ? ... : ''` at every boundary.
  */
 final class MixedCaster
 {
     public static function string(mixed $value, string $default = ''): string
     {
-        if (is_string($value)) {
-            return $value;
-        }
-        if (is_int($value) || is_float($value) || is_bool($value)) {
-            return (string)$value;
-        }
-        return $default;
+        return match (true) {
+            is_string($value) => $value,
+            is_int($value), is_float($value), is_bool($value) => (string)$value,
+            default => $default,
+        };
     }
 
     public static function int(mixed $value, int $default = 0): int
     {
-        if (is_int($value)) {
-            return $value;
+        return match (true) {
+            is_int($value) => $value,
+            is_string($value) && is_numeric($value), is_float($value) => (int)$value,
+            is_bool($value) => $value ? 1 : 0,
+            default => $default,
+        };
+    }
+
+    /**
+     * Narrow a `mixed` value to a string-keyed array (JSON objects, session
+     * payloads, request attributes). Returns null for anything that is not
+     * an array; integer keys are kept as their string form.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function stringKeyedArray(mixed $value): ?array
+    {
+        if (!is_array($value)) {
+            return null;
         }
-        if (is_string($value) && is_numeric($value)) {
-            return (int)$value;
+
+        $narrowed = [];
+        foreach ($value as $key => $item) {
+            $narrowed[(string)$key] = $item;
         }
-        if (is_float($value)) {
-            return (int)$value;
-        }
-        if (is_bool($value)) {
-            return $value ? 1 : 0;
-        }
-        return $default;
+
+        return $narrowed;
     }
 }

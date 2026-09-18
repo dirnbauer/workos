@@ -7,21 +7,23 @@ namespace Webconsulting\WorkosAuth\Service;
 use TYPO3\CMS\Core\Database\Schema\SchemaMigrator;
 use TYPO3\CMS\Core\Database\Schema\SqlReader;
 
+/**
+ * Reports and applies the pending schema changes of this extension's tables
+ * through TYPO3's schema migrator (the same mechanism as `extension:setup`).
+ *
+ * @phpstan-type SchemaStatement array{connection: string, action: string, statement: string}
+ */
 final readonly class ExtensionSchemaService
 {
     /**
      * @var list<string>
      */
-    private const MANAGED_TABLES = [
-        'tx_workosauth_identity',
-    ];
+    public const MANAGED_TABLES = ['tx_workosauth_identity'];
 
-    private const APPLY_ACTIONS = [
-        'add',
-        'change',
-        'create_table',
-        'change_table',
-    ];
+    /**
+     * Non-destructive update suggestion groups of SchemaMigrator::getUpdateSuggestions().
+     */
+    private const APPLY_ACTIONS = ['add', 'change', 'create_table', 'change_table'];
 
     public function __construct(
         private SqlReader $sqlReader,
@@ -29,98 +31,69 @@ final readonly class ExtensionSchemaService
     ) {}
 
     /**
-     * @return array{
-     *     ready: bool,
-     *     pendingCount: int,
-     *     managedTables: list<string>,
-     *     statements: list<array{connection: string, action: string, statement: string}>,
-     *     error: string
-     * }
+     * @return array{ready: bool, pendingCount: int, managedTables: list<string>, statements: list<SchemaStatement>, error: string}
      */
     public function getStatus(): array
     {
         try {
-            $statements = $this->getManagedUpdateStatements();
+            $statements = array_values($this->getManagedUpdateStatements($this->getCreateTableStatements()));
+            $error = '';
         } catch (\Throwable $exception) {
-            return [
-                'ready' => false,
-                'pendingCount' => 0,
-                'managedTables' => self::MANAGED_TABLES,
-                'statements' => [],
-                'error' => $exception->getMessage(),
-            ];
+            $statements = [];
+            $error = $exception->getMessage();
         }
 
         return [
-            'ready' => $statements === [],
+            'ready' => $statements === [] && $error === '',
             'pendingCount' => count($statements),
             'managedTables' => self::MANAGED_TABLES,
-            'statements' => array_values($statements),
-            'error' => '',
+            'statements' => $statements,
+            'error' => $error,
         ];
     }
 
     /**
-     * @return array{
-     *     appliedCount: int,
-     *     errors: array<string, string>
-     * }
+     * @return array{appliedCount: int, errors: array<string, string>}
      */
     public function applyPendingUpdates(): array
     {
         $databaseDefinitions = $this->getCreateTableStatements();
-        $pendingStatements = $this->getManagedUpdateStatements($databaseDefinitions);
-        $selectedStatements = [];
-        foreach (array_keys($pendingStatements) as $hash) {
-            $selectedStatements[$hash] = $hash;
+        $hashes = array_keys($this->getManagedUpdateStatements($databaseDefinitions));
+        if ($hashes === []) {
+            return ['appliedCount' => 0, 'errors' => []];
         }
 
-        if ($selectedStatements === []) {
-            return [
-                'appliedCount' => 0,
-                'errors' => [],
-            ];
-        }
-
-        $migrationErrors = $this->schemaMigrator->migrate($databaseDefinitions, $selectedStatements);
         $errors = [];
-        foreach ($migrationErrors as $key => $message) {
+        foreach ($this->schemaMigrator->migrate($databaseDefinitions, array_combine($hashes, $hashes)) as $hash => $message) {
             if (is_scalar($message) || $message instanceof \Stringable) {
-                $errors[(string)$key] = (string)$message;
+                $errors[(string)$hash] = (string)$message;
             }
         }
 
-        return [
-            'appliedCount' => count($selectedStatements) - count($errors),
-            'errors' => $errors,
-        ];
+        return ['appliedCount' => count($hashes) - count($errors), 'errors' => $errors];
     }
 
     /**
-     * @param list<string>|null $databaseDefinitions
-     * @return array<string, array{connection: string, action: string, statement: string}>
+     * @param list<string> $databaseDefinitions
+     * @return array<string, SchemaStatement> keyed by statement hash
      */
-    private function getManagedUpdateStatements(?array $databaseDefinitions = null): array
+    private function getManagedUpdateStatements(array $databaseDefinitions): array
     {
-        $databaseDefinitions ??= $this->getCreateTableStatements();
-        $updateSuggestionsPerConnection = $this->schemaMigrator->getUpdateSuggestions($databaseDefinitions);
         $managedStatements = [];
-
-        foreach ($updateSuggestionsPerConnection as $connectionName => $updateSuggestions) {
+        foreach ($this->schemaMigrator->getUpdateSuggestions($databaseDefinitions) as $connectionName => $updateSuggestions) {
             foreach (self::APPLY_ACTIONS as $action) {
                 $statements = $updateSuggestions[$action] ?? [];
                 if (!is_array($statements)) {
                     continue;
                 }
                 foreach ($statements as $hash => $statement) {
-                    if (!is_string($hash) || !is_string($statement) || !$this->referencesManagedTable($statement)) {
-                        continue;
+                    if (is_string($hash) && is_string($statement) && self::referencesManagedTable($statement)) {
+                        $managedStatements[$hash] = [
+                            'connection' => (string)$connectionName,
+                            'action' => $action,
+                            'statement' => $statement,
+                        ];
                     }
-                    $managedStatements[$hash] = [
-                        'connection' => (string)$connectionName,
-                        'action' => $action,
-                        'statement' => $statement,
-                    ];
                 }
             }
         }
@@ -133,26 +106,17 @@ final readonly class ExtensionSchemaService
      */
     private function getCreateTableStatements(): array
     {
-        $statements = $this->sqlReader->getCreateTableStatementArray(
-            $this->sqlReader->getTablesDefinitionString()
-        );
-        $createTableStatements = [];
-        foreach ($statements as $statement) {
-            if (is_string($statement)) {
-                $createTableStatements[] = $statement;
-            }
-        }
-        return $createTableStatements;
+        return array_values(array_filter(
+            $this->sqlReader->getCreateTableStatementArray($this->sqlReader->getTablesDefinitionString()),
+            is_string(...)
+        ));
     }
 
-    private function referencesManagedTable(string $statement): bool
+    private static function referencesManagedTable(string $statement): bool
     {
-        foreach (self::MANAGED_TABLES as $tableName) {
-            if (preg_match('/\b' . preg_quote($tableName, '/') . '\b/i', $statement) === 1) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(
+            self::MANAGED_TABLES,
+            static fn(string $tableName): bool => preg_match('/\b' . preg_quote($tableName, '/') . '\b/i', $statement) === 1
+        );
     }
 }

@@ -8,40 +8,36 @@ use TYPO3\CMS\Core\Attribute\AsEventListener;
 use TYPO3\CMS\Core\Authentication\Event\BeforeRequestTokenProcessedEvent;
 use TYPO3\CMS\Core\Security\RequestToken;
 use Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
+use Webconsulting\WorkosAuth\Domain\LoginContext;
 
+/**
+ * TYPO3 core verifies a `core/user-auth/fe|be` request token during active
+ * login processing. WorkOS forms validate their own scoped tokens before
+ * calling WorkOS; this listener swaps to the core scope for the internal
+ * handoff, but only for a server-created pending login and never for a
+ * request token that RequestTokenMiddleware already resolved as invalid.
+ */
 #[AsEventListener('workos-auth/allow-pending-login-request-token')]
 final class AllowPendingWorkosLoginRequestTokenListener
 {
     public function __invoke(BeforeRequestTokenProcessedEvent $event): void
     {
-        $pendingLogin = $event->getRequest()->getAttribute(
-            WorkosTypo3AuthenticationService::PENDING_LOGIN_ATTRIBUTE
-        );
+        $pendingLogin = $event->getRequest()->getAttribute(WorkosTypo3AuthenticationService::PENDING_LOGIN_ATTRIBUTE);
         if (!is_array($pendingLogin)) {
             return;
         }
 
-        $context = $pendingLogin['context'] ?? null;
-        if (!is_string($context) || !in_array($context, ['frontend', 'backend'], true)) {
-            return;
-        }
-
-        $loginType = strtolower($event->getUser()->loginType);
-        if (($loginType === 'be' && $context !== 'backend') || ($loginType === 'fe' && $context !== 'frontend')) {
+        $pendingContext = is_string($pendingLogin['context'] ?? null) ? LoginContext::tryFrom($pendingLogin['context']) : null;
+        if ($pendingContext === null || $pendingContext !== LoginContext::fromLoginType($event->getUser()->loginType)) {
             return;
         }
 
         $requestToken = $event->getRequestToken();
-        $expectedScope = 'core/user-auth/' . $loginType;
-        if ($requestToken instanceof RequestToken && $requestToken->scope === $expectedScope) {
-            return;
-        }
-        if ($requestToken === false) {
+        $expectedScope = $pendingContext->coreRequestTokenScope();
+        if ($requestToken === false || ($requestToken instanceof RequestToken && $requestToken->scope === $expectedScope)) {
             return;
         }
 
-        $event->setRequestToken(
-            RequestToken::create($expectedScope)
-        );
+        $event->setRequestToken(RequestToken::create($expectedScope));
     }
 }

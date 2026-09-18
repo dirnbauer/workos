@@ -4,69 +4,40 @@ declare(strict_types=1);
 
 defined('TYPO3') or die();
 
+use TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend;
+use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
+use Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
+use Webconsulting\WorkosAuth\Controller\Frontend\AccountController;
+use Webconsulting\WorkosAuth\Controller\Frontend\LoginController;
+use Webconsulting\WorkosAuth\Controller\Frontend\TeamController;
+use Webconsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider;
 
 (static function (): void {
-    /** @var array<string, mixed> $confVars */
-    $confVars = is_array($GLOBALS['TYPO3_CONF_VARS'] ?? null) ? $GLOBALS['TYPO3_CONF_VARS'] : [];
-    $sys = is_array($confVars['SYS'] ?? null) ? $confVars['SYS'] : [];
-    $caching = is_array($sys['caching'] ?? null) ? $sys['caching'] : [];
-    $cacheConfigurations = is_array($caching['cacheConfigurations'] ?? null) ? $caching['cacheConfigurations'] : [];
+    // Single-use state of multi-step login flows (see StateService); 10 minute TTL.
+    $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['workos_auth_state'] ??= [
+        'frontend' => VariableFrontend::class,
+        'backend' => SimpleFileBackend::class,
+        'groups' => ['system'],
+        'options' => ['defaultLifetime' => 600],
+    ];
 
-    if (!isset($cacheConfigurations['workos_auth_state'])) {
-        $cacheConfigurations['workos_auth_state'] = [
-            'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
-            'backend' => \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend::class,
-            'groups' => ['system'],
-            'options' => [
-                'defaultLifetime' => 600,
-            ],
-        ];
-
-        $caching['cacheConfigurations'] = $cacheConfigurations;
-        $sys['caching'] = $caching;
-        $confVars['SYS'] = $sys;
-        $GLOBALS['TYPO3_CONF_VARS'] = $confVars;
+    // Every plugin action depends on the frontend session (login state, CSRF
+    // tokens, flash messages), so all actions are registered as non-cacheable.
+    $plugins = [
+        'Login' => [LoginController::class => 'show,signUp,signUpSubmit,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify,verifyEmail,verifyEmailSubmit,verifyEmailResend'],
+        'Account' => [AccountController::class => 'dashboard,updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession'],
+        'Team' => [TeamController::class => 'dashboard,invite,resendInvitation,revokeInvitation,launchPortal'],
+    ];
+    foreach ($plugins as $pluginName => $controllerActions) {
+        ExtensionUtility::configurePlugin('WorkosAuth', $pluginName, $controllerActions, $controllerActions);
     }
-
-    ExtensionUtility::configurePlugin(
-        'WorkosAuth',
-        'Login',
-        [
-            \Webconsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,signUp,signUpSubmit,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify,verifyEmail,verifyEmailSubmit,verifyEmailResend',
-        ],
-        [
-            \Webconsulting\WorkosAuth\Controller\Frontend\LoginController::class => 'show,signUp,signUpSubmit,passwordAuth,magicAuthSend,magicAuthCode,magicAuthVerify,verifyEmail,verifyEmailSubmit,verifyEmailResend',
-        ]
-    );
-
-    ExtensionUtility::configurePlugin(
-        'WorkosAuth',
-        'Account',
-        [
-            \Webconsulting\WorkosAuth\Controller\Frontend\AccountController::class => 'dashboard,updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession',
-        ],
-        [
-            \Webconsulting\WorkosAuth\Controller\Frontend\AccountController::class => 'dashboard,updateProfile,changePassword,startMfaEnrollment,verifyMfaEnrollment,cancelMfaEnrollment,deleteFactor,revokeSession',
-        ]
-    );
-
-    ExtensionUtility::configurePlugin(
-        'WorkosAuth',
-        'Team',
-        [
-            \Webconsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'dashboard,invite,resendInvitation,revokeInvitation,launchPortal',
-        ],
-        [
-            \Webconsulting\WorkosAuth\Controller\Frontend\TeamController::class => 'dashboard,invite,resendInvitation,revokeInvitation,launchPortal',
-        ]
-    );
 
     ExtensionManagementUtility::addService(
         'workos_auth',
         'auth',
-        \Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+        WorkosTypo3AuthenticationService::class,
         [
             'title' => 'WorkOS TYPO3 Authentication Bridge',
             'description' => 'Authenticates TYPO3 FE and BE users after a successful WorkOS login flow.',
@@ -76,25 +47,14 @@ use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
             'quality' => 80,
             'os' => '',
             'exec' => '',
-            'className' => \Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService::class,
+            'className' => WorkosTypo3AuthenticationService::class,
         ]
     );
 
-    /** @var array<string, mixed> $confVars */
-    $confVars = is_array($GLOBALS['TYPO3_CONF_VARS'] ?? null) ? $GLOBALS['TYPO3_CONF_VARS'] : [];
-    $extconf = is_array($confVars['EXTCONF'] ?? null) ? $confVars['EXTCONF'] : [];
-    $backend = is_array($extconf['backend'] ?? null) ? $extconf['backend'] : [];
-    $providers = is_array($backend['loginProviders'] ?? null) ? $backend['loginProviders'] : [];
-
-    $providers[1744276800] = [
-        'provider' => \Webconsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider::class,
+    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'][WorkosBackendLoginProvider::IDENTIFIER] = [
+        'provider' => WorkosBackendLoginProvider::class,
         'sorting' => 60,
         'iconIdentifier' => 'workos-auth-logo',
         'label' => 'workos_auth.messages:loginprovider.label',
     ];
-
-    $backend['loginProviders'] = $providers;
-    $extconf['backend'] = $backend;
-    $confVars['EXTCONF'] = $extconf;
-    $GLOBALS['TYPO3_CONF_VARS'] = $confVars;
 })();

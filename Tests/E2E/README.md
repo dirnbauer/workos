@@ -28,7 +28,7 @@ sign-in hint inside `.workos-account` / `.workos-team`.
 
 `E2E_BASE_URL` / `E2E_LOGIN_PATH` flow in via environment variables
 from the workflow job. The job itself is not wired into
-`.github/workflows/tests.yml` yet — bring your own site URL (for
+`.github/workflows/ci.yml` yet — bring your own site URL (for
 example a preview deployment) before enabling it.
 
 ## Notes

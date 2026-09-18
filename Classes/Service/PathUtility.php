@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Webconsulting\WorkosAuth\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Site\Entity\Site;
 
 final class PathUtility
 {
@@ -25,11 +26,7 @@ final class PathUtility
         $normalizedBase = rtrim(trim($basePath), '/');
         $normalizedPath = self::normalizePath($path);
 
-        if ($normalizedBase === '') {
-            return $normalizedPath;
-        }
-
-        return $normalizedBase . $normalizedPath;
+        return $normalizedBase === '' ? $normalizedPath : $normalizedBase . $normalizedPath;
     }
 
     public static function joinBaseUrlAndPath(string $baseUrl, string $path): string
@@ -38,7 +35,7 @@ final class PathUtility
     }
 
     /**
-     * @param array<string, mixed> $queryParameters
+     * @param array<string, scalar|null> $queryParameters
      */
     public static function appendQueryParameters(string $url, array $queryParameters): string
     {
@@ -69,13 +66,15 @@ final class PathUtility
         }
 
         if (str_starts_with($requestPath . '/', $siteBasePath . '/')) {
-            $relativePath = substr($requestPath, strlen($siteBasePath));
-            return self::normalizePath($relativePath);
+            return self::normalizePath(substr($requestPath, strlen($siteBasePath)));
         }
 
         return $requestPath;
     }
 
+    /**
+     * Backend entry point path (e.g. `/typo3`) guessed from a backend request path.
+     */
     public static function guessBackendBasePath(string $requestPath): string
     {
         foreach (['/module/', '/login', '/main', '/logout'] as $marker) {
@@ -100,21 +99,68 @@ final class PathUtility
         return self::guessBackendBasePath($requestPath);
     }
 
-    public static function buildAbsoluteUrlFromRequest(ServerRequestInterface $request, string $path): string
+    /**
+     * `scheme://host[:port]` of the request, or '' when the request has no host.
+     */
+    public static function originFromRequest(ServerRequestInterface $request): string
     {
         $uri = $request->getUri();
-        $host = $uri->getHost();
-        if ($host === '') {
-            return self::normalizePath($path);
+        $scheme = strtolower($uri->getScheme());
+        $host = strtolower($uri->getHost());
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
+            return '';
         }
 
-        $port = $uri->getPort();
-        $authority = $host;
-        if ($port !== null && !self::isDefaultPort($uri->getScheme(), $port)) {
-            $authority .= ':' . $port;
+        return self::buildOrigin($scheme, $host, $uri->getPort());
+    }
+
+    /**
+     * Normalize a user-supplied URL to its `scheme://host[:port]` origin; '' when invalid.
+     */
+    public static function normalizeOrigin(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
         }
 
-        return $uri->getScheme() . '://' . $authority . self::normalizePath($path);
+        try {
+            $parts = parse_url($value);
+        } catch (\ValueError) {
+            return '';
+        }
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower($parts['scheme'] ?? '');
+        $host = strtolower($parts['host'] ?? '');
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
+            return '';
+        }
+
+        return self::buildOrigin($scheme, $host, $parts['port'] ?? null);
+    }
+
+    public static function buildAbsoluteUrlFromRequest(ServerRequestInterface $request, string $path): string
+    {
+        $origin = self::originFromRequest($request);
+
+        return $origin === '' ? self::normalizePath($path) : $origin . self::normalizePath($path);
+    }
+
+    /**
+     * Absolute base URL of a site. Sites with a path-only base (e.g. `/camino/`)
+     * have no host, so the request's origin is used to make the URL absolute.
+     */
+    public static function siteBaseUrl(Site $site, ServerRequestInterface $request): string
+    {
+        $siteBase = $site->getBase();
+        if ($siteBase->getHost() !== '') {
+            return rtrim((string)$siteBase, '/');
+        }
+
+        return rtrim(self::buildAbsoluteUrlFromRequest($request, $siteBase->getPath()), '/');
     }
 
     public static function sanitizeReturnTo(ServerRequestInterface $request, ?string $candidate, string $fallback): string
@@ -128,7 +174,7 @@ final class PathUtility
         // Reject protocol-relative URLs (`//evil.com/path`) and their
         // backslash variants (`/\`, `\\`, `\/`). Browsers follow
         // `Location: //host/path` as `scheme://host/path`, so these
-        // would be open-redirects if we treated them as safe paths.
+        // would be open redirects if treated as safe paths.
         if (self::startsWithTwoSlashVariant($candidate)) {
             return $fallback;
         }
@@ -152,15 +198,23 @@ final class PathUtility
         return $sameHost && $sameScheme && $samePort ? $candidate : $fallback;
     }
 
+    private static function buildOrigin(string $scheme, string $host, ?int $port): string
+    {
+        $origin = $scheme . '://' . $host;
+        if ($port !== null && $port > 0 && !self::isDefaultPort($scheme, $port)) {
+            $origin .= ':' . $port;
+        }
+
+        return $origin;
+    }
+
     private static function startsWithTwoSlashVariant(string $candidate): bool
     {
         if (strlen($candidate) < 2) {
             return false;
         }
-        $first = $candidate[0];
-        $second = $candidate[1];
         $slashlike = ['/', '\\'];
-        return in_array($first, $slashlike, true) && in_array($second, $slashlike, true);
+        return in_array($candidate[0], $slashlike, true) && in_array($candidate[1], $slashlike, true);
     }
 
     private static function isDefaultPort(string $scheme, int $port): bool

@@ -4,9 +4,6 @@ apiKey =
 # cat=workos/required; type=string; label=WorkOS Client ID
 clientId =
 
-# cat=workos/required; type=string; label=Cookie password (minimum 32 characters)
-cookiePassword =
-
 # cat=frontend/basic; type=boolean; label=Enable frontend login
 frontendEnabled = 1
 

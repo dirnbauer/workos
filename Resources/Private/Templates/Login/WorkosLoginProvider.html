@@ -1,188 +1,6 @@
 <f:layout name="Login" />
 
 <f:section name="loginFormFields">
-    <style>
-    /* When the WorkOS provider is active, hide TYPO3's default submit button;
-       our own "Sign in" button below handles WorkOS authentication. */
-    #t3-login-submit-section { display: none !important; }
-
-    .workos-login-root { display: block; }
-    .workos-login-form { margin: 0; }
-    .workos-field { margin-bottom: 0.75rem; }
-    .workos-field label {
-        display: block;
-        font-size: 0.85rem;
-        font-weight: 500;
-        margin-bottom: 0.25rem;
-        color: var(--typo3-text-color-base, #1f2937);
-    }
-    .workos-primary-btn {
-        display: block;
-        width: 100%;
-        margin-bottom: 1rem;
-    }
-    .workos-hint {
-        text-align: center;
-        margin: 1rem 0 0.5rem;
-        font-size: 0.7rem;
-        color: var(--typo3-text-color-base, #9ca3af);
-        opacity: 0.65;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-weight: 500;
-    }
-    .workos-social-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-    .workos-social-btn {
-        flex: 1 1 calc(50% - 0.2rem);
-        min-width: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 0.4rem 0.6rem;
-        border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: currentColor;
-        background: transparent;
-        text-decoration: none;
-        transition: background-color 0.15s ease, border-color 0.15s ease;
-    }
-    .workos-social-btn:hover, .workos-social-btn:focus {
-        background: color-mix(in srgb, currentColor 8%, transparent);
-        border-color: color-mix(in srgb, currentColor 32%, transparent);
-        color: currentColor;
-        text-decoration: none;
-    }
-    .workos-social-btn__icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .workos-social-btn__icon svg { display: block; width: 14px; height: 14px; }
-    .workos-authkit-link {
-        margin-top: 0.75rem;
-        text-align: center;
-        font-size: 0.85rem;
-    }
-    button.workos-secondary-btn {
-        display: block;
-        width: 100%;
-        margin-bottom: 1rem;
-        padding: var(--typo3-btn-padding-y, 0.55rem) var(--typo3-btn-padding-x, 0.75rem);
-        font-size: var(--typo3-btn-font-size, 0.95rem);
-        font-weight: 500;
-        line-height: 1.5;
-        background: transparent !important;
-        color: currentColor !important;
-        border: 1px solid color-mix(in srgb, currentColor 35%, transparent) !important;
-        border-radius: var(--typo3-btn-border-radius, 6px);
-        cursor: pointer;
-        transition: background-color 0.15s ease, border-color 0.15s ease;
-    }
-    button.workos-secondary-btn:hover, button.workos-secondary-btn:focus {
-        background: color-mix(in srgb, currentColor 10%, transparent) !important;
-        border-color: color-mix(in srgb, currentColor 55%, transparent) !important;
-        color: currentColor !important;
-    }
-    .workos-divider {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin: 0.75rem 0;
-        font-size: 0.8rem;
-        color: var(--typo3-text-color-base, #6b7280);
-        opacity: 0.7;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    .workos-divider::before, .workos-divider::after {
-        content: "";
-        flex: 1;
-        height: 1px;
-        background: var(--typo3-btn-border-color, #e5e7eb);
-        opacity: 0.6;
-    }
-    .workos-magic-note {
-        font-size: 0.85rem;
-        margin-bottom: 0.75rem;
-        color: var(--typo3-text-color-base, #374151);
-    }
-    .workos-magic-note strong { font-weight: 600; }
-    .workos-alert {
-        display: flex;
-        gap: 0.65rem;
-        align-items: flex-start;
-        padding: 0.75rem 0.85rem;
-        border-radius: 8px;
-        border: 1px solid transparent;
-        margin-bottom: 1rem;
-        font-size: 0.85rem;
-        line-height: 1.45;
-        text-align: left;
-    }
-    .workos-alert--danger {
-        background: color-mix(in srgb, var(--typo3-state-danger-bg, #fef2f2) 85%, transparent);
-        border-color: var(--typo3-state-danger-border-color, rgba(220, 38, 38, 0.25));
-        color: var(--typo3-state-danger-color, #991b1b);
-    }
-    .workos-alert--success {
-        background: color-mix(in srgb, var(--typo3-state-success-bg, #ecfdf5) 85%, transparent);
-        border-color: var(--typo3-state-success-border-color, rgba(5, 150, 105, 0.25));
-        color: var(--typo3-state-success-color, #065f46);
-    }
-    .workos-alert__icon {
-        flex: 0 0 auto;
-        width: 1.25rem;
-        height: 1.25rem;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: currentColor;
-        color: var(--typo3-state-danger-bg, #fef2f2);
-        font-weight: 700;
-        font-size: 0.8rem;
-        line-height: 1;
-    }
-    .workos-alert--success .workos-alert__icon {
-        color: var(--typo3-state-success-bg, #ecfdf5);
-    }
-    .workos-alert__body { flex: 1 1 auto; min-width: 0; }
-    .workos-alert__title {
-        font-weight: 600;
-        font-size: 0.9rem;
-        margin: 0 0 0.15rem;
-        color: inherit;
-    }
-    .workos-alert__summary { margin: 0 0 0.35rem; word-break: break-word; }
-    .workos-alert__meta {
-        margin: 0 0 0.35rem;
-        font-size: 0.78rem;
-        opacity: 0.9;
-        font-family: var(--typo3-font-family-monospace, ui-monospace, SFMono-Regular, Menlo, monospace);
-        word-break: break-all;
-    }
-    .workos-alert__meta-label { opacity: 0.7; margin-right: 0.25rem; }
-    .workos-alert__hint {
-        margin: 0.35rem 0 0;
-        font-size: 0.82rem;
-        opacity: 0.95;
-    }
-    .workos-alert__action {
-        display: inline-block;
-        margin-top: 0.5rem;
-        font-size: 0.82rem;
-        font-weight: 500;
-        color: inherit;
-        text-decoration: underline;
-    }
-    .workos-alert__action:hover, .workos-alert__action:focus {
-        text-decoration: none;
-        color: inherit;
-    }
-    @media (max-width: 480px) {
-        .workos-social-btn { flex: 1 1 0; padding: 0.55rem; }
-        .workos-social-btn__label { display: none; }
-    }
-    </style>
 
     <div class="workos-login-root"
          data-workos-password-url="{passwordAuthUrl}"
@@ -272,7 +90,7 @@
                                     </form>
                                 </f:if>
                                 <div class="workos-authkit-link">
-                                    <a href="{loginUrl}?loginProvider=1744276800"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a>
+                                    <a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a>
                                 </div>
                             </f:then>
                             <f:else>
@@ -301,7 +119,7 @@
                                     <f:translate key="workos_auth.messages:backend.login.magic.verify" />
                                 </button>
                                 <div class="workos-authkit-link">
-                                    <a href="{loginUrl}?loginProvider=1744276800"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a>
+                                    <a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a>
                                 </div>
                             </f:then>
                             <f:else>

@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Configuration;
 
+use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
+use Webconsulting\WorkosAuth\Domain\McpAuthenticationMode;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Service\LabelTranslator;
 use Webconsulting\WorkosAuth\Service\PathUtility;
 
 /**
+ * Typed access to the `EXTENSIONS.workos_auth` extension configuration.
+ *
  * @phpstan-type WorkosSettings array{
  *     apiKey: string,
  *     clientId: string,
- *     cookiePassword: string,
  *     frontendEnabled: bool,
  *     frontendAutoCreateUsers: bool,
  *     frontendLinkByEmail: bool,
@@ -49,32 +52,9 @@ use Webconsulting\WorkosAuth\Service\PathUtility;
 final class WorkosConfiguration
 {
     public const string EXTENSION_KEY = 'workos_auth';
-    public const string MCP_AUTHENTICATION_AUTO = 'auto';
-    public const string MCP_AUTHENTICATION_WORKOS = 'workos';
-    public const string MCP_AUTHENTICATION_ANONYMOUS = 'anonymous';
-
-    /**
-     * @var list<string>
-     */
-    public const MCP_AUTHENTICATION_MODES = [
-        self::MCP_AUTHENTICATION_AUTO,
-        self::MCP_AUTHENTICATION_WORKOS,
-        self::MCP_AUTHENTICATION_ANONYMOUS,
-    ];
-
-    /**
-     * Social login providers supported by the `?provider=` query
-     * parameter on the login endpoints. Values are the identifiers
-     * WorkOS expects when building the authorization URL.
-     *
-     * @var list<string>
-     */
-    public const SUPPORTED_SOCIAL_PROVIDERS = [
-        'GoogleOAuth',
-        'MicrosoftOAuth',
-        'GitHubOAuth',
-        'AppleOAuth',
-    ];
+    public const string MCP_PROTECTED_RESOURCE_METADATA_PATH = '/.well-known/oauth-protected-resource';
+    public const string MCP_AUTHORIZATION_SERVER_METADATA_PATH = '/.well-known/oauth-authorization-server';
+    public const int MCP_SERVER_LIMIT_MAX = 10;
 
     /**
      * @var WorkosSettings
@@ -82,7 +62,6 @@ final class WorkosConfiguration
     private const DEFAULTS = [
         'apiKey' => '',
         'clientId' => '',
-        'cookiePassword' => '',
         'frontendEnabled' => true,
         'frontendAutoCreateUsers' => true,
         'frontendLinkByEmail' => true,
@@ -107,10 +86,10 @@ final class WorkosConfiguration
         'authkitDomainHint' => '',
         'mcpEnabled' => true,
         'mcpServerPath' => '/workos-auth/mcp',
-        'mcpAuthenticationMode' => self::MCP_AUTHENTICATION_AUTO,
+        'mcpAuthenticationMode' => 'auto',
         'mcpAuthkitDomain' => '',
         'mcpWorkosDiscovery' => true,
-        'mcpServerLimit' => 10,
+        'mcpServerLimit' => self::MCP_SERVER_LIMIT_MAX,
         'mcpVerboseLogging' => false,
     ];
 
@@ -121,6 +100,7 @@ final class WorkosConfiguration
 
     public function __construct(
         private readonly ExtensionConfiguration $extensionConfiguration,
+        private readonly CacheManager $cacheManager,
         private readonly LabelTranslator $translator,
     ) {}
 
@@ -129,7 +109,21 @@ final class WorkosConfiguration
      */
     public function all(): array
     {
-        return $this->configuration ??= $this->loadConfiguration();
+        return $this->configuration ??= $this->normalizeInput(
+            MixedCaster::stringKeyedArray($this->readRawConfiguration()) ?? []
+        );
+    }
+
+    /**
+     * Persist normalized settings and flush the caches TYPO3 derives from them.
+     *
+     * @param WorkosSettings $settings
+     */
+    public function save(array $settings): void
+    {
+        $this->extensionConfiguration->set(self::EXTENSION_KEY, $settings);
+        $this->cacheManager->flushCachesInGroup('system');
+        $this->configuration = $settings;
     }
 
     /**
@@ -138,99 +132,82 @@ final class WorkosConfiguration
      */
     public function normalizeInput(array $input): array
     {
-        $successRedirect = MixedCaster::string($input['frontendSuccessRedirect'] ?? self::DEFAULTS['frontendSuccessRedirect']);
-        $successRedirect = trim($successRedirect) !== '' ? trim($successRedirect) : '/';
+        $string = static fn(string $key): string => trim(MixedCaster::string($input[$key] ?? self::DEFAULTS[$key]));
+        $bool = static fn(string $key): bool => (bool)($input[$key] ?? self::DEFAULTS[$key]);
+        $int = static fn(string $key): int => MixedCaster::int($input[$key] ?? self::DEFAULTS[$key]);
+        $path = static fn(string $key): string => PathUtility::normalizePath($string($key));
+
+        $successRedirect = $string('frontendSuccessRedirect');
 
         return [
-            'apiKey' => trim(MixedCaster::string($input['apiKey'] ?? self::DEFAULTS['apiKey'])),
-            'clientId' => trim(MixedCaster::string($input['clientId'] ?? self::DEFAULTS['clientId'])),
-            'cookiePassword' => trim(MixedCaster::string($input['cookiePassword'] ?? self::DEFAULTS['cookiePassword'])),
-            'frontendEnabled' => (bool)($input['frontendEnabled'] ?? self::DEFAULTS['frontendEnabled']),
-            'frontendAutoCreateUsers' => (bool)($input['frontendAutoCreateUsers'] ?? self::DEFAULTS['frontendAutoCreateUsers']),
-            'frontendLinkByEmail' => (bool)($input['frontendLinkByEmail'] ?? self::DEFAULTS['frontendLinkByEmail']),
-            'frontendStoragePid' => max(0, MixedCaster::int($input['frontendStoragePid'] ?? self::DEFAULTS['frontendStoragePid'])),
-            'frontendDefaultGroupUids' => trim(MixedCaster::string($input['frontendDefaultGroupUids'] ?? self::DEFAULTS['frontendDefaultGroupUids'])),
-            'frontendLoginPath' => PathUtility::normalizePath(trim(MixedCaster::string($input['frontendLoginPath'] ?? self::DEFAULTS['frontendLoginPath']))),
-            'frontendCallbackPath' => PathUtility::normalizePath(trim(MixedCaster::string($input['frontendCallbackPath'] ?? self::DEFAULTS['frontendCallbackPath']))),
-            'frontendLogoutPath' => PathUtility::normalizePath(trim(MixedCaster::string($input['frontendLogoutPath'] ?? self::DEFAULTS['frontendLogoutPath']))),
-            'frontendSuccessRedirect' => $successRedirect,
-            'backendEnabled' => (bool)($input['backendEnabled'] ?? self::DEFAULTS['backendEnabled']),
-            'backendAutoCreateUsers' => (bool)($input['backendAutoCreateUsers'] ?? self::DEFAULTS['backendAutoCreateUsers']),
-            'backendLinkByEmail' => (bool)($input['backendLinkByEmail'] ?? self::DEFAULTS['backendLinkByEmail']),
-            'backendDefaultGroupUids' => trim(MixedCaster::string($input['backendDefaultGroupUids'] ?? self::DEFAULTS['backendDefaultGroupUids'])),
-            'backendAllowedDomains' => trim(MixedCaster::string($input['backendAllowedDomains'] ?? self::DEFAULTS['backendAllowedDomains'])),
-            'backendLoginPath' => PathUtility::normalizePath(trim(MixedCaster::string($input['backendLoginPath'] ?? self::DEFAULTS['backendLoginPath']))),
-            'backendCallbackPath' => PathUtility::normalizePath(trim(MixedCaster::string($input['backendCallbackPath'] ?? self::DEFAULTS['backendCallbackPath']))),
-            'backendSuccessPath' => PathUtility::normalizePath(trim(MixedCaster::string($input['backendSuccessPath'] ?? self::DEFAULTS['backendSuccessPath']))),
-            'widgetCorsAutoRegister' => (bool)($input['widgetCorsAutoRegister'] ?? self::DEFAULTS['widgetCorsAutoRegister']),
-            'widgetCorsOrigins' => implode(',', self::parseOriginList(MixedCaster::string($input['widgetCorsOrigins'] ?? self::DEFAULTS['widgetCorsOrigins']))),
-            'authkitOrganizationId' => trim(MixedCaster::string($input['authkitOrganizationId'] ?? self::DEFAULTS['authkitOrganizationId'])),
-            'authkitConnectionId' => trim(MixedCaster::string($input['authkitConnectionId'] ?? self::DEFAULTS['authkitConnectionId'])),
-            'authkitDomainHint' => trim(MixedCaster::string($input['authkitDomainHint'] ?? self::DEFAULTS['authkitDomainHint'])),
-            'mcpEnabled' => (bool)($input['mcpEnabled'] ?? self::DEFAULTS['mcpEnabled']),
-            'mcpServerPath' => PathUtility::normalizePath(trim(MixedCaster::string($input['mcpServerPath'] ?? self::DEFAULTS['mcpServerPath']))),
-            'mcpAuthenticationMode' => $this->normalizeMcpAuthenticationMode($input['mcpAuthenticationMode'] ?? self::DEFAULTS['mcpAuthenticationMode']),
-            'mcpAuthkitDomain' => rtrim(trim(MixedCaster::string($input['mcpAuthkitDomain'] ?? self::DEFAULTS['mcpAuthkitDomain'])), '/'),
-            'mcpWorkosDiscovery' => (bool)($input['mcpWorkosDiscovery'] ?? self::DEFAULTS['mcpWorkosDiscovery']),
-            'mcpServerLimit' => min(10, max(1, MixedCaster::int($input['mcpServerLimit'] ?? self::DEFAULTS['mcpServerLimit']))),
-            'mcpVerboseLogging' => (bool)($input['mcpVerboseLogging'] ?? self::DEFAULTS['mcpVerboseLogging']),
+            'apiKey' => $string('apiKey'),
+            'clientId' => $string('clientId'),
+            'frontendEnabled' => $bool('frontendEnabled'),
+            'frontendAutoCreateUsers' => $bool('frontendAutoCreateUsers'),
+            'frontendLinkByEmail' => $bool('frontendLinkByEmail'),
+            'frontendStoragePid' => max(0, $int('frontendStoragePid')),
+            'frontendDefaultGroupUids' => $string('frontendDefaultGroupUids'),
+            'frontendLoginPath' => $path('frontendLoginPath'),
+            'frontendCallbackPath' => $path('frontendCallbackPath'),
+            'frontendLogoutPath' => $path('frontendLogoutPath'),
+            'frontendSuccessRedirect' => $successRedirect !== '' ? $successRedirect : '/',
+            'backendEnabled' => $bool('backendEnabled'),
+            'backendAutoCreateUsers' => $bool('backendAutoCreateUsers'),
+            'backendLinkByEmail' => $bool('backendLinkByEmail'),
+            'backendDefaultGroupUids' => $string('backendDefaultGroupUids'),
+            'backendAllowedDomains' => $string('backendAllowedDomains'),
+            'backendLoginPath' => $path('backendLoginPath'),
+            'backendCallbackPath' => $path('backendCallbackPath'),
+            'backendSuccessPath' => $path('backendSuccessPath'),
+            'widgetCorsAutoRegister' => $bool('widgetCorsAutoRegister'),
+            'widgetCorsOrigins' => implode(',', self::parseOriginList($string('widgetCorsOrigins'))),
+            'authkitOrganizationId' => $string('authkitOrganizationId'),
+            'authkitConnectionId' => $string('authkitConnectionId'),
+            'authkitDomainHint' => $string('authkitDomainHint'),
+            'mcpEnabled' => $bool('mcpEnabled'),
+            'mcpServerPath' => $path('mcpServerPath'),
+            'mcpAuthenticationMode' => (McpAuthenticationMode::tryFrom(strtolower($string('mcpAuthenticationMode'))) ?? McpAuthenticationMode::Auto)->value,
+            'mcpAuthkitDomain' => rtrim($string('mcpAuthkitDomain'), '/'),
+            'mcpWorkosDiscovery' => $bool('mcpWorkosDiscovery'),
+            'mcpServerLimit' => min(self::MCP_SERVER_LIMIT_MAX, max(1, $int('mcpServerLimit'))),
+            'mcpVerboseLogging' => $bool('mcpVerboseLogging'),
         ];
     }
 
     /**
-     * @param array<string, mixed> $configuration
+     * Validate normalized settings. Returns translated messages keyed by setting.
+     *
+     * @param WorkosSettings $settings
      * @return array<string, string>
      */
-    public function validate(array $configuration): array
+    public function validate(array $settings): array
     {
         $errors = [];
-        $frontendEnabled = (bool)($configuration['frontendEnabled'] ?? false);
-        $backendEnabled = (bool)($configuration['backendEnabled'] ?? false);
-        $authEnabled = $frontendEnabled || $backendEnabled;
+        $authEnabled = $settings['frontendEnabled'] || $settings['backendEnabled'];
 
-        if ($authEnabled && trim(MixedCaster::string($configuration['apiKey'] ?? '')) === '') {
+        if ($authEnabled && $settings['apiKey'] === '') {
             $errors['apiKey'] = $this->translator->translate('validation.apiKeyRequired');
         }
-
-        if ($authEnabled && trim(MixedCaster::string($configuration['clientId'] ?? '')) === '') {
+        if ($authEnabled && $settings['clientId'] === '') {
             $errors['clientId'] = $this->translator->translate('validation.clientIdRequired');
         }
-
-        if ($authEnabled && mb_strlen(trim(MixedCaster::string($configuration['cookiePassword'] ?? ''))) < 32) {
-            $errors['cookiePassword'] = $this->translator->translate('validation.cookiePasswordTooShort');
-        }
-
-        if ($frontendEnabled
-            && (bool)($configuration['frontendAutoCreateUsers'] ?? false)
-            && MixedCaster::int($configuration['frontendStoragePid'] ?? 0) <= 0
-        ) {
+        if ($settings['frontendEnabled'] && $settings['frontendAutoCreateUsers'] && $settings['frontendStoragePid'] <= 0) {
             $errors['frontendStoragePid'] = $this->translator->translate('validation.frontendStoragePidRequired');
         }
-
-        if ($backendEnabled
-            && (bool)($configuration['backendAutoCreateUsers'] ?? false)
-            && trim(MixedCaster::string($configuration['backendDefaultGroupUids'] ?? '')) === ''
-        ) {
+        if ($settings['backendEnabled'] && $settings['backendAutoCreateUsers'] && $settings['backendDefaultGroupUids'] === '') {
             $errors['backendDefaultGroupUids'] = $this->translator->translate('validation.backendGroupUidsRequired');
         }
-
-        if ($backendEnabled && !$this->isBackendCookieSameSiteCompatible()) {
+        if ($settings['backendEnabled'] && !$this->isBackendCookieSameSiteCompatible()) {
             $errors['backendCookieSameSite'] = $this->translator->translate(
                 'validation.backendCookieSameSiteUnsupported',
                 ['sameSite' => $this->getBackendCookieSameSite()]
             );
         }
-
-        if ((bool)($configuration['mcpEnabled'] ?? false)) {
-            $mcpMode = MixedCaster::string($configuration['mcpAuthenticationMode'] ?? self::MCP_AUTHENTICATION_AUTO);
-            if (!in_array($mcpMode, self::MCP_AUTHENTICATION_MODES, true)) {
-                $errors['mcpAuthenticationMode'] = $this->translator->translate('validation.mcpAuthenticationModeInvalid');
-            }
-            if ($this->mcpRequiresWorkosForConfiguration($configuration)
-                && trim(MixedCaster::string($configuration['mcpAuthkitDomain'] ?? '')) === ''
-            ) {
-                $errors['mcpAuthkitDomain'] = $this->translator->translate('validation.mcpAuthkitDomainRequired');
-            }
+        if ($settings['mcpEnabled']
+            && $this->mcpRequiresWorkos(McpAuthenticationMode::from($settings['mcpAuthenticationMode']))
+            && $settings['mcpAuthkitDomain'] === ''
+        ) {
+            $errors['mcpAuthkitDomain'] = $this->translator->translate('validation.mcpAuthkitDomainRequired');
         }
 
         return $errors;
@@ -238,22 +215,17 @@ final class WorkosConfiguration
 
     public function hasWorkosCredentials(): bool
     {
-        return $this->hasBaseCredentials($this->all());
+        return $this->getApiKey() !== '' && $this->getClientId() !== '';
     }
 
     public function getApiKey(): string
     {
-        return trim($this->all()['apiKey']);
+        return $this->all()['apiKey'];
     }
 
     public function getClientId(): string
     {
-        return trim($this->all()['clientId']);
-    }
-
-    public function getCookiePassword(): string
-    {
-        return trim($this->all()['cookiePassword']);
+        return $this->all()['clientId'];
     }
 
     public function isFrontendEnabled(): bool
@@ -263,12 +235,11 @@ final class WorkosConfiguration
 
     public function isFrontendReady(): bool
     {
-        $configuration = $this->all();
-        if (!$this->isFrontendEnabled() || !$this->hasBaseCredentials($configuration)) {
-            return false;
-        }
+        $settings = $this->all();
 
-        return !$configuration['frontendAutoCreateUsers'] || $configuration['frontendStoragePid'] > 0;
+        return $settings['frontendEnabled']
+            && $this->hasWorkosCredentials()
+            && (!$settings['frontendAutoCreateUsers'] || $settings['frontendStoragePid'] > 0);
     }
 
     public function shouldAutoCreateFrontendUsers(): bool
@@ -291,12 +262,7 @@ final class WorkosConfiguration
      */
     public function getFrontendDefaultGroupUids(): array
     {
-        return $this->parseIntegerList($this->all()['frontendDefaultGroupUids']);
-    }
-
-    public function getFrontendDefaultGroupCsv(): string
-    {
-        return implode(',', $this->getFrontendDefaultGroupUids());
+        return self::parseIntegerList($this->all()['frontendDefaultGroupUids']);
     }
 
     public function getFrontendLoginPath(): string
@@ -316,8 +282,7 @@ final class WorkosConfiguration
 
     public function getFrontendSuccessRedirect(): string
     {
-        $value = trim($this->all()['frontendSuccessRedirect']);
-        return $value !== '' ? $value : '/';
+        return $this->all()['frontendSuccessRedirect'];
     }
 
     public function isBackendEnabled(): bool
@@ -327,22 +292,18 @@ final class WorkosConfiguration
 
     public function isBackendReady(): bool
     {
-        $configuration = $this->all();
-        if (!$this->isBackendEnabled() || !$this->hasBaseCredentials($configuration)) {
-            return false;
-        }
+        $settings = $this->all();
 
-        return $this->isBackendCookieSameSiteCompatible()
-            && (!$configuration['backendAutoCreateUsers']
-            || trim($configuration['backendDefaultGroupUids']) !== '');
+        return $settings['backendEnabled']
+            && $this->hasWorkosCredentials()
+            && $this->isBackendCookieSameSiteCompatible()
+            && (!$settings['backendAutoCreateUsers'] || $settings['backendDefaultGroupUids'] !== '');
     }
 
     public function getBackendCookieSameSite(): string
     {
-        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        $stringKeyedConfVars = is_array($confVars) ? $confVars : [];
-        $beConfiguration = is_array($stringKeyedConfVars['BE'] ?? null) ? $stringKeyedConfVars['BE'] : [];
-        $value = strtolower(trim(MixedCaster::string($beConfiguration['cookieSameSite'] ?? 'strict')));
+        $value = strtolower(trim(MixedCaster::string($GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite'] ?? null)));
+
         return $value !== '' ? $value : 'strict';
     }
 
@@ -366,12 +327,7 @@ final class WorkosConfiguration
      */
     public function getBackendDefaultGroupUids(): array
     {
-        return $this->parseIntegerList($this->all()['backendDefaultGroupUids']);
-    }
-
-    public function getBackendDefaultGroupCsv(): string
-    {
-        return implode(',', $this->getBackendDefaultGroupUids());
+        return self::parseIntegerList($this->all()['backendDefaultGroupUids']);
     }
 
     /**
@@ -379,9 +335,7 @@ final class WorkosConfiguration
      */
     public function getBackendAllowedDomains(): array
     {
-        $split = preg_split('/[,\s;]+/', strtolower($this->all()['backendAllowedDomains']));
-        $domains = $split === false ? [] : $split;
-        return array_values(array_filter(array_map('trim', $domains), static fn(string $value): bool => $value !== ''));
+        return self::splitList(strtolower($this->all()['backendAllowedDomains']));
     }
 
     public function getBackendLoginPath(): string
@@ -414,20 +368,17 @@ final class WorkosConfiguration
 
     public function getAuthkitOrganizationId(): ?string
     {
-        $value = trim($this->all()['authkitOrganizationId']);
-        return $value !== '' ? $value : null;
+        return self::nullIfEmpty($this->all()['authkitOrganizationId']);
     }
 
     public function getAuthkitConnectionId(): ?string
     {
-        $value = trim($this->all()['authkitConnectionId']);
-        return $value !== '' ? $value : null;
+        return self::nullIfEmpty($this->all()['authkitConnectionId']);
     }
 
     public function getAuthkitDomainHint(): ?string
     {
-        $value = trim($this->all()['authkitDomainHint']);
-        return $value !== '' ? $value : null;
+        return self::nullIfEmpty($this->all()['authkitDomainHint']);
     }
 
     public function isMcpEnabled(): bool
@@ -440,15 +391,23 @@ final class WorkosConfiguration
         return $this->all()['mcpServerPath'];
     }
 
-    public function getMcpAuthenticationMode(): string
+    public function getMcpAuthenticationMode(): McpAuthenticationMode
     {
-        return $this->all()['mcpAuthenticationMode'];
+        return McpAuthenticationMode::from($this->all()['mcpAuthenticationMode']);
+    }
+
+    /**
+     * Whether MCP requests must carry a WorkOS bearer token, taking the TYPO3
+     * application context into account for the `auto` mode.
+     */
+    public function mcpRequiresWorkos(?McpAuthenticationMode $mode = null): bool
+    {
+        return ($mode ?? $this->getMcpAuthenticationMode())->requiresWorkos(Environment::getContext()->isProduction());
     }
 
     public function getMcpAuthkitDomain(): ?string
     {
-        $value = trim($this->all()['mcpAuthkitDomain']);
-        return $value !== '' ? $value : null;
+        return self::nullIfEmpty($this->all()['mcpAuthkitDomain']);
     }
 
     public function shouldDiscoverWorkosMcpServers(): bool
@@ -461,86 +420,46 @@ final class WorkosConfiguration
         return $this->all()['mcpServerLimit'];
     }
 
-    public function shouldLogMcpVerbously(): bool
+    public function shouldLogMcpVerbosely(): bool
     {
         return $this->all()['mcpVerboseLogging'];
     }
 
-    public function getMcpProtectedResourceMetadataPath(): string
-    {
-        return '/.well-known/oauth-protected-resource';
-    }
-
-    public function getMcpAuthorizationServerMetadataPath(): string
-    {
-        return '/.well-known/oauth-authorization-server';
-    }
-
-    /**
-     * @return WorkosSettings
-     */
-    private function loadConfiguration(): array
+    private function readRawConfiguration(): mixed
     {
         try {
-            $raw = $this->extensionConfiguration->get(self::EXTENSION_KEY);
+            return $this->extensionConfiguration->get(self::EXTENSION_KEY);
         } catch (\Throwable) {
-            $raw = [];
+            return [];
         }
+    }
 
-        $input = is_array($raw) ? $raw : [];
-        $stringKeyedInput = [];
-        foreach ($input as $key => $value) {
-            $stringKeyedInput[(string)$key] = $value;
-        }
-        return $this->normalizeInput($stringKeyedInput);
+    private static function nullIfEmpty(string $value): ?string
+    {
+        return $value !== '' ? $value : null;
     }
 
     /**
-     * @param WorkosSettings $configuration
+     * Split a comma / whitespace / semicolon separated list.
+     *
+     * @return list<string>
      */
-    private function hasBaseCredentials(array $configuration): bool
+    private static function splitList(string $value): array
     {
-        return trim($configuration['apiKey']) !== ''
-            && trim($configuration['clientId']) !== '';
-    }
+        $items = preg_split('/[,\s;]+/', $value, -1, PREG_SPLIT_NO_EMPTY);
 
-    private function normalizeMcpAuthenticationMode(mixed $value): string
-    {
-        $mode = strtolower(trim(MixedCaster::string($value)));
-        return in_array($mode, self::MCP_AUTHENTICATION_MODES, true)
-            ? $mode
-            : self::MCP_AUTHENTICATION_AUTO;
-    }
-
-    /**
-     * @param array<string, mixed> $configuration
-     */
-    private function mcpRequiresWorkosForConfiguration(array $configuration): bool
-    {
-        $mode = MixedCaster::string($configuration['mcpAuthenticationMode'] ?? self::MCP_AUTHENTICATION_AUTO);
-        if ($mode === self::MCP_AUTHENTICATION_WORKOS) {
-            return true;
-        }
-        if ($mode === self::MCP_AUTHENTICATION_ANONYMOUS) {
-            return false;
-        }
-
-        try {
-            return Environment::getContext()->isProduction();
-        } catch (\Throwable) {
-            return false;
-        }
+        return $items === false ? [] : $items;
     }
 
     /**
      * @return list<int>
      */
-    private function parseIntegerList(string $value): array
+    private static function parseIntegerList(string $value): array
     {
-        $split = preg_split('/[,\s;]+/', $value);
-        $items = $split === false ? [] : $split;
-        $ints = array_map(static fn(string $item): int => (int)$item, $items);
-        return array_values(array_filter($ints, static fn(int $item): bool => $item > 0));
+        return array_values(array_filter(
+            array_map(intval(...), self::splitList($value)),
+            static fn(int $item): bool => $item > 0
+        ));
     }
 
     /**
@@ -548,49 +467,14 @@ final class WorkosConfiguration
      */
     private static function parseOriginList(string $value): array
     {
-        $split = preg_split('/[,\s;]+/', $value);
-        $items = $split === false ? [] : $split;
         $origins = [];
-        foreach ($items as $item) {
-            $origin = self::normalizeOrigin($item);
+        foreach (self::splitList($value) as $item) {
+            $origin = PathUtility::normalizeOrigin($item);
             if ($origin !== '') {
                 $origins[$origin] = $origin;
             }
         }
+
         return array_values($origins);
     }
-
-    private static function normalizeOrigin(string $value): string
-    {
-        $value = trim($value);
-        if ($value === '') {
-            return '';
-        }
-
-        try {
-            $parts = parse_url($value);
-        } catch (\ValueError) {
-            return '';
-        }
-        if (!is_array($parts)) {
-            return '';
-        }
-
-        $scheme = strtolower(MixedCaster::string($parts['scheme'] ?? ''));
-        $host = strtolower(MixedCaster::string($parts['host'] ?? ''));
-        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
-            return '';
-        }
-
-        $origin = $scheme . '://' . $host;
-        $port = $parts['port'] ?? null;
-        if (is_int($port)
-            && $port > 0
-            && !(($scheme === 'http' && $port === 80) || ($scheme === 'https' && $port === 443))
-        ) {
-            $origin .= ':' . $port;
-        }
-        return $origin;
-    }
-
 }

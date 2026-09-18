@@ -8,11 +8,17 @@ use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Cache\CacheManager;
 
+/**
+ * Server-side, single-use state for multi-step login flows (OAuth callback,
+ * backend magic auth and email verification). Only a random lookup token is
+ * exposed to the browser; it is bound to an HttpOnly cookie so a token
+ * cannot be replayed from another browser.
+ */
 final readonly class StateService
 {
-    private const CACHE_IDENTIFIER = 'workos_auth_state';
-    private const COOKIE_PREFIX = 'workos_auth_state_';
-    private const TTL = 600;
+    private const string CACHE_IDENTIFIER = 'workos_auth_state';
+    private const string COOKIE_PREFIX = 'workos_auth_state_';
+    private const int TTL = 600;
 
     public function __construct(
         private CacheManager $cacheManager,
@@ -20,13 +26,12 @@ final readonly class StateService
 
     /**
      * @param array<string, mixed> $payload
-     * @return array{token:string,cookie:Cookie|null}
+     * @return array{token: string, cookie: Cookie|null} cookie is set when the browser has no binding cookie yet
      */
     public function issue(ServerRequestInterface $request, string $context, string $cookiePath, array $payload): array
     {
         $bindingCookieName = self::COOKIE_PREFIX . $context;
-        $bindingCookieValue = $request->getCookieParams()[$bindingCookieName] ?? null;
-        $bindingSecret = is_scalar($bindingCookieValue) ? trim((string)$bindingCookieValue) : '';
+        $bindingSecret = trim(MixedCaster::string($request->getCookieParams()[$bindingCookieName] ?? null));
         $cookie = null;
 
         if ($bindingSecret === '') {
@@ -45,20 +50,18 @@ final readonly class StateService
         }
 
         $token = bin2hex(random_bytes(32));
-        $cachePayload = [
+        $this->cacheManager->getCache(self::CACHE_IDENTIFIER)->set($token, [
             'context' => $context,
             'bindingHash' => hash('sha256', $bindingSecret),
             'payload' => $payload,
-        ];
-        $this->cacheManager->getCache(self::CACHE_IDENTIFIER)->set($token, $cachePayload, [], self::TTL);
+        ], [], self::TTL);
 
-        return [
-            'token' => $token,
-            'cookie' => $cookie,
-        ];
+        return ['token' => $token, 'cookie' => $cookie];
     }
 
     /**
+     * Resolve and invalidate a token.
+     *
      * @return array<string, mixed>
      */
     public function consume(ServerRequestInterface $request, string $expectedContext, string $token): array
@@ -67,8 +70,8 @@ final readonly class StateService
     }
 
     /**
-     * Resolve a state token without consuming it so follow-up screens can
-     * re-render the flow while keeping server-side integrity guarantees.
+     * Resolve a token without invalidating it, so follow-up screens can
+     * re-render the flow while keeping the server-side integrity guarantees.
      *
      * @return array<string, mixed>
      */
@@ -80,40 +83,35 @@ final readonly class StateService
     public function remove(string $token): void
     {
         $token = trim($token);
-        if ($token === '') {
-            return;
+        if ($token !== '') {
+            $this->cacheManager->getCache(self::CACHE_IDENTIFIER)->remove($token);
         }
-
-        $this->cacheManager->getCache(self::CACHE_IDENTIFIER)->remove($token);
     }
 
+    /**
+     * The OAuth `state` parameter is the JSON document `{"token": "..."}`
+     * issued by the authorization URL builder.
+     */
     public function extractTokenFromCallbackState(string $rawState): string
     {
-        $rawState = trim($rawState);
-        if ($rawState === '') {
+        if (trim($rawState) === '') {
             throw new \RuntimeException('Missing WorkOS state parameter.', 1744277405);
         }
 
         $decoded = json_decode($rawState, true);
-        if (is_array($decoded)) {
-            $rawToken = $decoded['token'] ?? '';
-            $token = is_string($rawToken) ? trim($rawToken) : '';
-            if ($token === '') {
-                throw new \RuntimeException('Missing WorkOS state token.', 1744277406);
-            }
-            return $token;
+        $token = is_array($decoded) ? trim(MixedCaster::string($decoded['token'] ?? null)) : '';
+        if ($token === '') {
+            throw new \RuntimeException('Missing WorkOS state token.', 1744277406);
         }
 
-        return $rawState;
+        return $token;
     }
 
     private function normalizeCookiePath(string $cookiePath): string
     {
         $cookiePath = trim($cookiePath);
-        if ($cookiePath === '' || $cookiePath === '/') {
-            return '/';
-        }
-        return '/' . trim($cookiePath, '/');
+
+        return $cookiePath === '' || $cookiePath === '/' ? '/' : '/' . trim($cookiePath, '/');
     }
 
     /**
@@ -133,9 +131,8 @@ final readonly class StateService
 
         $context = $entry['context'] ?? null;
         $bindingHash = $entry['bindingHash'] ?? null;
-        $payload = $entry['payload'] ?? null;
-
-        if (!is_string($context) || !is_string($bindingHash) || !is_array($payload)) {
+        $payload = MixedCaster::stringKeyedArray($entry['payload'] ?? null);
+        if (!is_string($context) || !is_string($bindingHash) || $payload === null) {
             throw new \RuntimeException('The WorkOS state payload is invalid.', 1744277403);
         }
 
@@ -143,9 +140,7 @@ final readonly class StateService
             throw new \RuntimeException('The WorkOS callback context did not match the login flow.', 1744277407);
         }
 
-        $bindingCookieName = self::COOKIE_PREFIX . $expectedContext;
-        $receivedBindingCookieValue = $request->getCookieParams()[$bindingCookieName] ?? null;
-        $receivedBindingSecret = is_scalar($receivedBindingCookieValue) ? trim((string)$receivedBindingCookieValue) : '';
+        $receivedBindingSecret = trim(MixedCaster::string($request->getCookieParams()[self::COOKIE_PREFIX . $expectedContext] ?? null));
         if ($receivedBindingSecret === '' || !hash_equals($bindingHash, hash('sha256', $receivedBindingSecret))) {
             throw new \RuntimeException('The WorkOS state token has expired.', 1744277404);
         }
@@ -154,11 +149,6 @@ final readonly class StateService
             $cache->remove($token);
         }
 
-        $narrowed = [];
-        foreach ($payload as $key => $value) {
-            $narrowed[(string)$key] = $value;
-        }
-
-        return $narrowed;
+        return $payload;
     }
 }

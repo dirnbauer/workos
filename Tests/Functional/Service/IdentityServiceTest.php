@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Webconsulting\WorkosAuth\Tests\Functional\Service;
 
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Service\IdentityService;
 
 /**
@@ -27,15 +28,14 @@ final class IdentityServiceTest extends FunctionalTestCase
         self::assertInstanceOf(IdentityService::class, $service);
 
         $service->storeIdentity(
-            context: 'frontend',
+            context: LoginContext::Frontend,
             workosUserId: 'user_01TEST',
             email: 'alice@example.com',
-            userTable: 'fe_users',
             userUid: 42,
             workosProfile: ['id' => 'user_01TEST', 'email' => 'alice@example.com'],
         );
 
-        $row = $service->findIdentity('frontend', 'user_01TEST');
+        $row = $service->findIdentity(LoginContext::Frontend, 'user_01TEST');
         self::assertIsArray($row);
         self::assertSame('alice@example.com', $row['email']);
         self::assertSame('fe_users', $row['user_table']);
@@ -47,10 +47,10 @@ final class IdentityServiceTest extends FunctionalTestCase
         $service = $this->get(IdentityService::class);
         self::assertInstanceOf(IdentityService::class, $service);
 
-        $service->storeIdentity('frontend', 'user_02', 'old@example.com', 'fe_users', 1);
-        $service->storeIdentity('frontend', 'user_02', 'new@example.com', 'fe_users', 2);
+        $service->storeIdentity(LoginContext::Frontend, 'user_02', 'old@example.com', 1);
+        $service->storeIdentity(LoginContext::Frontend, 'user_02', 'new@example.com', 2);
 
-        $row = $service->findIdentity('frontend', 'user_02');
+        $row = $service->findIdentity(LoginContext::Frontend, 'user_02');
         self::assertIsArray($row);
         self::assertSame('new@example.com', $row['email']);
         self::assertSame(2, is_numeric($row['user_uid']) ? (int)$row['user_uid'] : 0);
@@ -67,13 +67,15 @@ final class IdentityServiceTest extends FunctionalTestCase
         $service = $this->get(IdentityService::class);
         self::assertInstanceOf(IdentityService::class, $service);
 
-        $service->storeIdentity('backend', 'user_03', 'admin@example.com', 'be_users', 7);
+        $service->storeIdentity(LoginContext::Backend, 'user_03', 'admin@example.com', 7);
 
-        $row = $service->findIdentityByLocalUser('backend', 'be_users', 7);
+        $row = $service->findIdentityByLocalUser(LoginContext::Backend, 7);
         self::assertIsArray($row);
         self::assertSame('user_03', $row['workos_user_id']);
+        self::assertSame('be_users', $row['user_table']);
 
-        self::assertNull($service->findIdentityByLocalUser('backend', 'be_users', 999));
+        self::assertNull($service->findIdentityByLocalUser(LoginContext::Backend, 999));
+        self::assertNull($service->findIdentityByLocalUser(LoginContext::Frontend, 7), 'contexts must not leak into each other');
     }
 
     public function testStoreIdentityRebindsLocalUserToLatestWorkosIdentity(): void
@@ -81,10 +83,10 @@ final class IdentityServiceTest extends FunctionalTestCase
         $service = $this->get(IdentityService::class);
         self::assertInstanceOf(IdentityService::class, $service);
 
-        $service->storeIdentity('backend', 'user_old', 'admin@example.com', 'be_users', 7);
-        $service->storeIdentity('backend', 'user_new', 'admin@example.com', 'be_users', 7);
+        $service->storeIdentity(LoginContext::Backend, 'user_old', 'admin@example.com', 7);
+        $service->storeIdentity(LoginContext::Backend, 'user_new', 'admin@example.com', 7);
 
-        $row = $service->findIdentityByLocalUser('backend', 'be_users', 7);
+        $row = $service->findIdentityByLocalUser(LoginContext::Backend, 7);
         self::assertIsArray($row);
         self::assertSame('user_new', $row['workos_user_id']);
 
@@ -107,15 +109,14 @@ final class IdentityServiceTest extends FunctionalTestCase
         self::assertInstanceOf(IdentityService::class, $service);
 
         $service->storeIdentity(
-            context: 'frontend',
+            context: LoginContext::Frontend,
             workosUserId: 'user_04',
             email: 'bob@example.com',
-            userTable: 'fe_users',
             userUid: 5,
             workosProfile: ['email' => 'bob@example.com', 'firstName' => 'Bob'],
         );
 
-        $profile = $service->findProfileByLocalUser('frontend', 'fe_users', 5);
+        $profile = $service->findProfileByLocalUser(LoginContext::Frontend, 5);
         self::assertIsArray($profile);
         self::assertSame('bob@example.com', $profile['email']);
         self::assertSame('Bob', $profile['firstName']);
@@ -126,6 +127,6 @@ final class IdentityServiceTest extends FunctionalTestCase
         $service = $this->get(IdentityService::class);
         self::assertInstanceOf(IdentityService::class, $service);
 
-        self::assertNull($service->findProfileByLocalUser('frontend', 'fe_users', 99999));
+        self::assertNull($service->findProfileByLocalUser(LoginContext::Frontend, 99999));
     }
 }

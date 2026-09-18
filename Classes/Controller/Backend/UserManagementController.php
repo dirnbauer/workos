@@ -21,12 +21,15 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Security\RequestTokenService;
 use Webconsulting\WorkosAuth\Security\SecretRedactor;
 use Webconsulting\WorkosAuth\Service\IdentityService;
 use Webconsulting\WorkosAuth\Service\LabelTranslator;
+use Webconsulting\WorkosAuth\Service\PathUtility;
 use Webconsulting\WorkosAuth\Service\RequestBody;
+use Webconsulting\WorkosAuth\Service\Typo3SessionService;
 use Webconsulting\WorkosAuth\Service\WorkosClientFactory;
 use WorkOS\Exception\ConflictException;
 use WorkOS\Resource\Organization;
@@ -36,24 +39,20 @@ use WorkOS\Resource\WidgetSessionTokenScopes;
 use WorkOS\Service\RoleSingle;
 
 /**
- * Backend module that embeds the WorkOS "User Management" Widget.
+ * Backend module "WorkOS > User Management": embeds the WorkOS User
+ * Management widget (https://workos.com/docs/widgets/user-management).
  *
- * @see https://workos.com/docs/widgets/user-management
+ * The widget renders client-side from the bundled JavaScript; the server only
+ * mints a short-lived widget token. A backend user who is not yet a member of
+ * a WorkOS organization gets a self-service screen to join or create one.
  *
- * The widget is rendered client-side from WorkOS's CDN bundle. We only
- * mint a short-lived widget token on the server and hand it to the
- * JavaScript that mounts the web component.
- *
- * When the current backend user is not yet a member of any WorkOS
- * organization we render a self-service screen that lets an admin pick
- * an existing organization or create a new one without leaving TYPO3.
+ * @phpstan-type WidgetStatus array{canLoadWidget: bool, message?: string, workosUserId?: string, organizationId?: string, email?: string}
  */
 #[Autoconfigure(public: true)]
 final class UserManagementController implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    private const string SESSION_WORKOS_USER_ID = 'workos_auth_user_id';
     private const string TOKEN_REQUEST_SCOPE = 'workos/backend/users/token';
     private const string JOIN_REQUEST_SCOPE = 'workos/backend/users/join';
     private const string CREATE_ORGANIZATION_REQUEST_SCOPE = 'workos/backend/users/create-organization';
@@ -72,15 +71,13 @@ final class UserManagementController implements LoggerAwareInterface
 
     public function indexAction(ServerRequestInterface $request): ResponseInterface
     {
+        $status = $this->resolveStatus($request);
+        $availableOrganizations = !$status['canLoadWidget'] && ($status['workosUserId'] ?? '') !== ''
+            ? $this->listAvailableOrganizations()
+            : [];
+
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->setTitle($this->translator->translate('module.users.title'));
-
-        $status = $this->resolveStatus($request);
-        $availableOrganizations = [];
-        if (!$status['canLoadWidget'] && ($status['workosUserId'] ?? '') !== '') {
-            $availableOrganizations = $this->listAvailableOrganizations();
-        }
-
         $moduleTemplate->assignMultiple([
             'configured' => $this->configuration->isBackendReady(),
             'tokenUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_users.token'),
@@ -106,45 +103,36 @@ final class UserManagementController implements LoggerAwareInterface
     }
 
     /**
-     * Returns a short-lived widget token. Called by the browser after
-     * the module page is loaded. Exposed as POST so the response is
-     * not cached and cannot be triggered via simple image/GET requests.
+     * Mints the short-lived widget token after the module page has loaded.
+     * POST only, so the response is never cached or triggerable via GET.
      */
     public function tokenAction(ServerRequestInterface $request): ResponseInterface
     {
-        if (!$this->isCurrentBackendUserAdmin($request)) {
+        if (!self::isAdmin($request)) {
             return new JsonResponse(['error' => $this->translator->translate('module.users.error.noSession')], 403);
         }
-
         if (!$this->requestTokenService->validate(self::TOKEN_REQUEST_SCOPE)) {
             return new JsonResponse(['error' => $this->translator->translate('error.csrfTokenInvalid')], 400);
         }
 
         $status = $this->resolveStatus($request);
         if (!$status['canLoadWidget']) {
-            return new JsonResponse([
-                'error' => $status['message'] ?? $this->translator->translate('module.users.error.generic'),
-            ], 400);
+            return new JsonResponse(['error' => $status['message'] ?? $this->translator->translate('module.users.error.generic')], 400);
         }
 
         try {
             $this->registerWidgetCorsOrigins($request);
-            $widgets = $this->workosClientFactory->createWidgets();
-            $response = $widgets->createToken(
+            $response = $this->workosClientFactory->client()->widgets()->createToken(
                 organizationId: $status['organizationId'] ?? '',
                 userId: $status['workosUserId'] ?? '',
                 scopes: [WidgetSessionTokenScopes::WidgetsUsersTableManage],
             );
         } catch (\Throwable $exception) {
             $this->logger?->error('WorkOS widget token error: ' . SecretRedactor::redact($exception->getMessage()));
-            return new JsonResponse([
-                'error' => $this->translator->translate('module.users.error.tokenFailed'),
-            ], 502);
+            return new JsonResponse(['error' => $this->translator->translate('module.users.error.tokenFailed')], 502);
         }
 
-        return new JsonResponse([
-            'token' => MixedCaster::string($response->token),
-        ]);
+        return new JsonResponse(['token' => $response->token]);
     }
 
     /**
@@ -152,141 +140,126 @@ final class UserManagementController implements LoggerAwareInterface
      */
     public function joinAction(ServerRequestInterface $request): ResponseInterface
     {
-        if (!$this->isCurrentBackendUserAdmin($request)) {
-            $this->flash($this->translator->translate('module.users.error.noSession'), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
+        $workosUserId = $this->authorizeMutation($request, self::JOIN_REQUEST_SCOPE);
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
-        $payload = RequestBody::fromRequest($request);
-        if (!$this->requestTokenService->validate(self::JOIN_REQUEST_SCOPE)) {
-            $this->flash($this->translator->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
-        }
-
-        $status = $this->resolveStatus($request);
-        $workosUserId = $status['workosUserId'] ?? '';
-        if ($workosUserId === '') {
-            $this->flash($status['message'] ?? $this->translator->translate('module.users.error.noWorkosIdentity'), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
-        }
-
-        $organizationId = $payload->trimmedString('organizationId');
+        $organizationId = RequestBody::fromRequest($request)->trimmedString('organizationId');
         if ($organizationId === '') {
-            $this->flash($this->translator->translate('module.users.error.missingOrganization'), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
+            return $this->flashAndRedirect($this->translator->translate('module.users.error.missingOrganization'), ContextualFeedbackSeverity::ERROR);
         }
 
         try {
-            $this->workosClientFactory->createOrganizationMembership()->createOrganizationMembership(
-                $workosUserId,
-                $organizationId,
-                new RoleSingle('admin'),
-            );
+            $this->addAsAdmin($workosUserId, $organizationId);
         } catch (\Throwable $exception) {
             $this->logger?->error('WorkOS join organization failed: ' . SecretRedactor::redact($exception->getMessage()));
-            $this->flash(sprintf('%s %s', $this->translator->translate('module.users.error.joinFailed'), $exception->getMessage()), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
+            return $this->flashAndRedirect(
+                $this->translator->translate('module.users.error.joinFailed') . ' ' . $exception->getMessage(),
+                ContextualFeedbackSeverity::ERROR
+            );
         }
 
-        $this->flash($this->translator->translate('module.users.message.joined'), ContextualFeedbackSeverity::OK);
-        return $this->redirectToIndex();
+        return $this->flashAndRedirect($this->translator->translate('module.users.message.joined'), ContextualFeedbackSeverity::OK);
     }
 
     /**
-     * Create a new WorkOS organization and assign the current backend user as admin.
+     * Create a WorkOS organization and assign the current backend user as admin.
      */
     public function createOrganizationAction(ServerRequestInterface $request): ResponseInterface
     {
-        if (!$this->isCurrentBackendUserAdmin($request)) {
-            $this->flash($this->translator->translate('module.users.error.noSession'), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
+        $workosUserId = $this->authorizeMutation($request, self::CREATE_ORGANIZATION_REQUEST_SCOPE);
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
-        $payload = RequestBody::fromRequest($request);
-        if (!$this->requestTokenService->validate(self::CREATE_ORGANIZATION_REQUEST_SCOPE)) {
-            $this->flash($this->translator->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
+        $name = RequestBody::fromRequest($request)->trimmedString('name');
+        $name = $name !== '' ? $name : $this->suggestOrganizationName($request);
+        if ($name === '') {
+            return $this->flashAndRedirect($this->translator->translate('module.users.error.missingOrganizationName'), ContextualFeedbackSeverity::ERROR);
+        }
+
+        try {
+            $organization = $this->workosClientFactory->client()->organizations()->createOrganization($name);
+            if ($organization->id === '') {
+                throw new \RuntimeException('WorkOS did not return an organization id.', 1744320000);
+            }
+            $this->addAsAdmin($workosUserId, $organization->id);
+        } catch (\Throwable $exception) {
+            $this->logger?->error('WorkOS create organization failed: ' . SecretRedactor::redact($exception->getMessage()));
+            return $this->flashAndRedirect(
+                $this->translator->translate('module.users.error.createFailed') . ' ' . $exception->getMessage(),
+                ContextualFeedbackSeverity::ERROR
+            );
+        }
+
+        return $this->flashAndRedirect(
+            $this->translator->translate('module.users.message.createdAndJoined', ['organization' => $name]),
+            ContextualFeedbackSeverity::OK
+        );
+    }
+
+    /**
+     * Shared guard of the mutating POST routes: admin, valid request token,
+     * linked WorkOS identity. Returns the WorkOS user id, or the redirect
+     * response that ends the request.
+     */
+    private function authorizeMutation(ServerRequestInterface $request, string $requestTokenScope): ResponseInterface|string
+    {
+        if (!self::isAdmin($request)) {
+            return $this->flashAndRedirect($this->translator->translate('module.users.error.noSession'), ContextualFeedbackSeverity::ERROR);
+        }
+        if (!$this->requestTokenService->validate($requestTokenScope)) {
+            return $this->flashAndRedirect($this->translator->translate('error.csrfTokenInvalid'), ContextualFeedbackSeverity::ERROR);
         }
 
         $status = $this->resolveStatus($request);
         $workosUserId = $status['workosUserId'] ?? '';
         if ($workosUserId === '') {
-            $this->flash($status['message'] ?? $this->translator->translate('module.users.error.noWorkosIdentity'), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
-        }
-
-        $name = $payload->trimmedString('name');
-        if ($name === '') {
-            $name = $this->suggestOrganizationName($request);
-        }
-        if ($name === '') {
-            $this->flash($this->translator->translate('module.users.error.missingOrganizationName'), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
-        }
-
-        try {
-            $organization = $this->workosClientFactory->createOrganizations()->createOrganization($name);
-            $organizationId = $organization->id;
-            if ($organizationId === '') {
-                throw new \RuntimeException('WorkOS did not return an organization id.', 1744320000);
-            }
-
-            $this->workosClientFactory->createOrganizationMembership()->createOrganizationMembership(
-                $workosUserId,
-                $organizationId,
-                new RoleSingle('admin'),
+            return $this->flashAndRedirect(
+                $status['message'] ?? $this->translator->translate('module.users.error.noWorkosIdentity'),
+                ContextualFeedbackSeverity::ERROR
             );
-        } catch (\Throwable $exception) {
-            $this->logger?->error('WorkOS create organization failed: ' . SecretRedactor::redact($exception->getMessage()));
-            $this->flash(sprintf('%s %s', $this->translator->translate('module.users.error.createFailed'), $exception->getMessage()), ContextualFeedbackSeverity::ERROR);
-            return $this->redirectToIndex();
         }
 
-        $this->flash($this->translator->translate('module.users.message.createdAndJoined', ['organization' => $name]), ContextualFeedbackSeverity::OK);
-        return $this->redirectToIndex();
+        return $workosUserId;
+    }
+
+    private function addAsAdmin(string $workosUserId, string $organizationId): void
+    {
+        $this->workosClientFactory->client()->organizationMembership()->createOrganizationMembership(
+            $workosUserId,
+            $organizationId,
+            new RoleSingle('admin'),
+        );
     }
 
     /**
-     * @return array{
-     *     canLoadWidget: bool,
-     *     message?: string,
-     *     workosUserId?: string,
-     *     organizationId?: string,
-     *     email?: string,
-     * }
+     * @return WidgetStatus
      */
     private function resolveStatus(ServerRequestInterface $request): array
     {
         if (!$this->configuration->isBackendReady()) {
-            return [
-                'canLoadWidget' => false,
-                'message' => $this->translator->translate('module.users.error.notConfigured'),
-            ];
+            return ['canLoadWidget' => false, 'message' => $this->translator->translate('module.users.error.notConfigured')];
         }
 
         $beUser = $request->getAttribute('backend.user');
-        $beUserUid = $beUser instanceof BackendUserAuthentication && is_array($beUser->user)
-            ? MixedCaster::int($beUser->user['uid'] ?? null)
-            : 0;
+        $beUserUid = $beUser instanceof BackendUserAuthentication ? MixedCaster::int($beUser->user['uid'] ?? null) : 0;
         if (!$beUser instanceof BackendUserAuthentication || $beUserUid <= 0) {
-            return [
-                'canLoadWidget' => false,
-                'message' => $this->translator->translate('module.users.error.noSession'),
-            ];
+            return ['canLoadWidget' => false, 'message' => $this->translator->translate('module.users.error.noSession')];
         }
 
-        $identity = $this->identityService->findIdentityByLocalUser('backend', 'be_users', $beUserUid);
-        $workosUserId = $this->resolveCurrentWorkosUserId($beUser, $identity);
+        $identity = $this->identityService->findIdentityByLocalUser(LoginContext::Backend, $beUserUid);
+        $workosUserId = MixedCaster::string($beUser->getSessionData(Typo3SessionService::SESSION_WORKOS_USER_ID));
         if ($workosUserId === '') {
-            return [
-                'canLoadWidget' => false,
-                'message' => $this->translator->translate('module.users.error.noWorkosIdentity'),
-            ];
+            $workosUserId = MixedCaster::string($identity['workos_user_id'] ?? null);
+        }
+        if ($workosUserId === '') {
+            return ['canLoadWidget' => false, 'message' => $this->translator->translate('module.users.error.noWorkosIdentity')];
         }
 
         $email = MixedCaster::string($identity['email'] ?? null);
         $organizationId = $this->resolveOrganizationId($workosUserId);
-
         if ($organizationId === '') {
             return [
                 'canLoadWidget' => false,
@@ -296,36 +269,26 @@ final class UserManagementController implements LoggerAwareInterface
             ];
         }
 
-        return [
-            'canLoadWidget' => true,
-            'workosUserId' => $workosUserId,
-            'organizationId' => $organizationId,
-            'email' => $email,
-        ];
+        return ['canLoadWidget' => true, 'workosUserId' => $workosUserId, 'organizationId' => $organizationId, 'email' => $email];
     }
 
     /**
-     * Find the organization to scope the widget to. Order of precedence:
-     *   1. First active organization membership for this user.
-     *   2. The default `authkitOrganizationId` from the extension config.
+     * First active organization membership of the user, else the configured
+     * default `authkitOrganizationId`, else ''.
      */
     private function resolveOrganizationId(string $workosUserId): string
     {
         try {
-            $result = $this->workosClientFactory->createOrganizationMembership()->listOrganizationMemberships(
+            $result = $this->workosClientFactory->client()->organizationMembership()->listOrganizationMemberships(
                 userId: $workosUserId,
                 limit: 10,
             );
-
             foreach ($result->data as $membership) {
-                if ($membership instanceof UserOrganizationMembership) {
-                    if ($membership->status !== OrganizationMembershipStatus::Active) {
-                        continue;
-                    }
-                    $organizationId = $membership->organizationId;
-                    if ($organizationId !== '') {
-                        return $organizationId;
-                    }
+                if ($membership instanceof UserOrganizationMembership
+                    && $membership->status === OrganizationMembershipStatus::Active
+                    && $membership->organizationId !== ''
+                ) {
+                    return $membership->organizationId;
                 }
             }
         } catch (\Throwable $exception) {
@@ -335,71 +298,34 @@ final class UserManagementController implements LoggerAwareInterface
         return $this->configuration->getAuthkitOrganizationId() ?? '';
     }
 
+    /**
+     * The widget calls the WorkOS API from the browser, so the backend origin
+     * must be an allowed CORS origin in WorkOS.
+     */
     private function registerWidgetCorsOrigins(ServerRequestInterface $request): void
     {
         if (!$this->configuration->shouldAutoRegisterWidgetCorsOrigins()) {
             return;
         }
 
-        $origins = $this->resolveWidgetCorsOrigins($request);
-        if ($origins === []) {
-            return;
-        }
-
-        try {
-            $userManagement = $this->workosClientFactory->createUserManagement();
-        } catch (\Throwable $exception) {
-            $this->logger?->warning('WorkOS widget CORS origin registration skipped: ' . SecretRedactor::redact($exception->getMessage()));
-            return;
-        }
-
+        $origins = array_unique([...$this->configuration->getWidgetCorsOrigins(), PathUtility::originFromRequest($request)]);
+        $userManagement = $this->workosClientFactory->client()->userManagement();
         foreach ($origins as $origin) {
+            if ($origin === '') {
+                continue;
+            }
             try {
                 $userManagement->createCorsOrigin($origin);
             } catch (ConflictException) {
-                continue;
+                // Already registered.
             } catch (\Throwable $exception) {
-                $this->logger?->warning(
-                    sprintf(
-                        'WorkOS widget CORS origin registration failed for "%s": %s',
-                        $origin,
-                        SecretRedactor::redact($exception->getMessage())
-                    )
-                );
+                $this->logger?->warning(sprintf(
+                    'WorkOS widget CORS origin registration failed for "%s": %s',
+                    $origin,
+                    SecretRedactor::redact($exception->getMessage())
+                ));
             }
         }
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function resolveWidgetCorsOrigins(ServerRequestInterface $request): array
-    {
-        $origins = $this->configuration->getWidgetCorsOrigins();
-        $requestOrigin = self::originFromRequest($request);
-        if ($requestOrigin !== '') {
-            $origins[] = $requestOrigin;
-        }
-        return array_values(array_unique($origins));
-    }
-
-    private static function originFromRequest(ServerRequestInterface $request): string
-    {
-        $uri = $request->getUri();
-        $scheme = strtolower($uri->getScheme());
-        $host = strtolower($uri->getHost());
-        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
-            return '';
-        }
-
-        $origin = $scheme . '://' . $host;
-        $port = $uri->getPort();
-        if ($port !== null
-            && !(($scheme === 'http' && $port === 80) || ($scheme === 'https' && $port === 443))
-        ) {
-            $origin .= ':' . $port;
-        }
-        return $origin;
     }
 
     /**
@@ -408,84 +334,53 @@ final class UserManagementController implements LoggerAwareInterface
     private function listAvailableOrganizations(): array
     {
         try {
-            $result = $this->workosClientFactory->createOrganizations()->listOrganizations(
-                limit: 50,
-            );
-
-            $organizations = [];
-            foreach ($result->data as $organization) {
-                if (!$organization instanceof Organization) {
-                    continue;
-                }
-                $id = $organization->id;
-                if ($id === '') {
-                    continue;
-                }
-                $organizations[] = ['id' => $id, 'name' => $organization->name];
-            }
-            usort($organizations, static fn(array $a, array $b): int => strcasecmp($a['name'], $b['name']));
-            return $organizations;
+            $result = $this->workosClientFactory->client()->organizations()->listOrganizations(limit: 50);
         } catch (\Throwable $exception) {
             $this->logger?->warning('WorkOS list organizations failed: ' . SecretRedactor::redact($exception->getMessage()));
             return [];
         }
+
+        $organizations = [];
+        foreach ($result->data as $organization) {
+            if ($organization instanceof Organization && $organization->id !== '') {
+                $organizations[] = ['id' => $organization->id, 'name' => $organization->name];
+            }
+        }
+        usort($organizations, static fn(array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+
+        return $organizations;
     }
 
     private function suggestOrganizationName(ServerRequestInterface $request): string
     {
-        $conf = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        $sitename = '';
-        if (is_array($conf) && isset($conf['SYS']) && is_array($conf['SYS'])) {
-            $sitename = trim(MixedCaster::string($conf['SYS']['sitename'] ?? null));
-        }
+        $sitename = trim(MixedCaster::string($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ?? null));
         if ($sitename !== '') {
             return $sitename;
         }
 
         $host = trim($request->getUri()->getHost());
-        if ($host !== '') {
-            return $host;
-        }
 
-        return 'TYPO3 Workspace';
+        return $host !== '' ? $host : 'TYPO3 Workspace';
     }
 
-    private function redirectToIndex(): RedirectResponse
-    {
-        return new RedirectResponse((string)$this->uriBuilder->buildUriFromRoute('workos_users'));
-    }
-
-    private function flash(string $body, ContextualFeedbackSeverity $severity): void
+    private function flashAndRedirect(string $body, ContextualFeedbackSeverity $severity): ResponseInterface
     {
         $this->flashMessageService
             ->getMessageQueueByIdentifier('workos-auth-users')
             ->addMessage(new FlashMessage($body, $this->translator->translate('module.users.flashTitle'), $severity, true));
+
+        return new RedirectResponse((string)$this->uriBuilder->buildUriFromRoute('workos_users'));
     }
 
     /**
-     * Explicit admin assertion that does not rely on the module's
-     * `access => 'admin'` gate. Defence in depth: if a site package ever
-     * re-registers the route outside `admin` access, the controller
-     * itself still refuses to mint widget tokens or mutate WorkOS data.
+     * Defence in depth next to the module's `access => 'admin'` gate: even a
+     * re-registered route must not mint widget tokens or mutate WorkOS data
+     * for non-admins.
      */
-    private function isCurrentBackendUserAdmin(ServerRequestInterface $request): bool
+    private static function isAdmin(ServerRequestInterface $request): bool
     {
         $beUser = $request->getAttribute('backend.user');
+
         return $beUser instanceof BackendUserAuthentication && $beUser->isAdmin();
-    }
-
-    /**
-     * @param array<string, mixed>|null $identity
-     */
-    private function resolveCurrentWorkosUserId(?BackendUserAuthentication $beUser, ?array $identity): string
-    {
-        if ($beUser instanceof BackendUserAuthentication) {
-            $sessionWorkosUserId = MixedCaster::string($beUser->getSessionData(self::SESSION_WORKOS_USER_ID));
-            if ($sessionWorkosUserId !== '') {
-                return $sessionWorkosUserId;
-            }
-        }
-
-        return MixedCaster::string($identity['workos_user_id'] ?? null);
     }
 }

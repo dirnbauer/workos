@@ -9,11 +9,11 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Core\Site\Entity\Site;
-use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Security\RequestTokenService;
 use Webconsulting\WorkosAuth\Security\SecretRedactor;
+use Webconsulting\WorkosAuth\Security\WorkosErrorMessageResolver;
 use Webconsulting\WorkosAuth\Service\IdentityService;
 use Webconsulting\WorkosAuth\Service\RequestBody;
 use Webconsulting\WorkosAuth\Service\WorkosAccountService;
@@ -22,9 +22,8 @@ use WorkOS\Resource\UserOrganizationMembership;
 use WorkOS\Resource\UserSessionsListItem;
 
 /**
- * "WorkOS Account Center" plugin: lets a signed-in frontend user manage
- * their WorkOS profile, password, MFA factors, sessions and
- * organization memberships without leaving the TYPO3 site.
+ * "WorkOS Account Center" plugin: profile, password, TOTP factors, sessions
+ * and organization memberships of the signed-in frontend user.
  */
 #[Autoconfigure(public: true)]
 final class AccountController extends AbstractFrontendController implements LoggerAwareInterface
@@ -34,67 +33,49 @@ final class AccountController extends AbstractFrontendController implements Logg
     protected const string REQUEST_TOKEN_SCOPE = 'workos/frontend/account';
     protected const string SESSION_FLASH = 'workos_account_flash';
 
+    private const string SESSION_MFA_PENDING = 'workos_account_mfa_pending';
+
     public function __construct(
         WorkosConfiguration $configuration,
         IdentityService $identityService,
         RequestTokenService $requestTokenService,
         private readonly WorkosAccountService $accountService,
+        private readonly WorkosErrorMessageResolver $errorMessageResolver,
     ) {
         parent::__construct($configuration, $identityService, $requestTokenService);
     }
 
     public function dashboardAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
+        $workosUserId = $this->resolveLinkedWorkosUserId();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
-        $workosUserId = $context['workosUserId'];
-        $workosUser = null;
-        $factors = [];
-        $sessions = [];
-        $memberships = [];
+        // Every card degrades on its own: one failed WorkOS call only hides that card.
         $errors = [];
+        $load = function (string $section, string $errorKey, callable $loader, mixed $default) use (&$errors): mixed {
+            try {
+                return $loader();
+            } catch (\Throwable $e) {
+                $this->logger?->warning(sprintf('WorkOS account: loading %s failed: %s', $section, SecretRedactor::redact($e->getMessage())));
+                $errors[$section] = $this->translate($errorKey);
+                return $default;
+            }
+        };
 
-        try {
-            $workosUser = $this->accountService->getUser($workosUserId);
-        } catch (\Throwable $e) {
-            $this->logger?->warning('WorkOS account: getUser failed: ' . SecretRedactor::redact($e->getMessage()));
-            $errors['profile'] = $this->translate('account.error.loadProfile');
-        }
-
-        try {
-            $factors = $this->accountService->listTotpFactors($workosUserId);
-        } catch (\Throwable $e) {
-            $this->logger?->warning('WorkOS account: listAuthFactors failed: ' . SecretRedactor::redact($e->getMessage()));
-            $errors['mfa'] = $this->translate('account.error.loadFactors');
-        }
-
-        try {
-            $sessions = $this->accountService->listSessions($workosUserId, 25);
-        } catch (\Throwable $e) {
-            $this->logger?->warning('WorkOS account: listSessions failed: ' . SecretRedactor::redact($e->getMessage()));
-            $errors['sessions'] = $this->translate('account.error.loadSessions');
-        }
-
-        try {
-            $memberships = $this->accountService->listOrganizationMemberships($workosUserId);
-        } catch (\Throwable $e) {
-            $this->logger?->warning('WorkOS account: listOrganizationMemberships failed: ' . SecretRedactor::redact($e->getMessage()));
-            $errors['organizations'] = $this->translate('account.error.loadOrganizations');
-        }
-
-        $flash = $this->consumeFlash();
-        $pendingEnrollment = $this->getPendingEnrollment();
+        $workosUser = $load('profile', 'account.error.loadProfile', fn() => $this->accountService->getUser($workosUserId), null);
+        $factors = $load('mfa', 'account.error.loadFactors', fn() => $this->accountService->listTotpFactors($workosUserId), []);
+        $sessions = $load('sessions', 'account.error.loadSessions', fn() => $this->accountService->listSessions($workosUserId, 25), []);
+        $memberships = $load('organizations', 'account.error.loadOrganizations', fn() => $this->accountService->listOrganizationMemberships($workosUserId), []);
 
         $this->view->assignMultiple([
             'workosUser' => $workosUser,
             'factors' => $factors,
             'sessions' => array_map($this->prepareSessionRow(...), $sessions),
             'memberships' => array_map($this->prepareMembershipRow(...), $memberships),
-            'pendingEnrollment' => $pendingEnrollment,
-            'flash' => $flash,
+            'pendingEnrollment' => $this->getPendingEnrollment(),
+            'flash' => $this->consumeFlash(),
             'sectionErrors' => $errors,
             'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
@@ -104,25 +85,17 @@ final class AccountController extends AbstractFrontendController implements Logg
 
     public function updateProfileAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
+        $workosUserId = $this->authorizeAction();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
-            return $this->redirect('dashboard');
-        }
         $firstName = $body->trimmedString('firstName');
         $lastName = $body->trimmedString('lastName');
 
         try {
-            $this->accountService->updateProfile(
-                $context['workosUserId'],
-                $firstName !== '' ? $firstName : null,
-                $lastName !== '' ? $lastName : null,
-            );
+            $this->accountService->updateProfile($workosUserId, $firstName !== '' ? $firstName : null, $lastName !== '' ? $lastName : null);
             $this->setFlash('success', $this->translate('account.flash.profileUpdated'));
         } catch (\Throwable $e) {
             $this->logger?->error('WorkOS account: updateProfile failed: ' . SecretRedactor::redact($e->getMessage()));
@@ -134,38 +107,32 @@ final class AccountController extends AbstractFrontendController implements Logg
 
     public function changePasswordAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
+        $workosUserId = $this->authorizeAction();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
         $body = RequestBody::fromRequest($this->request);
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
-            return $this->redirect('dashboard');
-        }
         $newPassword = $body->string('password');
         $confirmPassword = $body->string('passwordConfirm');
 
-        if ($newPassword === '' || $confirmPassword === '') {
-            $this->setFlash('danger', $this->translate('account.flash.passwordRequired'));
-            return $this->redirect('dashboard');
-        }
-        if ($newPassword !== $confirmPassword) {
-            $this->setFlash('danger', $this->translate('account.flash.passwordMismatch'));
-            return $this->redirect('dashboard');
-        }
-        if (mb_strlen($newPassword) < 10) {
-            $this->setFlash('danger', $this->translate('account.flash.passwordTooShort'));
+        $validationError = match (true) {
+            $newPassword === '' || $confirmPassword === '' => 'account.flash.passwordRequired',
+            $newPassword !== $confirmPassword => 'account.flash.passwordMismatch',
+            mb_strlen($newPassword) < 10 => 'account.flash.passwordTooShort',
+            default => null,
+        };
+        if ($validationError !== null) {
+            $this->setFlash('danger', $this->translate($validationError));
             return $this->redirect('dashboard');
         }
 
         try {
-            $this->accountService->changePassword($context['workosUserId'], $newPassword);
+            $this->accountService->changePassword($workosUserId, $newPassword);
             $this->setFlash('success', $this->translate('account.flash.passwordUpdated'));
         } catch (\Throwable $e) {
             $this->logger?->error('WorkOS account: changePassword failed: ' . SecretRedactor::redact($e->getMessage()));
-            $this->setFlash('danger', $this->mapPasswordError($e->getMessage()));
+            $this->setFlash('danger', $this->translate($this->errorMessageResolver->resolvePasswordChange($e->getMessage())));
         }
 
         return $this->redirect('dashboard');
@@ -173,35 +140,20 @@ final class AccountController extends AbstractFrontendController implements Logg
 
     public function startMfaEnrollmentAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
+        $workosUserId = $this->authorizeAction();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
-
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
-            return $this->redirect('dashboard');
-        }
-
-        $workosUserId = $context['workosUserId'];
 
         try {
-            $issuer = $this->detectIssuer();
-            $accountName = $this->detectAccountName($workosUserId);
-            $enrollment = $this->accountService->enrollTotpFactor($workosUserId, $issuer, $accountName);
-
-            $factor = $enrollment->authenticationFactor;
-            $factorId = $factor->id;
-            if ($factorId === '') {
+            $factor = $this->accountService->enrollTotpFactor($workosUserId, $this->detectIssuer(), $this->detectAccountName($workosUserId))->authenticationFactor;
+            if ($factor->id === '') {
                 throw new \RuntimeException('WorkOS did not return an MFA factor.', 1744277950);
             }
+            $totp = $factor->totp ?? throw new \RuntimeException('WorkOS did not return TOTP enrollment data.', 1744277951);
 
-            $totp = $factor->totp;
-            if ($totp === null) {
-                throw new \RuntimeException('WorkOS did not return TOTP enrollment data.', 1744277951);
-            }
-            $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', [
-                'factorId' => $factorId,
+            $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_MFA_PENDING, [
+                'factorId' => $factor->id,
                 'qrCode' => $totp->qrCode,
                 'uri' => $totp->uri,
                 'secret' => $totp->secret,
@@ -217,9 +169,9 @@ final class AccountController extends AbstractFrontendController implements Logg
 
     public function verifyMfaEnrollmentAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
+        $workosUserId = $this->authorizeAction();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
         $pending = $this->getPendingEnrollment();
@@ -228,15 +180,9 @@ final class AccountController extends AbstractFrontendController implements Logg
             return $this->redirect('dashboard');
         }
 
-        $body = RequestBody::fromRequest($this->request);
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
-            return $this->redirect('dashboard');
-        }
-        $code = $body->trimmedString('code');
         try {
-            $this->accountService->verifyTotpFactor(MixedCaster::string($pending['factorId']), $code);
-            $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', null);
+            $this->accountService->verifyTotpFactor(MixedCaster::string($pending['factorId']), RequestBody::fromRequest($this->request)->trimmedString('code'));
+            $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_MFA_PENDING, null);
             $this->setFlash('success', $this->translate('account.flash.mfaActivated'));
         } catch (\Throwable $e) {
             $this->logger?->info('WorkOS account: verify factor failed: ' . SecretRedactor::redact($e->getMessage()));
@@ -248,14 +194,9 @@ final class AccountController extends AbstractFrontendController implements Logg
 
     public function cancelMfaEnrollmentAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
-        }
-
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
-            return $this->redirect('dashboard');
+        $workosUserId = $this->authorizeAction();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
         $pending = $this->getPendingEnrollment();
@@ -265,31 +206,28 @@ final class AccountController extends AbstractFrontendController implements Logg
             } catch (\Throwable $e) {
                 $this->logger?->warning('WorkOS account: delete pending factor failed: ' . SecretRedactor::redact($e->getMessage()));
             }
-            $this->getFrontendUser()->setAndSaveSessionData('workos_account_mfa_pending', null);
+            $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_MFA_PENDING, null);
         }
 
         $this->setFlash('info', $this->translate('account.flash.mfaCancelled'));
+
         return $this->redirect('dashboard');
     }
 
     public function deleteFactorAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
+        $workosUserId = $this->authorizeAction();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
-        $body = RequestBody::fromRequest($this->request);
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
-            return $this->redirect('dashboard');
-        }
-        $factorId = $body->trimmedString('factorId');
+        $factorId = RequestBody::fromRequest($this->request)->trimmedString('factorId');
         if ($factorId === '') {
             return $this->redirect('dashboard');
         }
 
-        if (!$this->currentUserOwnsFactor($context['workosUserId'], $factorId)) {
+        $owned = array_any($this->accountService->listTotpFactors($workosUserId), static fn($factor): bool => $factor->id === $factorId);
+        if (!$owned) {
             $this->setFlash('danger', $this->translate('account.flash.forbidden'));
             return $this->redirect('dashboard');
         }
@@ -307,22 +245,18 @@ final class AccountController extends AbstractFrontendController implements Logg
 
     public function revokeSessionAction(): ResponseInterface
     {
-        $context = $this->resolveLinkedWorkosContext();
-        if ($context['response'] !== null) {
-            return $context['response'];
+        $workosUserId = $this->authorizeAction();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
         }
 
-        $body = RequestBody::fromRequest($this->request);
-        if (!$this->hasValidRequestToken()) {
-            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
-            return $this->redirect('dashboard');
-        }
-        $sessionId = $body->trimmedString('sessionId');
+        $sessionId = RequestBody::fromRequest($this->request)->trimmedString('sessionId');
         if ($sessionId === '') {
             return $this->redirect('dashboard');
         }
 
-        if (!$this->currentUserOwnsSession($context['workosUserId'], $sessionId)) {
+        $owned = array_any($this->accountService->listSessions($workosUserId, 100), static fn($session): bool => $session->id === $sessionId);
+        if (!$owned) {
             $this->setFlash('danger', $this->translate('account.flash.forbidden'));
             return $this->redirect('dashboard');
         }
@@ -336,6 +270,24 @@ final class AccountController extends AbstractFrontendController implements Logg
         }
 
         return $this->redirect('dashboard');
+    }
+
+    /**
+     * Guard of every state-changing action: linked WorkOS user plus a valid
+     * request token. Returns the WorkOS user id or the response to send instead.
+     */
+    private function authorizeAction(): ResponseInterface|string
+    {
+        $workosUserId = $this->resolveLinkedWorkosUserId();
+        if ($workosUserId instanceof ResponseInterface) {
+            return $workosUserId;
+        }
+        if (!$this->hasValidRequestToken()) {
+            $this->setFlash('danger', $this->translate('account.flash.csrfInvalid'));
+            return $this->redirect('dashboard');
+        }
+
+        return $workosUserId;
     }
 
     /**
@@ -356,7 +308,7 @@ final class AccountController extends AbstractFrontendController implements Logg
             'expiresAt' => $this->formatDateTime($session->expiresAt),
             'createdAt' => $this->formatDateTime($session->createdAt),
             'updatedAt' => $this->formatDateTime($session->updatedAt),
-            'deviceLabel' => $this->summarizeUserAgent($userAgent),
+            'deviceLabel' => self::summarizeUserAgent($userAgent),
             'isActive' => strtolower($status) === 'active',
         ];
     }
@@ -368,22 +320,19 @@ final class AccountController extends AbstractFrontendController implements Logg
     private function prepareMembershipRow(array $entry): array
     {
         $membership = $entry['membership'];
-        $organization = $entry['organization'];
-
-        $roleSlugs = $membership->role->slug !== '' ? [$membership->role->slug] : [];
 
         return [
             'id' => $membership->id,
             'organizationId' => $membership->organizationId,
-            'organizationName' => $organization !== null ? $organization->name : ($membership->organizationName ?? ''),
+            'organizationName' => $entry['organization'] !== null ? $entry['organization']->name : ($membership->organizationName ?? ''),
             'status' => $membership->status->value,
-            'roleSlugs' => $roleSlugs,
+            'roleSlugs' => $membership->role->slug !== '' ? [$membership->role->slug] : [],
             'directoryManaged' => $membership->directoryManaged,
             'createdAt' => $this->formatDateTime($membership->createdAt),
         ];
     }
 
-    private function summarizeUserAgent(string $userAgent): string
+    private static function summarizeUserAgent(string $userAgent): string
     {
         if ($userAgent === '') {
             return '';
@@ -412,26 +361,17 @@ final class AccountController extends AbstractFrontendController implements Logg
     private function detectIssuer(): string
     {
         $site = $this->request->getAttribute('site');
-        if ($site instanceof Site) {
-            $host = $site->getBase()->getHost();
-            if ($host !== '') {
-                return $host;
-            }
-        }
-        $host = $this->request->getUri()->getHost();
+        $host = $site instanceof Site ? $site->getBase()->getHost() : '';
+        $host = $host !== '' ? $host : $this->request->getUri()->getHost();
+
         return $host !== '' ? $host : 'TYPO3';
     }
 
     private function detectAccountName(string $fallback): string
     {
-        $frontendUser = $this->request->getAttribute('frontend.user');
-        if ($frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user)) {
-            $email = trim(MixedCaster::string($frontendUser->user['email'] ?? null));
-            if ($email !== '') {
-                return $email;
-            }
-        }
-        return $fallback;
+        $email = trim(MixedCaster::string($this->getFrontendUser()->user['email'] ?? null));
+
+        return $email !== '' ? $email : $fallback;
     }
 
     /**
@@ -439,51 +379,8 @@ final class AccountController extends AbstractFrontendController implements Logg
      */
     private function getPendingEnrollment(): ?array
     {
-        $data = $this->getFrontendUser()->getSessionData('workos_account_mfa_pending');
-        if (!is_array($data) || !isset($data['factorId']) || $data['factorId'] === '') {
-            return null;
-        }
-        $keyed = [];
-        foreach ($data as $key => $value) {
-            $keyed[(string)$key] = $value;
-        }
-        return $keyed;
-    }
+        $data = MixedCaster::stringKeyedArray($this->getFrontendUser()->getSessionData(self::SESSION_MFA_PENDING));
 
-    private function currentUserOwnsFactor(string $workosUserId, string $factorId): bool
-    {
-        foreach ($this->accountService->listTotpFactors($workosUserId) as $factor) {
-            if ($factor->id === $factorId) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function currentUserOwnsSession(string $workosUserId, string $sessionId): bool
-    {
-        foreach ($this->accountService->listSessions($workosUserId, 100) as $session) {
-            if ($session->id === $sessionId) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function mapPasswordError(string $message): string
-    {
-        $lower = strtolower($message);
-        if (str_contains($lower, 'too short') || str_contains($lower, 'password_too_short')) {
-            return $this->translate('account.flash.passwordTooShort');
-        }
-        if (str_contains($lower, 'weak') || str_contains($lower, 'unguessable')) {
-            return $this->translate('account.flash.passwordTooWeak');
-        }
-        if (str_contains($lower, 'pwned') || str_contains($lower, 'breached') || str_contains($lower, 'compromised')) {
-            return $this->translate('account.flash.passwordBreached');
-        }
-        return $this->translate('account.flash.passwordFailed');
+        return $data !== null && MixedCaster::string($data['factorId'] ?? null) !== '' ? $data : null;
     }
 }

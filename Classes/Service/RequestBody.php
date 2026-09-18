@@ -5,14 +5,11 @@ declare(strict_types=1);
 namespace Webconsulting\WorkosAuth\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Webconsulting\WorkosAuth\Security\MixedCaster;
 
 /**
- * Narrow type-safe accessor for PSR-7 parsed request bodies.
- *
- * PSR-7 declares ServerRequestInterface::getParsedBody() as
- * array|object|null with no guarantees about value types. This helper
- * collapses that to array<string, mixed> and provides typed getters
- * so callers never cast mixed values on their own.
+ * Typed accessor for PSR-7 parsed request bodies, which are declared as
+ * `array|object|null` without any guarantee about value types.
  */
 final readonly class RequestBody
 {
@@ -25,27 +22,12 @@ final readonly class RequestBody
 
     public static function fromRequest(ServerRequestInterface $request): self
     {
-        $body = $request->getParsedBody();
-        if (!is_array($body)) {
-            return new self([]);
-        }
-        $narrow = [];
-        foreach ($body as $key => $value) {
-            $narrow[(string)$key] = $value;
-        }
-        return new self($narrow);
+        return new self(MixedCaster::stringKeyedArray($request->getParsedBody()) ?? []);
     }
 
     public function string(string $key, string $default = ''): string
     {
-        $value = $this->body[$key] ?? null;
-        if (is_string($value)) {
-            return $value;
-        }
-        if (is_int($value) || is_float($value) || is_bool($value)) {
-            return (string)$value;
-        }
-        return $default;
+        return MixedCaster::string($this->body[$key] ?? null, $default);
     }
 
     public function trimmedString(string $key): string
@@ -53,16 +35,13 @@ final readonly class RequestBody
         return trim($this->string($key));
     }
 
-    public function has(string $key): bool
-    {
-        return isset($this->body[$key]);
-    }
-
     /**
+     * Nested `name[key]` form values, e.g. `configuration[apiKey]`.
+     *
      * @return array<string, mixed>
      */
-    public function toArray(): array
+    public function group(string $key): array
     {
-        return $this->body;
+        return MixedCaster::stringKeyedArray($this->body[$key] ?? null) ?? [];
     }
 }

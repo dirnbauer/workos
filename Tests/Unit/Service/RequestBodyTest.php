@@ -13,50 +13,48 @@ final class RequestBodyTest extends TestCase
 {
     public function testFromRequestWithArrayBodyReturnsValues(): void
     {
-        $request = (new ServerRequest(new Uri('https://app.local/login')))
-            ->withParsedBody(['email' => '  user@example.com  ', 'other' => 42]);
-
-        $body = RequestBody::fromRequest($request);
+        $body = RequestBody::fromRequest(self::request(['email' => '  user@example.com  ', 'other' => 42]));
 
         self::assertSame('user@example.com', $body->trimmedString('email'));
         self::assertSame('42', $body->string('other'));
-        self::assertTrue($body->has('email'));
     }
 
-    public function testFromRequestWithNullBodyFallsBackToEmptyArray(): void
+    public function testMissingKeysFallBackToTheDefault(): void
     {
-        $request = new ServerRequest(new Uri('https://app.local/login'));
-        $body = RequestBody::fromRequest($request);
+        $body = RequestBody::fromRequest(new ServerRequest(new Uri('https://app.local/login')));
 
-        self::assertFalse($body->has('missing'));
         self::assertSame('', $body->string('missing'));
         self::assertSame('default', $body->string('missing', 'default'));
+        self::assertSame([], $body->group('configuration'));
     }
 
-    public function testFromRequestWithObjectBodyFallsBackToEmptyArray(): void
+    public function testObjectBodiesAreTreatedAsEmpty(): void
     {
-        $request = (new ServerRequest(new Uri('https://app.local/login')))
-            ->withParsedBody((object)['email' => 'user@example.com']);
+        $body = RequestBody::fromRequest(self::request((object)['email' => 'user@example.com']));
 
-        $body = RequestBody::fromRequest($request);
         self::assertSame('', $body->string('email'));
     }
 
     public function testStringReturnsDefaultForNonScalars(): void
     {
-        $request = (new ServerRequest(new Uri('https://app.local/login')))
-            ->withParsedBody(['payload' => ['nested' => 'value']]);
+        $body = RequestBody::fromRequest(self::request(['payload' => ['nested' => 'value']]));
 
-        $body = RequestBody::fromRequest($request);
         self::assertSame('fallback', $body->string('payload', 'fallback'));
     }
 
-    public function testToArrayReturnsNarrowedCopy(): void
+    public function testGroupReturnsNestedFormValues(): void
     {
-        $request = (new ServerRequest(new Uri('https://app.local/login')))
-            ->withParsedBody(['a' => 1, 'b' => 'two']);
-        $body = RequestBody::fromRequest($request);
+        $body = RequestBody::fromRequest(self::request(['configuration' => ['apiKey' => 'sk', 7 => 'x'], 'flat' => 'y']));
 
-        self::assertSame(['a' => 1, 'b' => 'two'], $body->toArray());
+        self::assertSame(['apiKey' => 'sk', '7' => 'x'], $body->group('configuration'));
+        self::assertSame([], $body->group('flat'));
+    }
+
+    /**
+     * @param array<string, mixed>|object $parsedBody
+     */
+    private static function request(array|object $parsedBody): ServerRequest
+    {
+        return (new ServerRequest(new Uri('https://app.local/login')))->withParsedBody($parsedBody);
     }
 }

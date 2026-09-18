@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Webconsulting\WorkosAuth\Tests\Unit\Mcp;
 
 use PHPUnit\Framework\TestCase;
+use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Domain\McpAuthenticationMode;
 use Webconsulting\WorkosAuth\Mcp\McpJsonRpcService;
 use Webconsulting\WorkosAuth\Mcp\McpRequestContext;
 use Webconsulting\WorkosAuth\Mcp\WorkosMcpRegistryService;
@@ -18,77 +20,107 @@ final class McpJsonRpcServiceTest extends TestCase
 {
     public function testInitializeReturnsMcpCapabilities(): void
     {
-        $service = $this->createService();
-
-        $response = $service->handle([
+        $response = $this->createService()->handle([
             'jsonrpc' => '2.0',
             'id' => 1,
             'method' => 'initialize',
-            'params' => [
-                'protocolVersion' => '2025-11-25',
-            ],
+            'params' => ['protocolVersion' => '2025-11-25'],
         ], $this->createContext());
 
         self::assertIsArray($response);
-        $result = $this->arrayFromMixed($response['result'] ?? null);
         self::assertSame('2.0', $response['jsonrpc']);
         self::assertSame(1, $response['id']);
-        self::assertSame('2025-11-25', $result['protocolVersion'] ?? null);
-        self::assertArrayHasKey('tools', $this->arrayFromMixed($result['capabilities'] ?? null));
+        self::assertIsArray($response['result']);
+        self::assertSame(McpJsonRpcService::PROTOCOL_VERSION, $response['result']['protocolVersion']);
+        self::assertSame(['tools' => ['listChanged' => false]], $response['result']['capabilities']);
+    }
+
+    public function testPingReturnsAnEmptyObject(): void
+    {
+        $response = $this->createService()->handle(['jsonrpc' => '2.0', 'id' => 'p', 'method' => 'ping'], $this->createContext());
+
+        self::assertIsArray($response);
+        self::assertEquals(new \stdClass(), $response['result']);
+    }
+
+    public function testNotificationsWithoutIdProduceNoResponse(): void
+    {
+        self::assertNull($this->createService()->handle(['jsonrpc' => '2.0', 'method' => 'notifications/initialized'], $this->createContext()));
+    }
+
+    public function testMissingMethodIsAnInvalidRequest(): void
+    {
+        $response = $this->createService()->handle(['jsonrpc' => '2.0', 'id' => 3], $this->createContext());
+
+        self::assertSame(['jsonrpc' => '2.0', 'id' => 3, 'error' => ['code' => -32600, 'message' => 'Invalid JSON-RPC request.']], $response);
+    }
+
+    public function testUnknownMethodAndUnknownToolAreReported(): void
+    {
+        $service = $this->createService();
+
+        $unknownMethod = $service->handle(['jsonrpc' => '2.0', 'id' => 4, 'method' => 'resources/list'], $this->createContext());
+        self::assertIsArray($unknownMethod);
+        self::assertSame(-32601, $unknownMethod['error']['code'] ?? null);
+
+        $unknownTool = $service->handle(['jsonrpc' => '2.0', 'id' => 5, 'method' => 'tools/call', 'params' => ['name' => 'nope']], $this->createContext());
+        self::assertIsArray($unknownTool);
+        self::assertSame(-32602, $unknownTool['error']['code'] ?? null);
     }
 
     public function testToolsListContainsWorkosIntrospectionTools(): void
     {
-        $service = $this->createService();
-
-        $response = $service->handle([
-            'jsonrpc' => '2.0',
-            'id' => 'tools',
-            'method' => 'tools/list',
-        ], $this->createContext());
+        $response = $this->createService()->handle(['jsonrpc' => '2.0', 'id' => 'tools', 'method' => 'tools/list'], $this->createContext());
 
         self::assertIsArray($response);
-        $result = $this->arrayFromMixed($response['result'] ?? null);
-        $tools = $this->listOfArraysFromMixed($result['tools'] ?? null);
-        $toolNames = array_column($tools, 'name');
-        self::assertContains('workos.mcp_context', $toolNames);
-        self::assertContains('workos.authorized_mcp_servers', $toolNames);
+        self::assertIsArray($response['result']);
+        self::assertIsArray($response['result']['tools']);
+        self::assertSame(['workos.mcp_context', 'workos.authorized_mcp_servers'], array_column($response['result']['tools'], 'name'));
     }
 
     public function testContextToolReturnsTypo3UserAndGroupMapping(): void
     {
-        $service = $this->createService();
-        $context = $this->createContext();
-
-        $response = $service->handle([
+        $response = $this->createService()->handle([
             'jsonrpc' => '2.0',
             'id' => 2,
             'method' => 'tools/call',
-            'params' => [
-                'name' => 'workos.mcp_context',
-                'arguments' => [],
-            ],
-        ], $context);
+            'params' => ['name' => 'workos.mcp_context', 'arguments' => []],
+        ], $this->createContext());
 
         self::assertIsArray($response);
-        $result = $this->arrayFromMixed($response['result'] ?? null);
-        $structuredContent = $this->arrayFromMixed($result['structuredContent'] ?? null);
-        $frontendUser = $this->arrayFromMixed($structuredContent['frontendUser'] ?? null);
-        $backendUser = $this->arrayFromMixed($structuredContent['backendUser'] ?? null);
-        self::assertSame('user_123', $structuredContent['workosUserId'] ?? null);
-        self::assertSame([1, 2], $frontendUser['groupUids'] ?? null);
-        self::assertSame([3], $backendUser['groupUids'] ?? null);
+        self::assertIsArray($response['result']);
+        $structuredContent = $response['result']['structuredContent'];
+        self::assertIsArray($structuredContent);
+        self::assertSame('workos', $structuredContent['authenticationMode']);
+        self::assertSame('user_123', $structuredContent['workosUserId']);
+        self::assertSame(['uid' => 10, 'groupUids' => [1, 2]], $structuredContent['frontendUser']);
+        self::assertSame(['uid' => 20, 'groupUids' => [3]], $structuredContent['backendUser']);
+        self::assertIsArray($response['result']['content']);
+        self::assertSame('text', $response['result']['content'][0]['type'] ?? null);
+    }
+
+    public function testAuthorizedServersToolReturnsAnEmptyListWhenDiscoveryIsOff(): void
+    {
+        $response = $this->createService()->handle([
+            'jsonrpc' => '2.0',
+            'id' => 6,
+            'method' => 'tools/call',
+            'params' => ['name' => 'workos.authorized_mcp_servers'],
+        ], $this->createContext());
+
+        self::assertIsArray($response);
+        self::assertIsArray($response['result']);
+        self::assertSame(
+            ['servers' => [], 'limit' => 10, 'workosDiscoveryEnabled' => false, 'requiresWorkosUser' => true],
+            $response['result']['structuredContent']
+        );
     }
 
     private function createService(): McpJsonRpcService
     {
         $configuration = $this->createConfiguration();
-        $registry = new WorkosMcpRegistryService(
-            $configuration,
-            new WorkosClientFactory($configuration),
-        );
 
-        return new McpJsonRpcService($configuration, $registry);
+        return new McpJsonRpcService($configuration, new WorkosMcpRegistryService($configuration, new WorkosClientFactory($configuration)));
     }
 
     private function createConfiguration(): WorkosConfiguration
@@ -102,6 +134,7 @@ final class McpJsonRpcServiceTest extends TestCase
 
         return new WorkosConfiguration(
             $extensionConfiguration,
+            self::createStub(CacheManager::class),
             new LabelTranslator(self::createStub(LanguageServiceFactory::class)),
         );
     }
@@ -109,7 +142,7 @@ final class McpJsonRpcServiceTest extends TestCase
     private function createContext(): McpRequestContext
     {
         return new McpRequestContext(
-            authenticationMode: WorkosConfiguration::MCP_AUTHENTICATION_WORKOS,
+            authenticationMode: McpAuthenticationMode::Workos,
             workosRequired: true,
             workosUserId: 'user_123',
             email: 'user@example.com',
@@ -119,31 +152,5 @@ final class McpJsonRpcServiceTest extends TestCase
             backendGroupUids: [3],
             claims: ['sub' => 'user_123'],
         );
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function arrayFromMixed(mixed $value): array
-    {
-        self::assertIsArray($value);
-        $array = [];
-        foreach ($value as $key => $item) {
-            $array[(string)$key] = $item;
-        }
-        return $array;
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function listOfArraysFromMixed(mixed $value): array
-    {
-        self::assertIsArray($value);
-        $list = [];
-        foreach ($value as $item) {
-            $list[] = $this->arrayFromMixed($item);
-        }
-        return $list;
     }
 }

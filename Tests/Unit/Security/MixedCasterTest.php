@@ -68,4 +68,17 @@ final class MixedCasterTest extends TestCase
         self::assertSame(99, MixedCaster::int('abc', 99));
         self::assertSame(99, MixedCaster::int(null, 99));
     }
+
+    public function testStringKeyedArrayKeepsStringKeysAndStringifiesIntegerKeys(): void
+    {
+        self::assertSame(['a' => 1, '5' => 'x'], MixedCaster::stringKeyedArray(['a' => 1, 5 => 'x']));
+        self::assertSame([], MixedCaster::stringKeyedArray([]));
+    }
+
+    public function testStringKeyedArrayReturnsNullForNonArrays(): void
+    {
+        self::assertNull(MixedCaster::stringKeyedArray(null));
+        self::assertNull(MixedCaster::stringKeyedArray('{"a":1}'));
+        self::assertNull(MixedCaster::stringKeyedArray(new \stdClass()));
+    }
 }

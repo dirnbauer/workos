@@ -790,24 +790,6 @@
         <target>Client-ID</target>
       </segment>
     </unit>
-    <unit id="setup.credentials.cookiePassword">
-      <segment>
-        <source>Cookie password</source>
-        <target>Cookie-Passwort</target>
-      </segment>
-    </unit>
-    <unit id="setup.credentials.cookiePasswordHint">
-      <segment>
-        <source>WorkOS requires a strong cookie password with at least 32 characters.</source>
-        <target>WorkOS benötigt ein starkes Cookie-Passwort mit mindestens 32 Zeichen.</target>
-      </segment>
-    </unit>
-    <unit id="setup.credentials.generateCookiePassword">
-      <segment>
-        <source>Generate a fresh cookie password on save</source>
-        <target>Beim Speichern ein neues Cookie-Passwort generieren</target>
-      </segment>
-    </unit>
     <unit id="setup.frontend.title">
       <segment>
         <source>Frontend login</source>
@@ -1646,12 +1628,6 @@
         <target>Eine WorkOS-Client-ID ist erforderlich, wenn die Frontend- oder Backend-Anmeldung aktiviert ist.</target>
       </segment>
     </unit>
-    <unit id="validation.cookiePasswordTooShort">
-      <segment>
-        <source>The WorkOS cookie password must be at least 32 characters long.</source>
-        <target>Das WorkOS-Cookie-Passwort muss mindestens 32 Zeichen lang sein.</target>
-      </segment>
-    </unit>
     <unit id="validation.frontendStoragePidRequired">
       <segment>
         <source>Automatic frontend user creation needs a storage PID greater than 0.</source>
@@ -1668,12 +1644,6 @@
       <segment>
         <source>Backend WorkOS login requires TYPO3 backend cookies to use one of the core SameSite values "strict", "lax", or "none". The current TYPO3 core value is "{sameSite}".</source>
         <target>Die WorkOS-Backend-Anmeldung setzt voraus, dass TYPO3-Backend-Cookies einen der Core-SameSite-Werte „strict“, „lax“ oder „none“ verwenden. Der aktuelle TYPO3-Core-Wert ist „{sameSite}“.</target>
-      </segment>
-    </unit>
-    <unit id="validation.mcpAuthenticationModeInvalid">
-      <segment>
-        <source>Choose a valid MCP authentication mode.</source>
-        <target>Wählen Sie einen gültigen MCP-Authentifizierungsmodus.</target>
       </segment>
     </unit>
     <unit id="validation.mcpAuthkitDomainRequired">

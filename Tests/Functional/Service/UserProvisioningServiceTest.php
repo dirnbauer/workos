@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Webconsulting\WorkosAuth\Tests\Functional\Service;
 
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Service\IdentityService;
 use Webconsulting\WorkosAuth\Service\UserProvisioningService;
 use WorkOS\Resource\User;
@@ -31,7 +32,6 @@ final class UserProvisioningServiceTest extends FunctionalTestCase
             'workos_auth' => [
                 'apiKey' => 'sk_test_dummy',
                 'clientId' => 'client_dummy',
-                'cookiePassword' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
                 'frontendAutoCreateUsers' => '1',
                 'frontendLinkByEmail' => '1',
                 'frontendStoragePid' => '1',
@@ -55,11 +55,11 @@ final class UserProvisioningServiceTest extends FunctionalTestCase
             lastName: 'User',
         );
 
-        $result = $provisioning->resolveFrontendUser($workosUser);
+        $result = $provisioning->resolve(LoginContext::Frontend, $workosUser);
         self::assertSame('new@example.com', $result['email']);
         self::assertSame('New User', $result['name']);
 
-        $mapping = $identity->findIdentity('frontend', 'user_05');
+        $mapping = $identity->findIdentity(LoginContext::Frontend, 'user_05');
         self::assertIsArray($mapping);
         $resultUid = is_numeric($result['uid']) ? (int)$result['uid'] : 0;
         $mappingUid = is_numeric($mapping['user_uid']) ? (int)$mapping['user_uid'] : 0;
@@ -87,7 +87,7 @@ final class UserProvisioningServiceTest extends FunctionalTestCase
             lastName: 'Person',
         );
 
-        $result = $provisioning->resolveFrontendUser($workosUser);
+        $result = $provisioning->resolve(LoginContext::Frontend, $workosUser);
         self::assertSame('preexisting', $result['username'], 'must link instead of creating a new record');
     }
 
@@ -105,14 +105,13 @@ final class UserProvisioningServiceTest extends FunctionalTestCase
             lastName: 'Carrier',
         );
 
-        $provisioning->resolveFrontendUser($workosUser);
+        $provisioning->resolve(LoginContext::Frontend, $workosUser);
 
-        $mapping = $identity->findIdentity('frontend', 'user_07');
+        $mapping = $identity->findIdentity(LoginContext::Frontend, 'user_07');
         self::assertIsArray($mapping);
 
         $profile = $identity->findProfileByLocalUser(
-            'frontend',
-            'fe_users',
+            LoginContext::Frontend,
             is_numeric($mapping['user_uid']) ? (int)$mapping['user_uid'] : 0
         );
         self::assertIsArray($profile);
@@ -123,6 +122,59 @@ final class UserProvisioningServiceTest extends FunctionalTestCase
         self::assertSame('Carrier', $profile['last_name']);
         self::assertArrayHasKey('created_at', $profile);
         self::assertArrayHasKey('updated_at', $profile);
+    }
+
+    public function testResolveBackendUserRefusesToCreateWhenAutoCreateIsOff(): void
+    {
+        $provisioning = $this->get(UserProvisioningService::class);
+        self::assertInstanceOf(UserProvisioningService::class, $provisioning);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(1744277605);
+        $provisioning->resolve(LoginContext::Backend, $this->createWorkosUser('user_08', 'nobody@example.com', 'No', 'Body'));
+    }
+
+    public function testResolveBackendUserLinksExistingUserByEmailAndSynchronizesRealName(): void
+    {
+        $provisioning = $this->get(UserProvisioningService::class);
+        $identity = $this->get(IdentityService::class);
+        self::assertInstanceOf(UserProvisioningService::class, $provisioning);
+        self::assertInstanceOf(IdentityService::class, $identity);
+
+        $this->getConnectionPool()->getConnectionForTable('be_users')->insert('be_users', [
+            'pid' => 0,
+            'username' => 'editor',
+            'email' => 'editor@example.com',
+            'password' => 'unused',
+            'realName' => 'Old Name',
+            'disable' => 0,
+            'deleted' => 0,
+        ]);
+
+        $result = $provisioning->resolve(LoginContext::Backend, $this->createWorkosUser('user_09', 'Editor@Example.com', 'New', 'Name'));
+
+        self::assertSame('editor', $result['username']);
+        self::assertSame('New Name', $result['realName']);
+        $mapping = $identity->findIdentity(LoginContext::Backend, 'user_09');
+        self::assertIsArray($mapping);
+        self::assertSame('be_users', $mapping['user_table']);
+        self::assertSame('editor@example.com', $mapping['email']);
+    }
+
+    public function testResolveFrontendUserReturnsTheLinkedUserOnRepeatedSignIn(): void
+    {
+        $provisioning = $this->get(UserProvisioningService::class);
+        self::assertInstanceOf(UserProvisioningService::class, $provisioning);
+        $workosUser = $this->createWorkosUser('user_10', 'repeat@example.com', 'Re', 'Peat');
+
+        $first = $provisioning->resolve(LoginContext::Frontend, $workosUser);
+        $second = $provisioning->resolve(LoginContext::Frontend, $workosUser);
+
+        self::assertSame($first['uid'], $second['uid']);
+        self::assertSame(
+            1,
+            $this->getConnectionPool()->getConnectionForTable('fe_users')->count('uid', 'fe_users', ['email' => 'repeat@example.com'])
+        );
     }
 
     private function createWorkosUser(string $id, string $email, string $firstName, string $lastName): User

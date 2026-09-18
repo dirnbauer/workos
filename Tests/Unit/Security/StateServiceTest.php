@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Tests\Unit\Security;
 
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
@@ -15,81 +14,97 @@ use Webconsulting\WorkosAuth\Security\StateService;
 final class StateServiceTest extends TestCase
 {
     private StateService $stateService;
-    private FrontendInterface&MockObject $cache;
 
     #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
         $entries = [];
-        $this->cache = $this->createMock(FrontendInterface::class);
-        $this->cache->method('set')->willReturnCallback(
+        $cache = self::createStub(FrontendInterface::class);
+        $cache->method('set')->willReturnCallback(
             static function (string $entryIdentifier, mixed $data) use (&$entries): void {
                 $entries[$entryIdentifier] = $data;
             }
         );
-        $this->cache->method('get')->willReturnCallback(
+        $cache->method('get')->willReturnCallback(
             static function (string $entryIdentifier) use (&$entries): mixed {
                 return $entries[$entryIdentifier] ?? false;
             }
         );
-        $this->cache->method('remove')->willReturnCallback(
+        $cache->method('remove')->willReturnCallback(
             static function (string $entryIdentifier) use (&$entries): bool {
                 unset($entries[$entryIdentifier]);
                 return true;
             }
         );
 
-        $cacheManager = $this->createMock(CacheManager::class);
-        $cacheManager->method('getCache')->with('workos_auth_state')->willReturn($this->cache);
+        $cacheManager = self::createStub(CacheManager::class);
+        $cacheManager->method('getCache')->willReturn($cache);
 
         $this->stateService = new StateService($cacheManager);
     }
 
     public function testIssuedTokenCanBeConsumed(): void
     {
-        $request = new ServerRequest(new Uri('https://app.local/workos-auth/login'));
-        $issued = $this->stateService->issue($request, 'frontend', '/', ['returnTo' => '/welcome']);
-        $token = $issued['token'];
+        $issued = $this->stateService->issue(self::request('/workos-auth/login'), 'frontend', '/', ['returnTo' => '/welcome']);
         $cookie = $issued['cookie'];
+        self::assertNotNull($cookie);
+        self::assertTrue($cookie->isHttpOnly());
+        self::assertTrue($cookie->isSecure());
 
+        $payload = $this->stateService->consume(self::callbackRequest($cookie->getName(), (string)$cookie->getValue()), 'frontend', $issued['token']);
+
+        self::assertSame(['returnTo' => '/welcome'], $payload);
+    }
+
+    public function testExistingBindingCookieIsReusedWithoutIssuingANewOne(): void
+    {
+        $issued = $this->stateService->issue(self::request('/workos-auth/login'), 'frontend', '/', []);
+        $cookie = $issued['cookie'];
         self::assertNotNull($cookie);
 
-        $callbackRequest = (new ServerRequest(new Uri('https://app.local/workos-auth/callback')))
-            ->withCookieParams([$cookie->getName() => $cookie->getValue()]);
+        $second = $this->stateService->issue(
+            self::request('/workos-auth/login')->withCookieParams([$cookie->getName() => $cookie->getValue()]),
+            'frontend',
+            '/',
+            ['returnTo' => '/second']
+        );
 
-        $payload = $this->stateService->consume($callbackRequest, 'frontend', $token);
-
-        self::assertSame('/welcome', $payload['returnTo']);
+        self::assertNull($second['cookie']);
+        self::assertSame(
+            ['returnTo' => '/second'],
+            $this->stateService->consume(self::callbackRequest($cookie->getName(), (string)$cookie->getValue()), 'frontend', $second['token'])
+        );
     }
 
     public function testTokenBoundToDifferentBrowserCookieIsRejected(): void
     {
-        $request = new ServerRequest(new Uri('https://app.local/workos-auth/login'));
-        $issued = $this->stateService->issue($request, 'frontend', '/', ['returnTo' => '/']);
-        $token = $issued['token'];
+        $issued = $this->stateService->issue(self::request('/workos-auth/login'), 'frontend', '/', ['returnTo' => '/']);
         $cookie = $issued['cookie'];
-
         self::assertNotNull($cookie);
-
-        $callbackRequest = (new ServerRequest(new Uri('https://app.local/workos-auth/callback')))
-            ->withCookieParams([$cookie->getName() => 'different-secret']);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionCode(1744277404);
-        $this->stateService->consume($callbackRequest, 'frontend', $token);
+        $this->stateService->consume(self::callbackRequest($cookie->getName(), 'different-secret'), 'frontend', $issued['token']);
+    }
+
+    public function testTokenIssuedForAnotherContextIsRejected(): void
+    {
+        $issued = $this->stateService->issue(self::request('/workos-auth/login'), 'frontend', '/', []);
+        $cookie = $issued['cookie'];
+        self::assertNotNull($cookie);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(1744277407);
+        $this->stateService->consume(self::callbackRequest($cookie->getName(), (string)$cookie->getValue()), 'backend', $issued['token']);
     }
 
     public function testTokenIsSingleUse(): void
     {
-        $request = new ServerRequest(new Uri('https://app.local/workos-auth/login'));
-        $issued = $this->stateService->issue($request, 'frontend', '/', ['returnTo' => '/']);
+        $issued = $this->stateService->issue(self::request('/workos-auth/login'), 'frontend', '/', ['returnTo' => '/']);
         $cookie = $issued['cookie'];
-
         self::assertNotNull($cookie);
-
-        $callbackRequest = (new ServerRequest(new Uri('https://app.local/workos-auth/callback')))
-            ->withCookieParams([$cookie->getName() => $cookie->getValue()]);
+        $callbackRequest = self::callbackRequest($cookie->getName(), (string)$cookie->getValue());
 
         $this->stateService->consume($callbackRequest, 'frontend', $issued['token']);
 
@@ -100,38 +115,26 @@ final class StateServiceTest extends TestCase
 
     public function testPeekKeepsTokenAvailableUntilConsumed(): void
     {
-        $request = new ServerRequest(new Uri('https://app.local/workos-auth/login'));
-        $issued = $this->stateService->issue($request, 'frontend', '/', ['returnTo' => '/welcome']);
+        $issued = $this->stateService->issue(self::request('/workos-auth/login'), 'frontend', '/', ['returnTo' => '/welcome']);
         $cookie = $issued['cookie'];
-
         self::assertNotNull($cookie);
+        $callbackRequest = self::callbackRequest($cookie->getName(), (string)$cookie->getValue());
 
-        $callbackRequest = (new ServerRequest(new Uri('https://app.local/workos-auth/callback')))
-            ->withCookieParams([$cookie->getName() => $cookie->getValue()]);
-
-        $peekedPayload = $this->stateService->peek($callbackRequest, 'frontend', $issued['token']);
-        $consumedPayload = $this->stateService->consume($callbackRequest, 'frontend', $issued['token']);
-
-        self::assertSame('/welcome', $peekedPayload['returnTo'] ?? '/welcome');
-        self::assertSame('/welcome', $consumedPayload['returnTo'] ?? '/welcome');
+        self::assertSame(['returnTo' => '/welcome'], $this->stateService->peek($callbackRequest, 'frontend', $issued['token']));
+        self::assertSame(['returnTo' => '/welcome'], $this->stateService->consume($callbackRequest, 'frontend', $issued['token']));
     }
 
     public function testRemoveInvalidatesIssuedToken(): void
     {
-        $request = new ServerRequest(new Uri('https://app.local/workos-auth/login'));
-        $issued = $this->stateService->issue($request, 'frontend', '/', ['returnTo' => '/']);
+        $issued = $this->stateService->issue(self::request('/workos-auth/login'), 'frontend', '/', ['returnTo' => '/']);
         $cookie = $issued['cookie'];
-
         self::assertNotNull($cookie);
-
-        $callbackRequest = (new ServerRequest(new Uri('https://app.local/workos-auth/callback')))
-            ->withCookieParams([$cookie->getName() => $cookie->getValue()]);
 
         $this->stateService->remove($issued['token']);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionCode(1744277402);
-        $this->stateService->peek($callbackRequest, 'frontend', $issued['token']);
+        $this->stateService->peek(self::callbackRequest($cookie->getName(), (string)$cookie->getValue()), 'frontend', $issued['token']);
     }
 
     public function testCallbackStateWrappedInJsonIsUnwrapped(): void
@@ -140,8 +143,27 @@ final class StateServiceTest extends TestCase
         self::assertSame('raw-token', $this->stateService->extractTokenFromCallbackState($wrapped));
     }
 
-    public function testRawCallbackStateIsReturnedUnchanged(): void
+    public function testCallbackStateWithoutTokenIsRejected(): void
     {
-        self::assertSame('raw-token', $this->stateService->extractTokenFromCallbackState('raw-token'));
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(1744277406);
+        $this->stateService->extractTokenFromCallbackState('raw-token');
+    }
+
+    public function testEmptyCallbackStateIsRejected(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(1744277405);
+        $this->stateService->extractTokenFromCallbackState('  ');
+    }
+
+    private static function request(string $path): ServerRequest
+    {
+        return new ServerRequest(new Uri('https://app.local' . $path));
+    }
+
+    private static function callbackRequest(string $cookieName, string $cookieValue): ServerRequest
+    {
+        return self::request('/workos-auth/callback')->withCookieParams([$cookieName => $cookieValue]);
     }
 }

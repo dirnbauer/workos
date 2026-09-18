@@ -11,6 +11,11 @@ use Webconsulting\WorkosAuth\Security\SecretRedactor;
 use Webconsulting\WorkosAuth\Service\WorkosClientFactory;
 use WorkOS\Resource\AuthorizedConnectApplicationListData;
 
+/**
+ * WorkOS is the source of truth for MCP applications: this lists the Connect
+ * applications the current WorkOS user has authorized, capped by the
+ * configured limit.
+ */
 final class WorkosMcpRegistryService implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
@@ -21,7 +26,7 @@ final class WorkosMcpRegistryService implements LoggerAwareInterface
     ) {}
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return list<array<string, mixed>>
      */
     public function listAuthorizedServers(McpRequestContext $context): array
     {
@@ -32,13 +37,12 @@ final class WorkosMcpRegistryService implements LoggerAwareInterface
             return [];
         }
 
+        $limit = $this->configuration->getMcpServerLimit();
         try {
-            $response = $this->workosClientFactory
-                ->createUserManagement()
-                ->listUserAuthorizedApplications(
-                    userId: (string)$context->workosUserId,
-                    limit: $this->configuration->getMcpServerLimit(),
-                );
+            $response = $this->workosClientFactory->client()->userManagement()->listUserAuthorizedApplications(
+                userId: (string)$context->workosUserId,
+                limit: $limit,
+            );
         } catch (\Throwable $exception) {
             $this->logger?->warning('WorkOS MCP discovery failed: ' . SecretRedactor::redact($exception->getMessage()));
             return [];
@@ -59,7 +63,7 @@ final class WorkosMcpRegistryService implements LoggerAwareInterface
                 'availableScopes' => $application->scopes,
                 'grantedScopes' => $authorizedApplication->grantedScopes,
             ];
-            if (count($servers) >= $this->configuration->getMcpServerLimit()) {
+            if (count($servers) >= $limit) {
                 break;
             }
         }

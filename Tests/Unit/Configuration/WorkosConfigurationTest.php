@@ -5,51 +5,51 @@ declare(strict_types=1);
 namespace Webconsulting\WorkosAuth\Tests\Unit\Configuration;
 
 use PHPUnit\Framework\TestCase;
+use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Domain\McpAuthenticationMode;
 use Webconsulting\WorkosAuth\Service\LabelTranslator;
 
 final class WorkosConfigurationTest extends TestCase
 {
     private WorkosConfiguration $configuration;
-    private string|null $originalBackendCookieSameSite;
+    private mixed $originalBackendCookieSameSite;
 
     #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
-
-        $this->originalBackendCookieSameSite = $this->readBackendCookieSameSite();
-
-        $extensionConfiguration = self::createStub(ExtensionConfiguration::class);
-        $extensionConfiguration->method('get')->willReturn([]);
-
-        $this->configuration = new WorkosConfiguration(
-            $extensionConfiguration,
-            new LabelTranslator(self::createStub(LanguageServiceFactory::class)),
-        );
+        $this->originalBackendCookieSameSite = $GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite'] ?? null;
+        $this->configuration = $this->createConfigurationWith([]);
     }
 
     #[\Override]
     protected function tearDown(): void
     {
         if ($this->originalBackendCookieSameSite === null) {
-            $this->removeBackendCookieSameSite();
+            unset($GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite']);
         } else {
-            $this->writeBackendCookieSameSite($this->originalBackendCookieSameSite);
+            $GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite'] = $this->originalBackendCookieSameSite;
         }
-
         parent::tearDown();
     }
 
-    public function testSupportedSocialProvidersContainsExpectedSet(): void
+    public function testDefaultsAreAppliedForMissingKeys(): void
     {
-        self::assertContains('GoogleOAuth', WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS);
-        self::assertContains('MicrosoftOAuth', WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS);
-        self::assertContains('GitHubOAuth', WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS);
-        self::assertContains('AppleOAuth', WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS);
-        self::assertCount(4, WorkosConfiguration::SUPPORTED_SOCIAL_PROVIDERS);
+        $settings = $this->configuration->all();
+
+        self::assertSame('', $settings['apiKey']);
+        self::assertTrue($settings['frontendEnabled']);
+        self::assertFalse($settings['backendAutoCreateUsers']);
+        self::assertSame('/workos-auth/frontend/login', $settings['frontendLoginPath']);
+        self::assertSame('/main', $settings['backendSuccessPath']);
+        self::assertSame(McpAuthenticationMode::Auto, $this->configuration->getMcpAuthenticationMode());
+        self::assertSame(10, $settings['mcpServerLimit']);
+        self::assertFalse($this->configuration->hasWorkosCredentials());
+        self::assertFalse($this->configuration->isFrontendReady());
+        self::assertFalse($this->configuration->isBackendReady());
     }
 
     public function testNormalizeInputTrimsStringsAndNormalizesPaths(): void
@@ -57,24 +57,21 @@ final class WorkosConfigurationTest extends TestCase
         $result = $this->configuration->normalizeInput([
             'apiKey' => '  sk_test_abc ',
             'clientId' => '  client_abc ',
-            'cookiePassword' => '  12345678901234567890123456789012  ',
             'frontendEnabled' => false,
             'frontendLoginPath' => 'workos-auth/login',
             'frontendCallbackPath' => '/workos-auth/callback/',
             'frontendLogoutPath' => '',
-            'frontendSuccessRedirect' => '  /dashboard  ',
-            'backendAllowedDomains' => '',
+            'frontendSuccessRedirect' => '  ',
             'frontendStoragePid' => '-1',
         ]);
 
         self::assertSame('sk_test_abc', $result['apiKey']);
         self::assertSame('client_abc', $result['clientId']);
-        self::assertSame('12345678901234567890123456789012', $result['cookiePassword']);
         self::assertFalse($result['frontendEnabled']);
         self::assertSame('/workos-auth/login', $result['frontendLoginPath']);
         self::assertSame('/workos-auth/callback', $result['frontendCallbackPath']);
         self::assertSame('/', $result['frontendLogoutPath']);
-        self::assertSame('/dashboard', $result['frontendSuccessRedirect']);
+        self::assertSame('/', $result['frontendSuccessRedirect']);
         self::assertSame(0, $result['frontendStoragePid']);
     }
 
@@ -92,11 +89,17 @@ final class WorkosConfigurationTest extends TestCase
 
         self::assertTrue($result['mcpEnabled']);
         self::assertSame('/custom-mcp', $result['mcpServerPath']);
-        self::assertSame(WorkosConfiguration::MCP_AUTHENTICATION_WORKOS, $result['mcpAuthenticationMode']);
+        self::assertSame('workos', $result['mcpAuthenticationMode']);
         self::assertSame('https://example.authkit.app', $result['mcpAuthkitDomain']);
         self::assertTrue($result['mcpWorkosDiscovery']);
         self::assertSame(10, $result['mcpServerLimit']);
         self::assertTrue($result['mcpVerboseLogging']);
+    }
+
+    public function testNormalizeInputFallsBackToAutoForUnknownMcpMode(): void
+    {
+        self::assertSame('auto', $this->configuration->normalizeInput(['mcpAuthenticationMode' => 'bogus'])['mcpAuthenticationMode']);
+        self::assertSame(1, $this->configuration->normalizeInput(['mcpServerLimit' => '0'])['mcpServerLimit']);
     }
 
     public function testNormalizeInputNormalizesWidgetCorsOrigins(): void
@@ -110,106 +113,118 @@ final class WorkosConfigurationTest extends TestCase
         self::assertSame('https://example.test,http://app.test:8080', $result['widgetCorsOrigins']);
     }
 
-    public function testGetWidgetCorsOriginsReturnsNormalizedOrigins(): void
+    public function testGettersExposeParsedLists(): void
     {
         $configuration = $this->createConfigurationWith([
             'widgetCorsAutoRegister' => '0',
             'widgetCorsOrigins' => 'https://Example.test/foo;http://app.test:8080/path;not-an-origin',
+            'frontendDefaultGroupUids' => '3, 0; abc 7',
+            'backendAllowedDomains' => 'Example.com, partner.org',
+            'authkitOrganizationId' => '  ',
         ]);
 
         self::assertFalse($configuration->shouldAutoRegisterWidgetCorsOrigins());
         self::assertSame(['https://example.test', 'http://app.test:8080'], $configuration->getWidgetCorsOrigins());
+        self::assertSame([3, 7], $configuration->getFrontendDefaultGroupUids());
+        self::assertSame(['example.com', 'partner.org'], $configuration->getBackendAllowedDomains());
+        self::assertNull($configuration->getAuthkitOrganizationId());
     }
 
     public function testValidateReportsMissingCredentialsWhenAuthEnabled(): void
     {
-        $errors = $this->configuration->validate([
+        $errors = $this->configuration->validate($this->configuration->normalizeInput([
             'frontendEnabled' => true,
             'backendEnabled' => false,
-            'apiKey' => '',
-            'clientId' => '',
-            'cookiePassword' => str_repeat('x', 32),
-        ]);
+        ]));
 
         self::assertArrayHasKey('apiKey', $errors);
         self::assertArrayHasKey('clientId', $errors);
-        self::assertArrayNotHasKey('cookiePassword', $errors);
     }
 
     public function testValidateAcceptsDisabledWithoutSecrets(): void
     {
-        $errors = $this->configuration->validate([
+        $errors = $this->configuration->validate($this->configuration->normalizeInput([
             'frontendEnabled' => false,
             'backendEnabled' => false,
-        ]);
+            'mcpAuthenticationMode' => 'anonymous',
+        ]));
 
         self::assertSame([], $errors);
+    }
+
+    public function testValidateRequiresStoragePidAndBackendGroupsForAutoCreate(): void
+    {
+        $errors = $this->configuration->validate($this->configuration->normalizeInput([
+            'apiKey' => 'sk_test_abc',
+            'clientId' => 'client_abc',
+            'frontendAutoCreateUsers' => true,
+            'frontendStoragePid' => 0,
+            'backendAutoCreateUsers' => true,
+            'backendDefaultGroupUids' => '',
+            'mcpEnabled' => false,
+        ]));
+
+        self::assertSame(['frontendStoragePid', 'backendDefaultGroupUids'], array_keys($errors));
     }
 
     public function testValidateRequiresAuthkitDomainWhenMcpAlwaysRequiresWorkos(): void
     {
-        $errors = $this->configuration->validate([
+        $errors = $this->configuration->validate($this->configuration->normalizeInput([
             'frontendEnabled' => false,
             'backendEnabled' => false,
             'mcpEnabled' => true,
-            'mcpAuthenticationMode' => WorkosConfiguration::MCP_AUTHENTICATION_WORKOS,
+            'mcpAuthenticationMode' => 'workos',
             'mcpAuthkitDomain' => '',
-        ]);
+        ]));
 
-        self::assertArrayHasKey('mcpAuthkitDomain', $errors);
-    }
-
-    public function testValidateAcceptsAnonymousMcpWithoutAuthkitDomain(): void
-    {
-        $errors = $this->configuration->validate([
-            'frontendEnabled' => false,
-            'backendEnabled' => false,
-            'mcpEnabled' => true,
-            'mcpAuthenticationMode' => WorkosConfiguration::MCP_AUTHENTICATION_ANONYMOUS,
-            'mcpAuthkitDomain' => '',
-        ]);
-
-        self::assertSame([], $errors);
-    }
-
-    public function testValidateRequiresCookiePasswordOfAtLeast32Characters(): void
-    {
-        $errors = $this->configuration->validate([
-            'frontendEnabled' => true,
-            'apiKey' => 'sk_test_abc',
-            'clientId' => 'client_abc',
-            'cookiePassword' => 'short',
-        ]);
-
-        self::assertArrayHasKey('cookiePassword', $errors);
+        self::assertSame(['mcpAuthkitDomain'], array_keys($errors));
     }
 
     public function testBackendCookieSameSiteCompatibilityAcceptsCoreValues(): void
     {
-        $this->writeBackendCookieSameSite('strict');
-        self::assertTrue($this->configuration->isBackendCookieSameSiteCompatible());
-
-        $this->writeBackendCookieSameSite('lax');
-        self::assertTrue($this->configuration->isBackendCookieSameSiteCompatible());
-
-        $this->writeBackendCookieSameSite('none');
-        self::assertTrue($this->configuration->isBackendCookieSameSiteCompatible());
+        foreach (['strict', 'lax', 'none', 'LAX'] as $value) {
+            $GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite'] = $value;
+            self::assertTrue($this->configuration->isBackendCookieSameSiteCompatible(), $value);
+        }
+        unset($GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite']);
+        self::assertSame('strict', $this->configuration->getBackendCookieSameSite());
     }
 
     public function testValidateReportsUnsupportedBackendCookieSameSiteValue(): void
     {
-        $this->writeBackendCookieSameSite('unsupported');
+        $GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite'] = 'unsupported';
 
-        $errors = $this->configuration->validate([
+        $errors = $this->configuration->validate($this->configuration->normalizeInput([
             'frontendEnabled' => false,
             'backendEnabled' => true,
             'apiKey' => 'sk_test_abc',
             'clientId' => 'client_abc',
-            'cookiePassword' => str_repeat('x', 32),
-            'backendAutoCreateUsers' => false,
-        ]);
+            'mcpEnabled' => false,
+        ]));
 
-        self::assertArrayHasKey('backendCookieSameSite', $errors);
+        self::assertSame(['backendCookieSameSite'], array_keys($errors));
+        self::assertFalse($this->configuration->isBackendReady());
+    }
+
+    public function testSavePersistsSettingsFlushesSystemCachesAndUpdatesInMemoryState(): void
+    {
+        $extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
+        $extensionConfiguration->method('get')->willReturn([]);
+        $cacheManager = $this->createMock(CacheManager::class);
+        $configuration = new WorkosConfiguration(
+            $extensionConfiguration,
+            $cacheManager,
+            new LabelTranslator(self::createStub(LanguageServiceFactory::class)),
+        );
+        $settings = $configuration->normalizeInput(['apiKey' => 'sk_test_saved', 'clientId' => 'client_saved']);
+
+        $extensionConfiguration->expects(self::once())->method('set')->with(WorkosConfiguration::EXTENSION_KEY, $settings);
+        $cacheManager->expects(self::once())->method('flushCachesInGroup')->with('system');
+
+        $configuration->save($settings);
+
+        self::assertSame('sk_test_saved', $configuration->getApiKey());
+        self::assertTrue($configuration->hasWorkosCredentials());
     }
 
     /**
@@ -222,50 +237,8 @@ final class WorkosConfigurationTest extends TestCase
 
         return new WorkosConfiguration(
             $extensionConfiguration,
+            self::createStub(CacheManager::class),
             new LabelTranslator(self::createStub(LanguageServiceFactory::class)),
         );
-    }
-
-    private function readBackendCookieSameSite(): string|null
-    {
-        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        if (!is_array($confVars)) {
-            return null;
-        }
-
-        $beConfiguration = $confVars['BE'] ?? null;
-        if (!is_array($beConfiguration)) {
-            return null;
-        }
-
-        $cookieSameSite = $beConfiguration['cookieSameSite'] ?? null;
-        return is_string($cookieSameSite) ? $cookieSameSite : null;
-    }
-
-    private function writeBackendCookieSameSite(string $value): void
-    {
-        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        $stringKeyedConfVars = is_array($confVars) ? $confVars : [];
-        $beConfiguration = is_array($stringKeyedConfVars['BE'] ?? null) ? $stringKeyedConfVars['BE'] : [];
-        $beConfiguration['cookieSameSite'] = $value;
-        $stringKeyedConfVars['BE'] = $beConfiguration;
-        $GLOBALS['TYPO3_CONF_VARS'] = $stringKeyedConfVars;
-    }
-
-    private function removeBackendCookieSameSite(): void
-    {
-        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        if (!is_array($confVars)) {
-            return;
-        }
-
-        $beConfiguration = $confVars['BE'] ?? null;
-        if (!is_array($beConfiguration)) {
-            return;
-        }
-
-        unset($beConfiguration['cookieSameSite']);
-        $confVars['BE'] = $beConfiguration;
-        $GLOBALS['TYPO3_CONF_VARS'] = $confVars;
     }
 }

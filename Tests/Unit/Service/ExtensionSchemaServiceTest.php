@@ -11,91 +11,98 @@ use Webconsulting\WorkosAuth\Service\ExtensionSchemaService;
 
 final class ExtensionSchemaServiceTest extends TestCase
 {
+    private const WORKOS_STATEMENT = 'CREATE TABLE tx_workosauth_identity (uid INT);';
+    private const OTHER_STATEMENT = 'CREATE TABLE tx_other_extension (uid INT);';
+
     public function testStatusOnlyReportsWorkosSchemaSuggestions(): void
     {
-        $workosStatement = 'CREATE TABLE tx_workosauth_identity (uid INT);';
-        $otherStatement = 'CREATE TABLE tx_other_extension (uid INT);';
-        $databaseDefinitions = [$workosStatement, $otherStatement];
-
         $schemaMigrator = $this->createMock(SchemaMigrator::class);
         $schemaMigrator->expects(self::once())
             ->method('getUpdateSuggestions')
-            ->with($databaseDefinitions)
-            ->willReturn([
-                'Default' => [
-                    'create_table' => [
-                        md5($workosStatement) => $workosStatement,
-                        md5($otherStatement) => $otherStatement,
-                    ],
-                    'add' => [],
-                    'change' => [],
-                    'change_table' => [],
-                ],
-            ]);
+            ->with([self::WORKOS_STATEMENT, self::OTHER_STATEMENT])
+            ->willReturn(['Default' => $this->suggestions()]);
 
-        $status = (new ExtensionSchemaService(
-            $this->createSqlReader($databaseDefinitions),
-            $schemaMigrator,
-        ))->getStatus();
+        $status = (new ExtensionSchemaService($this->createSqlReader(), $schemaMigrator))->getStatus();
 
         self::assertFalse($status['ready']);
         self::assertSame(1, $status['pendingCount']);
-        self::assertSame('tx_workosauth_identity', $status['managedTables'][0]);
-        self::assertSame($workosStatement, $status['statements'][0]['statement']);
+        self::assertSame(['tx_workosauth_identity'], $status['managedTables']);
+        self::assertSame(self::WORKOS_STATEMENT, $status['statements'][0]['statement']);
+        self::assertSame('create_table', $status['statements'][0]['action']);
+        self::assertSame('', $status['error']);
+    }
+
+    public function testStatusIsReadyWithoutPendingStatements(): void
+    {
+        $schemaMigrator = self::createStub(SchemaMigrator::class);
+        $schemaMigrator->method('getUpdateSuggestions')->willReturn(['Default' => ['create_table' => [md5(self::OTHER_STATEMENT) => self::OTHER_STATEMENT]]]);
+
+        $status = (new ExtensionSchemaService($this->createSqlReader(), $schemaMigrator))->getStatus();
+
+        self::assertTrue($status['ready']);
+        self::assertSame(0, $status['pendingCount']);
+    }
+
+    public function testStatusReportsMigratorFailuresAsNotReady(): void
+    {
+        $schemaMigrator = self::createStub(SchemaMigrator::class);
+        $schemaMigrator->method('getUpdateSuggestions')->willThrowException(new \RuntimeException('no connection'));
+
+        $status = (new ExtensionSchemaService($this->createSqlReader(), $schemaMigrator))->getStatus();
+
+        self::assertFalse($status['ready']);
+        self::assertSame('no connection', $status['error']);
     }
 
     public function testApplyPendingUpdatesPassesOnlyWorkosStatementHashesToSchemaMigrator(): void
     {
-        $workosStatement = 'CREATE TABLE tx_workosauth_identity (uid INT);';
-        $otherStatement = 'CREATE TABLE tx_other_extension (uid INT);';
-        $databaseDefinitions = [$workosStatement, $otherStatement];
-        $workosHash = md5($workosStatement);
-        $otherHash = md5($otherStatement);
-
+        $workosHash = md5(self::WORKOS_STATEMENT);
         $schemaMigrator = $this->createMock(SchemaMigrator::class);
-        $schemaMigrator->expects(self::once())
-            ->method('getUpdateSuggestions')
-            ->with($databaseDefinitions)
-            ->willReturn([
-                'Default' => [
-                    'create_table' => [
-                        $workosHash => $workosStatement,
-                        $otherHash => $otherStatement,
-                    ],
-                    'add' => [],
-                    'change' => [],
-                    'change_table' => [],
-                ],
-            ]);
+        $schemaMigrator->method('getUpdateSuggestions')->willReturn(['Default' => $this->suggestions()]);
         $schemaMigrator->expects(self::once())
             ->method('migrate')
-            ->with(
-                $databaseDefinitions,
-                self::callback(static function (array $selectedStatements) use ($workosHash, $otherHash): bool {
-                    self::assertSame($workosHash, $selectedStatements[$workosHash] ?? null);
-                    self::assertArrayNotHasKey($otherHash, $selectedStatements);
-                    return true;
-                })
-            )
+            ->with([self::WORKOS_STATEMENT, self::OTHER_STATEMENT], [$workosHash => $workosHash])
             ->willReturn([]);
 
-        $result = (new ExtensionSchemaService(
-            $this->createSqlReader($databaseDefinitions),
-            $schemaMigrator,
-        ))->applyPendingUpdates();
+        $result = (new ExtensionSchemaService($this->createSqlReader(), $schemaMigrator))->applyPendingUpdates();
 
-        self::assertSame(1, $result['appliedCount']);
-        self::assertSame([], $result['errors']);
+        self::assertSame(['appliedCount' => 1, 'errors' => []], $result);
+    }
+
+    public function testApplyPendingUpdatesDoesNotMigrateWhenNothingIsPending(): void
+    {
+        $schemaMigrator = $this->createMock(SchemaMigrator::class);
+        $schemaMigrator->method('getUpdateSuggestions')->willReturn([]);
+        $schemaMigrator->expects(self::never())->method('migrate');
+
+        self::assertSame(
+            ['appliedCount' => 0, 'errors' => []],
+            (new ExtensionSchemaService($this->createSqlReader(), $schemaMigrator))->applyPendingUpdates()
+        );
     }
 
     /**
-     * @param list<string> $databaseDefinitions
+     * @return array<string, array<string, string>>
      */
-    private function createSqlReader(array $databaseDefinitions): SqlReader
+    private function suggestions(): array
     {
-        $sqlReader = $this->createMock(SqlReader::class);
-        $sqlReader->method('getTablesDefinitionString')->willReturn(implode("\n\n", $databaseDefinitions));
-        $sqlReader->method('getCreateTableStatementArray')->willReturn($databaseDefinitions);
+        return [
+            'create_table' => [
+                md5(self::WORKOS_STATEMENT) => self::WORKOS_STATEMENT,
+                md5(self::OTHER_STATEMENT) => self::OTHER_STATEMENT,
+            ],
+            'add' => [],
+            'change' => [],
+            'change_table' => [],
+        ];
+    }
+
+    private function createSqlReader(): SqlReader
+    {
+        $statements = [self::WORKOS_STATEMENT, self::OTHER_STATEMENT];
+        $sqlReader = self::createStub(SqlReader::class);
+        $sqlReader->method('getTablesDefinitionString')->willReturn(implode("\n\n", $statements));
+        $sqlReader->method('getCreateTableStatementArray')->willReturn($statements);
 
         return $sqlReader;
     }

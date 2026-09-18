@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
+use TYPO3\CMS\Core\Site\Entity\Site;
 use Webconsulting\WorkosAuth\Service\PathUtility;
 
 final class PathUtilityTest extends TestCase
@@ -47,15 +48,16 @@ final class PathUtilityTest extends TestCase
             'provider' => null,
         ]);
 
-        self::assertStringContainsString('returnTo=%2Fdashboard', $url);
-        self::assertStringNotContainsString('screen', $url);
-        self::assertStringNotContainsString('provider', $url);
+        self::assertSame('/login?returnTo=%2Fdashboard', $url);
+        self::assertSame('/login', PathUtility::appendQueryParameters('/login', ['screen' => '']));
     }
 
     public function testAppendQueryParametersPreservesExistingQuery(): void
     {
-        $url = PathUtility::appendQueryParameters('/login?returnTo=%2Fa', ['screen' => 'sign-up']);
-        self::assertSame('/login?returnTo=%2Fa&screen=sign-up', $url);
+        self::assertSame(
+            '/login?returnTo=%2Fa&screen=sign-up',
+            PathUtility::appendQueryParameters('/login?returnTo=%2Fa', ['screen' => 'sign-up'])
+        );
     }
 
     /**
@@ -74,54 +76,37 @@ final class PathUtilityTest extends TestCase
     #[DataProvider('openRedirectProvider')]
     public function testSanitizeReturnToRejectsProtocolRelativeCandidates(string $candidate): void
     {
-        $request = self::request('https://app.local/login');
-
         self::assertSame(
             '/fallback',
-            PathUtility::sanitizeReturnTo($request, $candidate, '/fallback'),
+            PathUtility::sanitizeReturnTo(self::request('https://app.local/login'), $candidate, '/fallback'),
             sprintf('Candidate %s must not be treated as a safe path.', $candidate)
         );
     }
 
-    public function testSanitizeReturnToAcceptsRelativePath(): void
+    public function testSanitizeReturnToAcceptsRelativePathAndSameOriginUrl(): void
     {
         $request = self::request('https://app.local/login');
+
         self::assertSame('/dashboard', PathUtility::sanitizeReturnTo($request, '/dashboard', '/'));
+        self::assertSame('https://app.local/profile', PathUtility::sanitizeReturnTo($request, 'https://app.local/profile', '/'));
     }
 
-    public function testSanitizeReturnToAcceptsSameHostAbsoluteUrl(): void
+    public function testSanitizeReturnToRejectsForeignOrigins(): void
     {
         $request = self::request('https://app.local/login');
-        self::assertSame(
-            'https://app.local/profile',
-            PathUtility::sanitizeReturnTo($request, 'https://app.local/profile', '/')
-        );
-    }
 
-    public function testSanitizeReturnToRejectsDifferentHost(): void
-    {
-        $request = self::request('https://app.local/login');
-        self::assertSame(
-            '/',
-            PathUtility::sanitizeReturnTo($request, 'https://evil.example/profile', '/')
-        );
-    }
-
-    public function testSanitizeReturnToRejectsDifferentScheme(): void
-    {
-        $request = self::request('https://app.local/login');
-        self::assertSame(
-            '/',
-            PathUtility::sanitizeReturnTo($request, 'http://app.local/profile', '/')
-        );
+        self::assertSame('/', PathUtility::sanitizeReturnTo($request, 'https://evil.example/profile', '/'));
+        self::assertSame('/', PathUtility::sanitizeReturnTo($request, 'http://app.local/profile', '/'));
+        self::assertSame('/', PathUtility::sanitizeReturnTo($request, 'https://app.local:8443/profile', '/'));
     }
 
     public function testSanitizeReturnToFallsBackOnEmpty(): void
     {
         $request = self::request('https://app.local/login');
+
         self::assertSame('/', PathUtility::sanitizeReturnTo($request, '', '/'));
         self::assertSame('/', PathUtility::sanitizeReturnTo($request, '   ', '/'));
-        self::assertSame('/', PathUtility::sanitizeReturnTo($request, null, '/'));
+        self::assertSame('/', PathUtility::sanitizeReturnTo($request, null, '  '));
     }
 
     public function testJoinBaseUrlAndPathAbsoluteUrl(): void
@@ -141,8 +126,8 @@ final class PathUtilityTest extends TestCase
         self::assertSame('/login', PathUtility::getPathRelativeToSiteBase('/de/login', '/de'));
         self::assertSame('/', PathUtility::getPathRelativeToSiteBase('/de', '/de'));
         self::assertSame('/login', PathUtility::getPathRelativeToSiteBase('/login', '/'));
-        // unrelated path returns the request path unchanged
         self::assertSame('/other/foo', PathUtility::getPathRelativeToSiteBase('/other/foo', '/de'));
+        self::assertSame('/delta/foo', PathUtility::getPathRelativeToSiteBase('/delta/foo', '/de'));
     }
 
     /**
@@ -167,47 +152,59 @@ final class PathUtilityTest extends TestCase
 
     public function testGuessBasePathFromMatchedPath(): void
     {
-        self::assertSame(
-            '/typo3',
-            PathUtility::guessBasePathFromMatchedPath(
-                '/typo3/workos-auth/backend/login',
-                '/workos-auth/backend/login'
-            )
-        );
-        self::assertSame(
-            '',
-            PathUtility::guessBasePathFromMatchedPath(
-                '/workos-auth/backend/login',
-                '/workos-auth/backend/login'
-            )
-        );
+        self::assertSame('/typo3', PathUtility::guessBasePathFromMatchedPath('/typo3/workos-auth/backend/login', '/workos-auth/backend/login'));
+        self::assertSame('', PathUtility::guessBasePathFromMatchedPath('/workos-auth/backend/login', '/workos-auth/backend/login'));
+        self::assertSame('/typo3', PathUtility::guessBasePathFromMatchedPath('/typo3/login', '/'));
     }
 
-    public function testBuildAbsoluteUrlFromRequestUsesHostAndScheme(): void
+    public function testBuildAbsoluteUrlFromRequest(): void
     {
-        $request = self::request('https://app.local/login');
-        self::assertSame(
-            'https://app.local/callback',
-            PathUtility::buildAbsoluteUrlFromRequest($request, '/callback')
-        );
+        self::assertSame('https://app.local/callback', PathUtility::buildAbsoluteUrlFromRequest(self::request('https://app.local/login'), '/callback'));
+        self::assertSame('https://app.local/callback', PathUtility::buildAbsoluteUrlFromRequest(self::request('https://app.local:443/login'), '/callback'));
+        self::assertSame('https://app.local:8443/callback', PathUtility::buildAbsoluteUrlFromRequest(self::request('https://app.local:8443/login'), 'callback'));
+        self::assertSame('/callback', PathUtility::buildAbsoluteUrlFromRequest(self::request('/login'), '/callback'));
     }
 
-    public function testBuildAbsoluteUrlFromRequestOmitsDefaultPort(): void
+    public function testOriginFromRequest(): void
     {
-        $request = self::request('https://app.local:443/login');
-        self::assertSame(
-            'https://app.local/callback',
-            PathUtility::buildAbsoluteUrlFromRequest($request, '/callback')
-        );
+        self::assertSame('https://app.local', PathUtility::originFromRequest(self::request('https://App.Local:443/typo3/module')));
+        self::assertSame('http://app.local:8080', PathUtility::originFromRequest(self::request('http://app.local:8080/')));
+        self::assertSame('', PathUtility::originFromRequest(self::request('/relative')));
     }
 
-    public function testBuildAbsoluteUrlFromRequestKeepsNonDefaultPort(): void
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function normalizeOriginProvider(): array
     {
-        $request = self::request('https://app.local:8443/login');
-        self::assertSame(
-            'https://app.local:8443/callback',
-            PathUtility::buildAbsoluteUrlFromRequest($request, '/callback')
-        );
+        return [
+            'strips path and lowercases' => ['https://Example.test/foo', 'https://example.test'],
+            'keeps non-default port' => ['http://app.test:8080/path', 'http://app.test:8080'],
+            'drops default port' => ['https://example.test:443', 'https://example.test'],
+            'rejects unsupported scheme' => ['ftp://example.test', ''],
+            'rejects host-less value' => ['not-an-origin', ''],
+            'rejects empty' => ['  ', ''],
+        ];
+    }
+
+    #[DataProvider('normalizeOriginProvider')]
+    public function testNormalizeOrigin(string $input, string $expected): void
+    {
+        self::assertSame($expected, PathUtility::normalizeOrigin($input));
+    }
+
+    public function testSiteBaseUrlUsesTheSiteHostWhenPresent(): void
+    {
+        $site = new Site('main', 1, ['base' => 'https://www.example.test/']);
+
+        self::assertSame('https://www.example.test', PathUtility::siteBaseUrl($site, self::request('https://backend.local/typo3/module')));
+    }
+
+    public function testSiteBaseUrlFallsBackToTheRequestOriginForPathOnlyBases(): void
+    {
+        $site = new Site('camino', 2, ['base' => '/camino/']);
+
+        self::assertSame('https://backend.local/camino', PathUtility::siteBaseUrl($site, self::request('https://backend.local/typo3/module')));
     }
 
     private static function request(string $uri): ServerRequest

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Service;
 
-use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WorkOS\Resource\AuthenticationFactor;
 use WorkOS\Resource\AuthenticationFactorsCreateRequestType;
 use WorkOS\Resource\AuthenticationFactorTotp;
@@ -16,27 +15,23 @@ use WorkOS\Resource\UserSessionsListItem;
 use WorkOS\Service\PasswordPlaintext;
 
 /**
- * High-level facade around the WorkOS UserManagement endpoints used by
- * the Account Center plugin: profile updates, password changes,
- * TOTP/MFA enrollment, sessions and organization memberships.
+ * WorkOS calls behind the Account Center plugin: profile, password,
+ * TOTP factors, sessions and organization memberships of one user.
  */
 final readonly class WorkosAccountService
 {
     public function __construct(
-        private WorkosConfiguration $configuration,
         private WorkosClientFactory $workosClientFactory,
     ) {}
 
     public function getUser(string $workosUserId): User
     {
-        $this->assertConfigured();
-        return $this->workosClientFactory->createUserManagement()->getUser($workosUserId);
+        return $this->workosClientFactory->client()->userManagement()->getUser($workosUserId);
     }
 
     public function updateProfile(string $workosUserId, ?string $firstName, ?string $lastName): User
     {
-        $this->assertConfigured();
-        return $this->workosClientFactory->createUserManagement()->updateUser(
+        return $this->workosClientFactory->client()->userManagement()->updateUser(
             id: $workosUserId,
             firstName: $firstName,
             lastName: $lastName,
@@ -45,24 +40,23 @@ final readonly class WorkosAccountService
 
     public function changePassword(string $workosUserId, string $newPassword): User
     {
-        $this->assertConfigured();
         if (mb_strlen($newPassword) < 10) {
             throw new \RuntimeException('password_too_short', 1744277901);
         }
-        return $this->workosClientFactory->createUserManagement()->updateUser(
+
+        return $this->workosClientFactory->client()->userManagement()->updateUser(
             id: $workosUserId,
             password: new PasswordPlaintext($newPassword),
         );
     }
 
     /**
-     * Enroll a brand-new TOTP factor. Returns the factor and a
-     * scannable QR code (data URI) plus a URI for manual entry.
+     * Enroll a new TOTP factor; the response carries the QR code (data URI),
+     * the otpauth URI and the secret for manual entry.
      */
     public function enrollTotpFactor(string $workosUserId, string $issuer, string $accountName): UserAuthenticationFactorEnrollResponse
     {
-        $this->assertConfigured();
-        return $this->workosClientFactory->createMultiFactorAuth()->createUserAuthFactor(
+        return $this->workosClientFactory->client()->multiFactorAuth()->createUserAuthFactor(
             userlandUserId: $workosUserId,
             type: AuthenticationFactorsCreateRequestType::Totp->value,
             totpIssuer: $issuer,
@@ -71,122 +65,92 @@ final readonly class WorkosAccountService
     }
 
     /**
-     * Activate an existing factor by submitting the 6-digit code from
-     * the user's authenticator app.
-     *
-     * @return array{response: mixed, factorId: string}
+     * Activate a freshly enrolled factor with the six-digit authenticator code.
      */
-    public function verifyTotpFactor(string $factorId, string $code): array
+    public function verifyTotpFactor(string $factorId, string $code): void
     {
-        $this->assertConfigured();
         if (preg_match('/^\d{6}$/', $code) !== 1) {
             throw new \RuntimeException('invalid_code_format', 1744277902);
         }
 
-        $mfa = $this->workosClientFactory->createMultiFactorAuth();
-        $challenge = $mfa->challengeFactor(id: $factorId);
-        $challengeId = $challenge->id;
+        $mfa = $this->workosClientFactory->client()->multiFactorAuth();
+        $challengeId = $mfa->challengeFactor(id: $factorId)->id;
         if ($challengeId === '') {
             throw new \RuntimeException('challenge_failed', 1744277903);
         }
 
-        return [
-            'response' => $mfa->verifyChallenge($challengeId, $code),
-            'factorId' => $factorId,
-        ];
+        $mfa->verifyChallenge($challengeId, $code);
     }
 
     /**
-     * @return AuthenticationFactor[]
+     * @return list<AuthenticationFactor>
      */
     public function listTotpFactors(string $workosUserId): array
     {
-        $this->assertConfigured();
-        $paginated = $this->workosClientFactory->createMultiFactorAuth()->listUserAuthFactors(
+        $paginated = $this->workosClientFactory->client()->multiFactorAuth()->listUserAuthFactors(
             userlandUserId: $workosUserId,
             limit: 50,
         );
 
-        $factors = [];
-        foreach ($paginated->data as $factor) {
-            if ($factor instanceof AuthenticationFactor && $factor->totp instanceof AuthenticationFactorTotp) {
-                $factors[] = $factor;
-            }
-        }
-
-        return $factors;
+        return array_values(array_filter(
+            $paginated->data,
+            static fn(mixed $factor): bool => $factor instanceof AuthenticationFactor && $factor->totp instanceof AuthenticationFactorTotp
+        ));
     }
 
     public function deleteFactor(string $factorId): void
     {
-        $this->assertConfigured();
-        $this->workosClientFactory->createMultiFactorAuth()->deleteFactor($factorId);
+        $this->workosClientFactory->client()->multiFactorAuth()->deleteFactor($factorId);
     }
 
     /**
-     * @return UserSessionsListItem[]
+     * @return list<UserSessionsListItem>
      */
     public function listSessions(string $workosUserId, int $limit = 25): array
     {
-        $this->assertConfigured();
-        $paginated = $this->workosClientFactory->createUserManagement()->listSessions(
+        $paginated = $this->workosClientFactory->client()->userManagement()->listSessions(
             id: $workosUserId,
             limit: $limit,
         );
 
-        $sessions = [];
-        foreach ($paginated->data as $session) {
-            if ($session instanceof UserSessionsListItem) {
-                $sessions[] = $session;
-            }
-        }
-        return $sessions;
+        return array_values(array_filter(
+            $paginated->data,
+            static fn(mixed $session): bool => $session instanceof UserSessionsListItem
+        ));
     }
 
     public function revokeSession(string $sessionId): void
     {
-        $this->assertConfigured();
-        $this->workosClientFactory->createUserManagement()->revokeSession($sessionId);
+        $this->workosClientFactory->client()->userManagement()->revokeSession($sessionId);
     }
 
     /**
-     * @return array<int, array{membership: UserOrganizationMembership, organization: ?Organization}>
+     * Memberships with their organization; the organization is null when it
+     * can no longer be loaded (e.g. deleted in WorkOS).
+     *
+     * @return list<array{membership: UserOrganizationMembership, organization: ?Organization}>
      */
     public function listOrganizationMemberships(string $workosUserId): array
     {
-        $this->assertConfigured();
-        $response = $this->workosClientFactory->createOrganizationMembership()->listOrganizationMemberships(
+        $client = $this->workosClientFactory->client();
+        $response = $client->organizationMembership()->listOrganizationMemberships(
             userId: $workosUserId,
             limit: 50,
         );
 
-        $organizations = $this->workosClientFactory->createOrganizations();
         $memberships = [];
         foreach ($response->data as $membership) {
             if (!$membership instanceof UserOrganizationMembership) {
                 continue;
             }
-
-            $organization = null;
             try {
-                $organization = $organizations->getOrganization($membership->organizationId);
+                $organization = $client->organizations()->getOrganization($membership->organizationId);
             } catch (\Throwable) {
-                // Organization may have been removed; degrade gracefully.
+                $organization = null;
             }
-
-            $memberships[] = [
-                'membership' => $membership,
-                'organization' => $organization,
-            ];
+            $memberships[] = ['membership' => $membership, 'organization' => $organization];
         }
 
         return $memberships;
-    }
-
-    private function assertConfigured(): void
-    {
-        if ($this->configuration->getApiKey() === '' || $this->configuration->getClientId() === '') {
-            throw new \RuntimeException('WorkOS API key and client ID must be configured.', 1744277900);
-        }
     }
 }

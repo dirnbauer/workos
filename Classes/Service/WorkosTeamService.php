@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Service;
 
-use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WorkOS\Resource\GenerateLinkIntent;
 use WorkOS\Resource\Invitation;
 use WorkOS\Resource\Organization;
@@ -15,23 +14,20 @@ use WorkOS\Resource\UserInvite;
 use WorkOS\Resource\UserOrganizationMembership;
 
 /**
- * Backs the "WorkOS Team" frontend plugin: manages organization
- * invitations and generates one-time WorkOS Admin Portal links so
- * customer admins can self-serve SSO, Directory Sync, Audit Logs,
- * Domain Verification and certificate renewal.
+ * WorkOS calls behind the Team plugin: organization invitations and one-time
+ * Admin Portal links (SSO, Directory Sync, Audit Logs, ...).
  */
 final readonly class WorkosTeamService
 {
     /**
-     * The Team plugin exposes invitation + Admin Portal management
-     * features, so only organization-level admin roles may use it.
+     * Only organization-level admin roles may use the Team plugin.
      *
      * @var list<string>
      */
     private const MANAGEMENT_ROLE_SLUGS = ['admin', 'owner'];
 
     /**
-     * Intent => translation key. Order matters for the dashboard.
+     * Admin Portal intent => translation key, in dashboard order.
      *
      * @var array<string, string>
      */
@@ -45,43 +41,34 @@ final readonly class WorkosTeamService
     ];
 
     public function __construct(
-        private WorkosConfiguration $configuration,
         private WorkosClientFactory $workosClientFactory,
     ) {}
 
     /**
-     * Return active organization memberships for a WorkOS user as
-     * `[organizationId => Organization]` (skip memberships whose
-     * organization can't be loaded).
+     * Organizations the user administers, as `[organizationId => Organization]`.
+     * Organizations the API key can no longer load are skipped.
      *
      * @return array<string, Organization>
      */
     public function listAdminOrganizations(string $workosUserId): array
     {
-        $this->assertConfigured();
-        $organizations = $this->workosClientFactory->createOrganizations();
-
-        $response = $this->workosClientFactory->createOrganizationMembership()->listOrganizationMemberships(
+        $client = $this->workosClientFactory->client();
+        $response = $client->organizationMembership()->listOrganizationMemberships(
             userId: $workosUserId,
             limit: 50,
         );
 
         $result = [];
         foreach ($response->data as $membership) {
-            if (!$membership instanceof UserOrganizationMembership) {
-                continue;
-            }
-            if (!$this->canManageMembership($membership)) {
+            if (!$membership instanceof UserOrganizationMembership || !self::canManage($membership)) {
                 continue;
             }
             $organizationId = $membership->organizationId;
             if ($organizationId === '' || isset($result[$organizationId])) {
                 continue;
             }
-
             try {
-                $organization = $organizations->getOrganization($organizationId);
-                $result[$organizationId] = $organization;
+                $result[$organizationId] = $client->organizations()->getOrganization($organizationId);
             } catch (\Throwable) {
                 // Skip organizations the API key can no longer load.
             }
@@ -91,81 +78,68 @@ final readonly class WorkosTeamService
     }
 
     /**
-     * Authorization helper. Throws when the given WorkOS user is not an
-     * active member of the given organization. Call this before any
-     * action whose `organizationId` came from the user's POST body.
-     *
-     * Guards against CWE-285 (Improper Authorization) in the Team*
-     * controller actions: without this check, a logged-in frontend
-     * user could invite, revoke, or mint portal links for arbitrary
-     * organizations the API key can reach.
+     * Authorization guard for every action whose organization id comes from
+     * the POST body: the user must be an active admin/owner of that
+     * organization, otherwise a logged-in frontend user could invite, revoke
+     * or mint portal links for arbitrary organizations the API key can reach.
      */
     public function assertMemberOfOrganization(string $workosUserId, string $organizationId): void
     {
         if ($workosUserId === '' || $organizationId === '') {
             throw new \RuntimeException('forbidden_organization', 1744278100);
         }
-        $this->assertConfigured();
-        $response = $this->workosClientFactory->createOrganizationMembership()->listOrganizationMemberships(
+
+        $response = $this->workosClientFactory->client()->organizationMembership()->listOrganizationMemberships(
             userId: $workosUserId,
             organizationId: $organizationId,
             limit: 1,
         );
-        foreach ($response->data as $membership) {
-            if ($membership instanceof UserOrganizationMembership
-                && $this->canManageMembership($membership)
+        $isMember = array_any(
+            $response->data,
+            static fn(mixed $membership): bool => $membership instanceof UserOrganizationMembership
+                && self::canManage($membership)
                 && $membership->userId === $workosUserId
-                && $membership->organizationId === $organizationId) {
-                return;
-            }
+                && $membership->organizationId === $organizationId
+        );
+        if (!$isMember) {
+            throw new \RuntimeException('forbidden_organization', 1744278101);
         }
-        throw new \RuntimeException('forbidden_organization', 1744278101);
     }
 
     /**
-     * Fetch a single invitation so the caller can resolve the
-     * organization id it belongs to before running authorization
-     * checks. Returns null when the invitation cannot be loaded.
+     * Organization id of an invitation, so callers can authorize before acting on it.
      */
-    public function findInvitation(string $invitationId): ?UserInvite
+    public function findInvitationOrganizationId(string $invitationId): string
     {
         if ($invitationId === '') {
-            return null;
+            return '';
         }
-        $this->assertConfigured();
         try {
-            $invitation = $this->workosClientFactory->createUserManagement()->getInvitation($invitationId);
+            return $this->workosClientFactory->client()->userManagement()->getInvitation($invitationId)->organizationId ?? '';
         } catch (\Throwable) {
-            return null;
+            return '';
         }
-        return $invitation;
     }
 
     /**
-     * @return UserInvite[]
+     * @return list<UserInvite>
      */
     public function listInvitations(string $organizationId, int $limit = 25): array
     {
-        $this->assertConfigured();
-        $response = $this->workosClientFactory->createUserManagement()->listInvitations(
+        $response = $this->workosClientFactory->client()->userManagement()->listInvitations(
             organizationId: $organizationId,
             limit: $limit,
             order: PaginationOrder::Desc,
         );
+
         return array_values(array_filter(
             $response->data,
             static fn(mixed $invitation): bool => $invitation instanceof UserInvite
         ));
     }
 
-    public function sendInvitation(
-        string $email,
-        string $organizationId,
-        ?string $inviterUserId = null,
-        ?string $roleSlug = null,
-        ?int $expiresInDays = null,
-    ): UserInvite {
-        $this->assertConfigured();
+    public function sendInvitation(string $email, string $organizationId, string $inviterUserId, ?string $roleSlug): UserInvite
+    {
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             throw new \RuntimeException('invalid_email', 1744278001);
         }
@@ -173,69 +147,40 @@ final readonly class WorkosTeamService
             throw new \RuntimeException('organization_required', 1744278002);
         }
 
-        return $this->workosClientFactory->createUserManagement()->sendInvitation(
+        return $this->workosClientFactory->client()->userManagement()->sendInvitation(
             email: $email,
             organizationId: $organizationId,
-            expiresInDays: $expiresInDays,
-            inviterUserId: $inviterUserId !== null && $inviterUserId !== '' ? $inviterUserId : null,
-            roleSlug: $roleSlug !== null && $roleSlug !== '' ? $roleSlug : null,
+            inviterUserId: $inviterUserId !== '' ? $inviterUserId : null,
+            roleSlug: $roleSlug,
         );
     }
 
     public function resendInvitation(string $invitationId): UserInvite
     {
-        $this->assertConfigured();
-        return $this->workosClientFactory->createUserManagement()->resendInvitation($invitationId);
+        return $this->workosClientFactory->client()->userManagement()->resendInvitation($invitationId);
     }
 
     public function revokeInvitation(string $invitationId): Invitation
     {
-        $this->assertConfigured();
-        return $this->workosClientFactory->createUserManagement()->revokeInvitation($invitationId);
+        return $this->workosClientFactory->client()->userManagement()->revokeInvitation($invitationId);
     }
 
-    public function generatePortalLink(
-        string $organizationId,
-        string $intent,
-        ?string $returnUrl = null,
-    ): PortalLinkResponse {
-        $this->assertConfigured();
+    public function generatePortalLink(string $organizationId, string $intent, ?string $returnUrl): PortalLinkResponse
+    {
         if (!array_key_exists($intent, self::PORTAL_INTENTS)) {
             throw new \RuntimeException('invalid_intent', 1744278003);
         }
-        return $this->workosClientFactory->createPortal()->generateLink(
+
+        return $this->workosClientFactory->client()->adminPortal()->generateLink(
             organization: $organizationId,
             intent: GenerateLinkIntent::from($intent),
-            returnUrl: $returnUrl !== null && $returnUrl !== '' ? $returnUrl : null,
+            returnUrl: $returnUrl !== '' ? $returnUrl : null,
         );
     }
 
-    /**
-     * @return array<int, array{slug: string, labelKey: string}>
-     */
-    public function describePortalIntents(): array
+    private static function canManage(UserOrganizationMembership $membership): bool
     {
-        $intents = [];
-        foreach (self::PORTAL_INTENTS as $slug => $labelKey) {
-            $intents[] = ['slug' => $slug, 'labelKey' => $labelKey];
-        }
-        return $intents;
-    }
-
-    private function assertConfigured(): void
-    {
-        if ($this->configuration->getApiKey() === '' || $this->configuration->getClientId() === '') {
-            throw new \RuntimeException('WorkOS API key and client ID must be configured.', 1744278000);
-        }
-    }
-
-    private function canManageMembership(UserOrganizationMembership $membership): bool
-    {
-        if ($membership->status !== OrganizationMembershipStatus::Active) {
-            return false;
-        }
-
-        $roleSlug = strtolower(trim($membership->role->slug));
-        return $roleSlug !== '' && in_array($roleSlug, self::MANAGEMENT_ROLE_SLUGS, true);
+        return $membership->status === OrganizationMembershipStatus::Active
+            && in_array(strtolower(trim($membership->role->slug)), self::MANAGEMENT_ROLE_SLUGS, true);
     }
 }

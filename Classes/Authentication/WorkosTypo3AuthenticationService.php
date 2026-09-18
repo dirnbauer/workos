@@ -8,28 +8,33 @@ use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Core\Authentication\AbstractAuthenticationService;
 use TYPO3\CMS\Core\Authentication\LoginType;
+use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 
+/**
+ * TYPO3 auth service that completes a WorkOS login: it only acts when the
+ * request carries the server-created pending-login attribute (set by
+ * Typo3SessionService) and then hands TYPO3 the already-resolved user row.
+ */
 #[Autoconfigure(public: true)]
 final class WorkosTypo3AuthenticationService extends AbstractAuthenticationService
 {
     public const string PENDING_LOGIN_ATTRIBUTE = 'workos_auth.pending_login';
 
-    private const string PLACEHOLDER_USERNAME = '__workos__';
-    private const string PLACEHOLDER_PASSWORD = '__workos__';
+    private const string PLACEHOLDER_CREDENTIAL = '__workos__';
 
     /**
      * @param array<string, mixed> $loginData
      */
     public function processLoginData(array &$loginData): bool|int
     {
-        if (!$this->hasPendingLoginForCurrentMode()) {
+        if ($this->getPendingUser() === null) {
             return false;
         }
 
-        $loginData['uname'] = self::PLACEHOLDER_USERNAME;
-        $loginData['uident'] = self::PLACEHOLDER_PASSWORD;
-        $loginData['uident_text'] = self::PLACEHOLDER_PASSWORD;
+        $loginData['uname'] = self::PLACEHOLDER_CREDENTIAL;
+        $loginData['uident'] = self::PLACEHOLDER_CREDENTIAL;
+        $loginData['uident_text'] = self::PLACEHOLDER_CREDENTIAL;
 
         return 200;
     }
@@ -37,18 +42,13 @@ final class WorkosTypo3AuthenticationService extends AbstractAuthenticationServi
     /**
      * @return array<string, mixed>|false
      */
-    public function getUser()
+    public function getUser(): array|false
     {
-        if (!$this->isActiveLogin() || !$this->hasPendingLoginForCurrentMode()) {
+        if (!$this->isActiveLogin()) {
             return false;
         }
 
-        $pendingUser = $this->getPendingUser();
-        if (!is_array($pendingUser)) {
-            return false;
-        }
-
-        return $pendingUser;
+        return $this->getPendingUser() ?? false;
     }
 
     /**
@@ -61,18 +61,13 @@ final class WorkosTypo3AuthenticationService extends AbstractAuthenticationServi
         }
 
         $pendingUser = $this->getPendingUser();
-        if (!is_array($pendingUser) || !$this->hasPendingLoginForCurrentMode()) {
+        if ($pendingUser === null) {
             return 100;
         }
 
         $pendingUid = MixedCaster::int($pendingUser['uid'] ?? null);
-        $candidateUid = MixedCaster::int($user['uid'] ?? null);
 
-        if ($pendingUid <= 0 || $candidateUid !== $pendingUid) {
-            return 0;
-        }
-
-        return 200;
+        return $pendingUid > 0 && MixedCaster::int($user['uid'] ?? null) === $pendingUid ? 200 : 0;
     }
 
     private function isActiveLogin(): bool
@@ -80,70 +75,26 @@ final class WorkosTypo3AuthenticationService extends AbstractAuthenticationServi
         return LoginType::tryFrom(MixedCaster::string($this->login['status'] ?? null)) === LoginType::LOGIN;
     }
 
-    private function hasPendingLoginForCurrentMode(): bool
-    {
-        $pendingLogin = $this->getPendingLogin();
-        if (!is_array($pendingLogin)) {
-            return false;
-        }
-
-        return MixedCaster::string($pendingLogin['context'] ?? null) === $this->resolveExpectedContext();
-    }
-
     /**
-     * @return array<string, mixed>|null
-     */
-    private function getPendingLogin(): ?array
-    {
-        $request = $this->getRequest();
-        if (!$request instanceof ServerRequestInterface) {
-            return null;
-        }
-
-        $pendingLogin = $request->getAttribute(self::PENDING_LOGIN_ATTRIBUTE);
-        if (!is_array($pendingLogin)) {
-            return null;
-        }
-
-        $narrowed = [];
-        foreach ($pendingLogin as $key => $value) {
-            $narrowed[(string)$key] = $value;
-        }
-
-        return $narrowed;
-    }
-
-    /**
+     * The pending user row when the request carries a pending login for the
+     * context this service instance runs in (FE or BE), null otherwise.
+     *
      * @return array<string, mixed>|null
      */
     private function getPendingUser(): ?array
     {
-        $pendingLogin = $this->getPendingLogin();
-        if (!is_array($pendingLogin)) {
-            return null;
-        }
-
-        $pendingUser = $pendingLogin['user'] ?? null;
-        if (!is_array($pendingUser)) {
-            return null;
-        }
-
-        $narrowed = [];
-        foreach ($pendingUser as $key => $value) {
-            $narrowed[(string)$key] = $value;
-        }
-
-        return $narrowed;
-    }
-
-    private function resolveExpectedContext(): string
-    {
-        return str_ends_with($this->mode, 'BE') ? 'backend' : 'frontend';
-    }
-
-    private function getRequest(): ?ServerRequestInterface
-    {
         $request = $this->authInfo['request'] ?? null;
-        return $request instanceof ServerRequestInterface ? $request : null;
+        if (!$request instanceof ServerRequestInterface) {
+            return null;
+        }
+
+        $pendingLogin = MixedCaster::stringKeyedArray($request->getAttribute(self::PENDING_LOGIN_ATTRIBUTE));
+        if ($pendingLogin === null
+            || MixedCaster::string($pendingLogin['context'] ?? null) !== LoginContext::fromLoginType($this->mode)->value
+        ) {
+            return null;
+        }
+
+        return MixedCaster::stringKeyedArray($pendingLogin['user'] ?? null);
     }
 }

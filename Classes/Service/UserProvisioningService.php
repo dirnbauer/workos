@@ -8,10 +8,18 @@ use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use WorkOS\Resource\User;
 
+/**
+ * Resolves the local fe_users / be_users record for an authenticated WorkOS
+ * user: identity link first, then (optionally) an existing user with the same
+ * email, then (optionally) a newly created user. The identity link and the
+ * stored WorkOS profile are refreshed on every sign-in.
+ */
 final readonly class UserProvisioningService
 {
     public function __construct(
@@ -23,25 +31,9 @@ final readonly class UserProvisioningService
     ) {}
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, mixed> the enabled, non-deleted local user row
      */
-    public function resolveFrontendUser(User $workosUser): array
-    {
-        return $this->resolveUser($workosUser, 'frontend', 'fe_users');
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function resolveBackendUser(User $workosUser): array
-    {
-        return $this->resolveUser($workosUser, 'backend', 'be_users');
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function resolveUser(User $workosUser, string $context, string $table): array
+    public function resolve(LoginContext $context, User $workosUser): array
     {
         $workosUserId = trim($workosUser->id);
         $email = strtolower(trim($workosUser->email));
@@ -49,148 +41,146 @@ final readonly class UserProvisioningService
             throw new \RuntimeException('The WorkOS user response is missing an id or email address.', 1744277601);
         }
 
-        $identity = $this->identityService->findIdentity($context, $workosUserId);
-        if ($identity !== null) {
-            $linkedUser = $this->findUserByUid($table, MixedCaster::int($identity['user_uid']));
-            if ($linkedUser !== null) {
-                $updatedUser = $context === 'frontend'
-                    ? $this->synchronizeFrontendProfile($linkedUser, $workosUser)
-                    : $this->synchronizeBackendProfile($linkedUser, $workosUser);
-                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, MixedCaster::int($updatedUser['uid']), $this->extractProfile($workosUser));
-                return $updatedUser;
-            }
-        }
+        $user = $this->findLinkedUser($context, $workosUserId)
+            ?? ($this->shouldLinkByEmail($context) ? $this->findUserByEmail($context->userTable(), $email) : null);
 
-        $linkByEmail = $context === 'frontend'
-            ? $this->configuration->shouldLinkFrontendUsersByEmail()
-            : $this->configuration->shouldLinkBackendUsersByEmail();
+        $user = $user === null
+            ? $this->createUser($context, $workosUser, $email)
+            : $this->synchronizeProfile($context, $user, $workosUser, $email);
 
-        if ($linkByEmail) {
-            $user = $this->findUserByEmail($table, $email);
-            if ($user !== null) {
-                $updatedUser = $context === 'frontend'
-                    ? $this->synchronizeFrontendProfile($user, $workosUser)
-                    : $this->synchronizeBackendProfile($user, $workosUser);
-                $this->identityService->storeIdentity($context, $workosUserId, $email, $table, MixedCaster::int($updatedUser['uid']), $this->extractProfile($workosUser));
-                return $updatedUser;
-            }
-        }
+        $this->identityService->storeIdentity(
+            $context,
+            $workosUserId,
+            $email,
+            MixedCaster::int($user['uid']),
+            $workosUser->toArray()
+        );
 
-        $user = $context === 'frontend'
-            ? $this->createFrontendUser($workosUser)
-            : $this->createBackendUser($workosUser);
-
-        $this->identityService->storeIdentity($context, $workosUserId, $email, $table, MixedCaster::int($user['uid']), $this->extractProfile($workosUser));
         return $user;
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, mixed>|null
      */
-    private function createFrontendUser(User $workosUser): array
+    private function findLinkedUser(LoginContext $context, string $workosUserId): ?array
     {
-        if (!$this->configuration->shouldAutoCreateFrontendUsers()) {
-            throw new \RuntimeException(sprintf(
-                'No frontend user matched the WorkOS account (email "%s", id "%s") and automatic frontend provisioning is disabled.',
-                $workosUser->email,
-                $workosUser->id
-            ), 1744277602);
-        }
+        $identity = $this->identityService->findIdentity($context, $workosUserId);
 
-        $storagePid = $this->configuration->getFrontendStoragePid();
-        if ($storagePid <= 0) {
-            throw new \RuntimeException('Automatic frontend provisioning requires a storage PID.', 1744277603);
-        }
+        return $identity === null
+            ? null
+            : $this->findUserByUid($context->userTable(), MixedCaster::int($identity['user_uid']));
+    }
 
-        $email = strtolower(trim($workosUser->email));
-        $connection = $this->connectionPool->getConnectionForTable('fe_users');
-        $connection->insert('fe_users', [
-            'pid' => $storagePid,
-            'tstamp' => $this->currentTimestamp(),
-            'crdate' => $this->currentTimestamp(),
-            'disable' => 0,
-            'username' => $this->generateUniqueUsername('fe_users', 'fe', $workosUser->id),
-            'password' => $this->hashRandomPassword('FE'),
-            'email' => $email,
-            'name' => $this->buildDisplayName($workosUser),
-            'first_name' => trim($workosUser->firstName ?? ''),
-            'last_name' => trim($workosUser->lastName ?? ''),
-            'usergroup' => $this->configuration->getFrontendDefaultGroupCsv(),
-        ]);
-
-        return $this->findUserByUid('fe_users', (int)$connection->lastInsertId())
-            ?? throw new \RuntimeException('The frontend user could not be loaded after creation.', 1744277604);
+    private function shouldLinkByEmail(LoginContext $context): bool
+    {
+        return match ($context) {
+            LoginContext::Frontend => $this->configuration->shouldLinkFrontendUsersByEmail(),
+            LoginContext::Backend => $this->configuration->shouldLinkBackendUsersByEmail(),
+        };
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function createBackendUser(User $workosUser): array
+    private function createUser(LoginContext $context, User $workosUser, string $email): array
     {
-        if (!$this->configuration->shouldAutoCreateBackendUsers()) {
+        $table = $context->userTable();
+        $timestamp = $this->currentTimestamp();
+        $row = $this->newUserRow($context, $workosUser) + $this->profileFields($context, $workosUser, $email) + [
+            'tstamp' => $timestamp,
+            'crdate' => $timestamp,
+            'disable' => 0,
+            'username' => $this->generateUniqueUsername($table, $context->loginTypeAbbreviation(), $workosUser->id),
+            'password' => $this->hashRandomPassword(strtoupper($context->loginTypeAbbreviation())),
+        ];
+
+        $connection = $this->connectionPool->getConnectionForTable($table);
+        $connection->insert($table, $row);
+
+        return $this->findUserByUid($table, (int)$connection->lastInsertId())
+            ?? throw new \RuntimeException(sprintf('The %s user could not be loaded after creation.', $context->value), 1744277604);
+    }
+
+    /**
+     * Context-specific columns of a new user, after checking that automatic
+     * provisioning is allowed for this context and WorkOS account.
+     *
+     * @return array<string, int|string>
+     */
+    private function newUserRow(LoginContext $context, User $workosUser): array
+    {
+        $autoCreate = match ($context) {
+            LoginContext::Frontend => $this->configuration->shouldAutoCreateFrontendUsers(),
+            LoginContext::Backend => $this->configuration->shouldAutoCreateBackendUsers(),
+        };
+        if (!$autoCreate) {
             throw new \RuntimeException(sprintf(
-                'No backend user matched the WorkOS account (email "%s", id "%s") and automatic backend provisioning is disabled.',
+                'No %s user matched the WorkOS account (email "%s", id "%s") and automatic %1$s provisioning is disabled.',
+                $context->value,
                 $workosUser->email,
                 $workosUser->id
-            ), 1744277605);
+            ), $context === LoginContext::Frontend ? 1744277602 : 1744277605);
+        }
+
+        if ($context === LoginContext::Frontend) {
+            $storagePid = $this->configuration->getFrontendStoragePid();
+            if ($storagePid <= 0) {
+                throw new \RuntimeException('Automatic frontend provisioning requires a storage PID.', 1744277603);
+            }
+
+            return [
+                'pid' => $storagePid,
+                'usergroup' => implode(',', $this->configuration->getFrontendDefaultGroupUids()),
+            ];
         }
 
         $this->assertBackendDomainAllowed($workosUser->email);
 
-        $connection = $this->connectionPool->getConnectionForTable('be_users');
-        $connection->insert('be_users', [
+        return [
             'pid' => 0,
-            'tstamp' => $this->currentTimestamp(),
-            'crdate' => $this->currentTimestamp(),
-            'disable' => 0,
             'admin' => 0,
-            'username' => $this->generateUniqueUsername('be_users', 'be', $workosUser->id),
-            'password' => $this->hashRandomPassword('BE'),
-            'email' => strtolower(trim($workosUser->email)),
-            'realName' => $this->buildDisplayName($workosUser),
-            'usergroup' => $this->configuration->getBackendDefaultGroupCsv(),
-        ]);
-
-        return $this->findUserByUid('be_users', (int)$connection->lastInsertId())
-            ?? throw new \RuntimeException('The backend user could not be loaded after creation.', 1744277606);
+            'usergroup' => implode(',', $this->configuration->getBackendDefaultGroupUids()),
+        ];
     }
 
     /**
      * @param array<string, mixed> $user
      * @return array<string, mixed>
      */
-    private function synchronizeFrontendProfile(array $user, User $workosUser): array
+    private function synchronizeProfile(LoginContext $context, array $user, User $workosUser, string $email): array
     {
-        $connection = $this->connectionPool->getConnectionForTable('fe_users');
-        $connection->update('fe_users', [
-            'tstamp' => $this->currentTimestamp(),
-            'email' => strtolower(trim($workosUser->email)),
-            'name' => $this->buildDisplayName($workosUser),
-            'first_name' => trim($workosUser->firstName ?? ''),
-            'last_name' => trim($workosUser->lastName ?? ''),
-        ], [
-            'uid' => MixedCaster::int($user['uid']),
-        ]);
+        $table = $context->userTable();
+        $uid = MixedCaster::int($user['uid']);
+        $this->connectionPool->getConnectionForTable($table)->update(
+            $table,
+            $this->profileFields($context, $workosUser, $email) + ['tstamp' => $this->currentTimestamp()],
+            ['uid' => $uid]
+        );
 
-        return $this->findUserByUid('fe_users', MixedCaster::int($user['uid'])) ?? $user;
+        return $this->findUserByUid($table, $uid) ?? $user;
     }
 
     /**
-     * @param array<string, mixed> $user
-     * @return array<string, mixed>
+     * Columns mirrored from the WorkOS profile on every sign-in.
+     *
+     * @return array<string, string>
      */
-    private function synchronizeBackendProfile(array $user, User $workosUser): array
+    private function profileFields(LoginContext $context, User $workosUser, string $email): array
     {
-        $connection = $this->connectionPool->getConnectionForTable('be_users');
-        $connection->update('be_users', [
-            'tstamp' => $this->currentTimestamp(),
-            'email' => strtolower(trim($workosUser->email)),
-            'realName' => $this->buildDisplayName($workosUser),
-        ], [
-            'uid' => MixedCaster::int($user['uid']),
-        ]);
+        $displayName = self::buildDisplayName($workosUser);
 
-        return $this->findUserByUid('be_users', MixedCaster::int($user['uid'])) ?? $user;
+        return match ($context) {
+            LoginContext::Frontend => [
+                'email' => $email,
+                'name' => $displayName,
+                'first_name' => trim($workosUser->firstName ?? ''),
+                'last_name' => trim($workosUser->lastName ?? ''),
+            ],
+            LoginContext::Backend => [
+                'email' => $email,
+                'realName' => $displayName,
+            ],
+        };
     }
 
     /**
@@ -198,17 +188,9 @@ final readonly class UserProvisioningService
      */
     private function findUserByUid(string $table, int $uid): ?array
     {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
-        $queryBuilder->getRestrictions()->removeAll();
-
+        $queryBuilder = $this->createActiveUserQuery($table);
         $user = $queryBuilder
-            ->select('*')
-            ->from($table)
-            ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)),
-                $queryBuilder->expr()->eq('disable', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
-            )
+            ->andWhere($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)))
             ->executeQuery()
             ->fetchAssociative();
 
@@ -220,22 +202,28 @@ final readonly class UserProvisioningService
      */
     private function findUserByEmail(string $table, string $email): ?array
     {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
-        $queryBuilder->getRestrictions()->removeAll();
-
+        $queryBuilder = $this->createActiveUserQuery($table);
         $user = $queryBuilder
-            ->select('*')
-            ->from($table)
-            ->where(
-                $queryBuilder->expr()->eq('email', $queryBuilder->createNamedParameter($email)),
-                $queryBuilder->expr()->eq('disable', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
-            )
+            ->andWhere($queryBuilder->expr()->eq('email', $queryBuilder->createNamedParameter($email)))
             ->setMaxResults(1)
             ->executeQuery()
             ->fetchAssociative();
 
         return is_array($user) ? $user : null;
+    }
+
+    private function createActiveUserQuery(string $table): QueryBuilder
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        return $queryBuilder
+            ->select('*')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('disable', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
+                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
+            );
     }
 
     private function generateUniqueUsername(string $table, string $prefix, string $seed): string
@@ -245,8 +233,7 @@ final readonly class UserProvisioningService
         $counter = 1;
 
         while ($this->usernameExists($table, $candidate)) {
-            $candidate = $baseUsername . '_' . $counter;
-            $counter++;
+            $candidate = $baseUsername . '_' . $counter++;
         }
 
         return $candidate;
@@ -256,23 +243,19 @@ final readonly class UserProvisioningService
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
         $queryBuilder->getRestrictions()->removeAll();
-
         $count = $queryBuilder
             ->count('uid')
             ->from($table)
-            ->where(
-                $queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($username))
-            )
+            ->where($queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($username)))
             ->executeQuery()
             ->fetchOne();
 
-        return is_numeric($count) && (int)$count > 0;
+        return MixedCaster::int($count) > 0;
     }
 
     private function hashRandomPassword(string $mode): string
     {
-        $hashInstance = $this->passwordHashFactory->getDefaultHashInstance($mode);
-        $hash = $hashInstance->getHashedPassword(bin2hex(random_bytes(32)));
+        $hash = $this->passwordHashFactory->getDefaultHashInstance($mode)->getHashedPassword(bin2hex(random_bytes(32)));
         if (!is_string($hash) || $hash === '') {
             throw new \RuntimeException('A TYPO3 password hash could not be generated.', 1744277607);
         }
@@ -285,14 +268,11 @@ final readonly class UserProvisioningService
         return MixedCaster::int($this->context->getPropertyFromAspect('date', 'timestamp'), time());
     }
 
-    private function buildDisplayName(User $workosUser): string
+    private static function buildDisplayName(User $workosUser): string
     {
         $displayName = trim(trim($workosUser->firstName ?? '') . ' ' . trim($workosUser->lastName ?? ''));
-        if ($displayName !== '') {
-            return $displayName;
-        }
 
-        return $workosUser->email;
+        return $displayName !== '' ? $displayName : $workosUser->email;
     }
 
     private function assertBackendDomainAllowed(string $email): void
@@ -302,22 +282,10 @@ final readonly class UserProvisioningService
             return;
         }
 
-        $localHost = strrchr($email, '@');
-        $domain = $localHost !== false ? strtolower(substr($localHost, 1)) : '';
+        $atPosition = strrpos($email, '@');
+        $domain = $atPosition === false ? '' : strtolower(substr($email, $atPosition + 1));
         if ($domain === '' || !in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException('This WorkOS account is not allowed to create a TYPO3 backend user.', 1744277608);
         }
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function extractProfile(User $workosUser): array
-    {
-        $profile = [];
-        foreach ($workosUser->toArray() as $key => $value) {
-            $profile[(string)$key] = $value;
-        }
-        return $profile;
     }
 }

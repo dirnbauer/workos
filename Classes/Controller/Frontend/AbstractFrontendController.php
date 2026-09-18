@@ -9,14 +9,15 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Security\RequestTokenService;
 use Webconsulting\WorkosAuth\Service\IdentityService;
 
 /**
- * Shared plumbing for the WorkOS frontend plugins: request-token
- * validation, session-bound flash messages, translation and the lookup
- * of the WorkOS identity linked to the signed-in frontend user.
+ * Shared plumbing of the WorkOS frontend plugins: request-token validation,
+ * session-bound one-shot messages, translation and the lookup of the WorkOS
+ * identity linked to the signed-in frontend user.
  */
 abstract class AbstractFrontendController extends ActionController
 {
@@ -36,61 +37,70 @@ abstract class AbstractFrontendController extends ActionController
         protected readonly RequestTokenService $requestTokenService,
     ) {}
 
+    protected function getFrontendUser(): FrontendUserAuthentication
+    {
+        $frontendUser = $this->request->getAttribute('frontend.user');
+        if (!$frontendUser instanceof FrontendUserAuthentication) {
+            throw new \RuntimeException('No frontend user session available.', 1744277820);
+        }
+
+        return $frontendUser;
+    }
+
     protected function isFrontendUserLoggedIn(): bool
     {
         $frontendUser = $this->request->getAttribute('frontend.user');
 
-        return $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user ?? null);
+        return $frontendUser instanceof FrontendUserAuthentication && is_array($frontendUser->user);
     }
 
     /**
-     * Resolve the WorkOS user id linked to the signed-in frontend user.
-     * When the plugin is not usable (not configured, not signed in, or
-     * not linked) a rendered response is returned instead.
-     *
-     * @return array{response: ?ResponseInterface, workosUserId: string, displayName: string}
+     * First non-empty of name, username, email of the signed-in user.
      */
-    protected function resolveLinkedWorkosContext(): array
+    protected function resolveDisplayName(): string
     {
-        $frontendUser = $this->request->getAttribute('frontend.user');
-        $isLoggedIn = $this->isFrontendUserLoggedIn();
+        $user = $this->getFrontendUser()->user ?? [];
+        foreach (['name', 'username', 'email'] as $field) {
+            $value = trim(MixedCaster::string($user[$field] ?? null));
+            if ($value !== '') {
+                return $value;
+            }
+        }
 
-        if (!$this->configuration->isFrontendReady() || !$isLoggedIn || !$frontendUser instanceof FrontendUserAuthentication) {
+        return '';
+    }
+
+    /**
+     * The WorkOS user id linked to the signed-in frontend user. When the
+     * plugin is not usable (not configured, not signed in, not linked) the
+     * "empty state" response to return instead is given back.
+     */
+    protected function resolveLinkedWorkosUserId(): ResponseInterface|string
+    {
+        if (!$this->configuration->isFrontendReady() || !$this->isFrontendUserLoggedIn()) {
             $this->view->assignMultiple([
                 'configured' => $this->configuration->isFrontendReady(),
-                'isLoggedIn' => $isLoggedIn,
+                'isLoggedIn' => $this->isFrontendUserLoggedIn(),
             ]);
-            return ['response' => $this->htmlResponse(), 'workosUserId' => '', 'displayName' => ''];
+
+            return $this->htmlResponse();
         }
 
         $identity = $this->identityService->findIdentityByLocalUser(
-            'frontend',
-            'fe_users',
-            MixedCaster::int($frontendUser->user['uid'] ?? null)
+            LoginContext::Frontend,
+            MixedCaster::int($this->getFrontendUser()->user['uid'] ?? null)
         );
-
-        $workosUserId = is_array($identity) ? MixedCaster::string($identity['workos_user_id'] ?? null) : '';
-        if ($workosUserId === '') {
-            $this->view->assignMultiple([
-                'configured' => true,
-                'isLoggedIn' => true,
-                'noWorkosLink' => true,
-            ]);
-            return ['response' => $this->htmlResponse(), 'workosUserId' => '', 'displayName' => ''];
-        }
-
-        $displayName = MixedCaster::string(
-            $frontendUser->user['name'] ?? $frontendUser->user['username'] ?? $frontendUser->user['email'] ?? null
-        );
+        $workosUserId = MixedCaster::string($identity['workos_user_id'] ?? null);
 
         $this->view->assignMultiple([
             'configured' => true,
             'isLoggedIn' => true,
-            'displayName' => $displayName,
+            'noWorkosLink' => $workosUserId === '',
+            'displayName' => $this->resolveDisplayName(),
             'workosUserId' => $workosUserId,
         ]);
 
-        return ['response' => null, 'workosUserId' => $workosUserId, 'displayName' => $displayName];
+        return $workosUserId === '' ? $this->htmlResponse() : $workosUserId;
     }
 
     protected function hasValidRequestToken(): bool
@@ -98,38 +108,53 @@ abstract class AbstractFrontendController extends ActionController
         return $this->requestTokenService->validate(static::REQUEST_TOKEN_SCOPE);
     }
 
-    protected function getFrontendUser(): FrontendUserAuthentication
-    {
-        $frontendUser = $this->request->getAttribute('frontend.user');
-        if (!$frontendUser instanceof FrontendUserAuthentication) {
-            throw new \RuntimeException('No frontend user session available.', 1744277820);
-        }
-        return $frontendUser;
-    }
-
     protected function setFlash(string $type, string $message): void
     {
-        $this->getFrontendUser()->setAndSaveSessionData(static::SESSION_FLASH, [
-            'type' => $type,
-            'message' => $message,
-        ]);
+        $this->getFrontendUser()->setAndSaveSessionData(static::SESSION_FLASH, ['type' => $type, 'message' => $message]);
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array{type: string, message: string}|null
      */
     protected function consumeFlash(): ?array
     {
         $flash = $this->getFrontendUser()->getSessionData(static::SESSION_FLASH);
-        if (!is_array($flash) || !isset($flash['message']) || $flash['message'] === '') {
+        $message = is_array($flash) ? MixedCaster::string($flash['message'] ?? null) : '';
+        if ($message === '') {
             return null;
         }
         $this->getFrontendUser()->setAndSaveSessionData(static::SESSION_FLASH, null);
-        $keyed = [];
-        foreach ($flash as $key => $value) {
-            $keyed[(string)$key] = $value;
+
+        return ['type' => MixedCaster::string($flash['type'] ?? null), 'message' => $message];
+    }
+
+    /**
+     * Read and clear a one-shot string stored in the frontend session.
+     */
+    protected function consumeSessionString(string $key): ?string
+    {
+        $value = $this->getFrontendUser()->getSessionData($key);
+        if (!is_string($value) || $value === '') {
+            return null;
         }
-        return $keyed;
+        $this->getFrontendUser()->setAndSaveSessionData($key, null);
+
+        return $value;
+    }
+
+    /**
+     * Read and clear a one-shot array stored in the frontend session.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function consumeSessionArray(string $key): ?array
+    {
+        $value = MixedCaster::stringKeyedArray($this->getFrontendUser()->getSessionData($key));
+        if ($value !== null) {
+            $this->getFrontendUser()->setAndSaveSessionData($key, null);
+        }
+
+        return $value;
     }
 
     protected function formatDateTime(\DateTimeImmutable $value): string
