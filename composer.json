@@ -1,8 +1,8 @@
 {
     "name": "webconsulting/workos-auth",
-    "description": "TYPO3 v14 extension for WorkOS-powered frontend and backend login (AuthKit, SSO, MFA, Admin Portal).",
-    "type": "typo3-cms-extension",
+    "description": "TYPO3 v14 extension for WorkOS-powered frontend and backend login (AuthKit, SSO, MFA, Admin Portal) and a WorkOS-protected TYPO3 MCP server.",
     "license": "GPL-2.0-or-later",
+    "type": "typo3-cms-extension",
     "keywords": [
         "typo3",
         "typo3-cms-extension",
@@ -10,9 +10,9 @@
         "sso",
         "workos",
         "oidc",
-        "mfa"
+        "mfa",
+        "mcp"
     ],
-    "homepage": "https://github.com/dirnbauer/workos",
     "authors": [
         {
             "name": "webconsulting",
@@ -21,6 +21,7 @@
             "role": "Developer"
         }
     ],
+    "homepage": "https://github.com/dirnbauer/workos",
     "support": {
         "issues": "https://github.com/dirnbauer/workos/issues",
         "source": "https://github.com/dirnbauer/workos"
@@ -32,10 +33,7 @@
         "typo3/cms-extbase": "^14.3.7",
         "typo3/cms-fluid": "^14.3.7",
         "typo3/cms-frontend": "^14.3.7",
-        "workos/workos-php": "^9.3"
-    },
-    "conflict": {
-        "paragonie/sodium_compat": "<1.24.1 || >=2.0 <2.5.1"
+        "workos/workos-php": "^9.4"
     },
     "require-dev": {
         "infection/infection": "^0.29",
@@ -45,12 +43,14 @@
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpunit/phpunit": "^11.5",
+        "phpunit/phpunit": "^12.4 || ^13.0",
         "saschaegerer/phpstan-typo3": "^3.0",
-        "symfony/stopwatch": "^7.4",
         "typo3/cms-workspaces": "^14.3.7",
         "typo3/coding-standards": "^0.8",
-        "typo3/testing-framework": "^9.2"
+        "typo3/testing-framework": "^9.5"
+    },
+    "conflict": {
+        "paragonie/sodium_compat": "<1.24.1 || >=2.0 <2.5.1"
     },
     "autoload": {
         "psr-4": {
@@ -63,42 +63,39 @@
         }
     },
     "config": {
-        "sort-packages": true,
         "allow-plugins": {
+            "infection/extension-installer": true,
             "phpstan/extension-installer": true,
             "typo3/class-alias-loader": true,
-            "typo3/cms-composer-installers": true,
-            "infection/extension-installer": true
+            "typo3/cms-composer-installers": true
+        },
+        "bin-dir": ".Build/bin",
+        "sort-packages": true,
+        "vendor-dir": ".Build/vendor"
+    },
+    "extra": {
+        "typo3/cms": {
+            "app-dir": ".Build",
+            "extension-key": "workos_auth",
+            "version": "2.2.0",
+            "web-dir": ".Build/public"
         }
     },
     "scripts": {
-        "audit": "@composer audit --abandoned=ignore",
         "ci": [
-            "@validate",
+            "@composer validate --strict",
             "@lint",
             "@cs:check",
             "@phpstan",
             "@test:unit",
-            "@test:functional",
-            "@test:architecture"
+            "@test:functional"
         ],
         "cs:check": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no",
         "cs:fix": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --using-cache=no",
         "lint": "Build/Scripts/runTests.sh -s lint",
-        "phpstan": "phpstan analyse --memory-limit=1G",
-        "test:architecture": "Build/Scripts/runTests.sh -s architecture",
+        "phpstan": "phpstan analyse --memory-limit=1G --no-progress",
         "test:functional": "phpunit -c Build/phpunit/FunctionalTests.xml",
         "test:mutation": "infection --threads=4 --no-progress",
-        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml",
-        "validate": "@composer validate --strict"
-    },
-    "extra": {
-        "typo3/cms": {
-            "extension-key": "workos_auth",
-            "version": "2.1.0",
-            "Package": {
-                "providesPackages": {}
-            }
-        }
+        "test:unit": "phpunit -c Build/phpunit/UnitTests.xml"
     }
 }

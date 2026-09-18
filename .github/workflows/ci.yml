@@ -64,9 +64,7 @@ jobs:
               run: composer cs:check --no-interaction
 
     phpstan:
-        # Policy: the "normal" static-analysis gate is PHPStan level 8 or
-        # higher. phpstan.neon runs at level max, which satisfies that.
-        name: PHPStan (level max, policy minimum level 8)
+        name: PHPStan (level 8 + phpat layering rules)
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -83,7 +81,7 @@ jobs:
             - name: Install dependencies
               run: composer install --no-interaction --no-progress --prefer-dist
             - name: PHPStan
-              run: composer phpstan --no-interaction -- --no-progress --error-format=github
+              run: composer phpstan --no-interaction -- --error-format=github
 
     unit:
         name: Unit tests (PHP ${{ matrix.php }})
@@ -155,22 +153,21 @@ jobs:
             - name: PHPUnit functional suite
               run: Build/Scripts/runTests.sh -s functional
 
-    architecture:
-        name: Architecture rules (phpat)
+    assets:
+        name: User Management widget bundle is up to date
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - uses: shivammathur/setup-php@v2
+            - uses: actions/setup-node@v4
               with:
-                  php-version: '8.4'
-                  coverage: none
-                  tools: composer:v2
-            - uses: actions/cache@v4
-              with:
-                  path: ~/.cache/composer
-                  key: composer-8.4-${{ hashFiles('composer.json') }}
-                  restore-keys: composer-8.4-
-            - name: Install dependencies
-              run: composer install --no-interaction --no-progress --prefer-dist
-            - name: phpat layering rules
-              run: Build/Scripts/runTests.sh -s architecture
+                  node-version: '22'
+                  cache: npm
+                  cache-dependency-path: Build/user-management-widget/package-lock.json
+            - name: Install widget build dependencies
+              run: npm ci
+              working-directory: Build/user-management-widget
+            - name: Rebuild the bundle
+              run: npm run build
+              working-directory: Build/user-management-widget
+            - name: Committed bundle must match the build output
+              run: git diff --exit-code -- Resources/Public/JavaScript

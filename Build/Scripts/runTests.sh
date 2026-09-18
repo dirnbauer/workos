@@ -1,28 +1,27 @@
 #!/usr/bin/env bash
 #
-# Thin harness that runs the extension's quality checks uniformly
-# from a developer machine or a CI runner. Use the `-s` flag to pick
-# a suite; default is `unit`.
+# Runs the extension's quality checks uniformly on a developer machine
+# or a CI runner. Pick a suite with `-s`; default is `unit`.
 #
 # Usage:
-#   Build/Scripts/runTests.sh                    # unit tests
-#   Build/Scripts/runTests.sh -s lint            # php -l on every extension PHP file
-#   Build/Scripts/runTests.sh -s cs              # TYPO3 coding standards (dry-run)
-#   Build/Scripts/runTests.sh -s phpstan         # static analysis (level max, policy >= 8)
-#   Build/Scripts/runTests.sh -s unit            # PHPUnit unit suite
-#   Build/Scripts/runTests.sh -s functional      # PHPUnit functional suite
-#   Build/Scripts/runTests.sh -s architecture    # phpat layering rules only
-#   Build/Scripts/runTests.sh -s mutation        # Infection mutation testing
-#   Build/Scripts/runTests.sh -s ci              # lint + cs + phpstan + unit + functional + architecture
+#   Build/Scripts/runTests.sh                 # unit tests
+#   Build/Scripts/runTests.sh -s lint         # php -l on every extension PHP file
+#   Build/Scripts/runTests.sh -s cs           # TYPO3 coding standards (dry-run)
+#   Build/Scripts/runTests.sh -s phpstan      # PHPStan level 8 incl. phpat layering rules
+#   Build/Scripts/runTests.sh -s unit         # PHPUnit unit suite
+#   Build/Scripts/runTests.sh -s functional   # PHPUnit functional suite (needs typo3Database* env)
+#   Build/Scripts/runTests.sh -s mutation     # Infection mutation testing
+#   Build/Scripts/runTests.sh -s ci           # lint + cs + phpstan + unit + functional
 #
-# Environment variables picked up from typo3/testing-framework
-# (typo3DatabaseHost, typo3DatabaseName, ...) are forwarded to PHPUnit.
+# Local functional run without a database server:
+#   typo3DatabaseDriver=pdo_sqlite Build/Scripts/runTests.sh -s functional
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT_DIR"
 
+BIN=".Build/bin"
 suite="unit"
 
 while getopts "s:h" opt; do
@@ -39,9 +38,9 @@ while getopts "s:h" opt; do
     esac
 done
 
-require_vendor() {
-    if [[ ! -x "vendor/bin/$1" ]]; then
-        echo "vendor/bin/$1 is missing. Run 'composer install' first." >&2
+require_bin() {
+    if [[ ! -x "$BIN/$1" ]]; then
+        echo "$BIN/$1 is missing. Run 'composer install' first." >&2
         exit 1
     fi
 }
@@ -63,44 +62,37 @@ case "$suite" in
         echo "PHP syntax OK."
         ;;
     cs)
-        require_vendor php-cs-fixer
-        exec vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no
+        require_bin php-cs-fixer
+        exec "$BIN/php-cs-fixer" fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no
         ;;
     phpstan)
-        require_vendor phpstan
-        exec vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+        require_bin phpstan
+        exec "$BIN/phpstan" analyse --memory-limit=1G --no-progress
         ;;
     unit)
-        require_vendor phpunit
-        exec vendor/bin/phpunit -c Build/phpunit/UnitTests.xml
+        require_bin phpunit
+        exec "$BIN/phpunit" -c Build/phpunit/UnitTests.xml
         ;;
     functional)
-        require_vendor phpunit
-        exec vendor/bin/phpunit -c Build/phpunit/FunctionalTests.xml
-        ;;
-    architecture)
-        # phpat rules are registered as PHPStan rules in phpstan.neon and run
-        # at every level; level 0 keeps this job fast and focused on layering.
-        require_vendor phpstan
-        exec vendor/bin/phpstan analyse --level=0 --memory-limit=1G --no-progress Classes
+        require_bin phpunit
+        exec "$BIN/phpunit" -c Build/phpunit/FunctionalTests.xml
         ;;
     mutation)
-        require_vendor infection
-        exec vendor/bin/infection --threads=4 --no-progress
+        require_bin infection
+        exec "$BIN/infection" --threads=4 --no-progress
         ;;
     ci)
-        require_vendor php-cs-fixer
-        require_vendor phpstan
-        require_vendor phpunit
+        require_bin php-cs-fixer
+        require_bin phpstan
+        require_bin phpunit
         lint_php_files
-        vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no
-        vendor/bin/phpstan analyse --memory-limit=1G --no-progress
-        vendor/bin/phpunit -c Build/phpunit/UnitTests.xml
-        vendor/bin/phpunit -c Build/phpunit/FunctionalTests.xml
-        exec vendor/bin/phpstan analyse --level=0 --memory-limit=1G --no-progress Classes
+        "$BIN/php-cs-fixer" fix --config=.php-cs-fixer.dist.php --dry-run --diff --using-cache=no
+        "$BIN/phpstan" analyse --memory-limit=1G --no-progress
+        "$BIN/phpunit" -c Build/phpunit/UnitTests.xml
+        exec "$BIN/phpunit" -c Build/phpunit/FunctionalTests.xml
         ;;
     *)
-        echo "Unknown suite: $suite (valid: lint, cs, phpstan, unit, functional, architecture, mutation, ci)" >&2
+        echo "Unknown suite: $suite (valid: lint, cs, phpstan, unit, functional, mutation, ci)" >&2
         exit 2
         ;;
 esac

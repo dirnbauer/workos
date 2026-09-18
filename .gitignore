@@ -1,33 +1,36 @@
 # macOS
 .DS_Store
+._*
 
-# IDE
+# IDE / agents
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 
-# Composer
+# Composer / build output
+/.Build/
 /vendor/
+/public/
+/var/
 composer.lock
+
+# Tool caches
+*.cache
+.php-cs-fixer.cache
+.phpunit.cache/
+Build/phpunit/.phpunit.cache/
+Build/Reports/
 
 # Node
 node_modules/
+*.map
 
-# DDEV
+# DDEV / environment
 .ddev/
-
-# Environment
 .env
 .env.local
-
-# Build artifacts
-/.Build/
-/var/
-/public/
-/.claude/
-/Build/Reports/
-Build/phpunit/.phpunit.cache/
 
 # Infection
 /.infection/

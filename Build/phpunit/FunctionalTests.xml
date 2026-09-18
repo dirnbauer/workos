@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.4/phpunit.xsd"
     bootstrap="FunctionalTestsBootstrap.php"
     colors="true"
     cacheDirectory=".phpunit.cache"
@@ -9,6 +9,8 @@
     beStrictAboutOutputDuringTests="true"
     failOnRisky="true"
     failOnWarning="true"
+    displayDetailsOnTestsThatTriggerWarnings="true"
+    displayDetailsOnTestsThatTriggerErrors="true"
 >
     <testsuites>
         <testsuite name="Functional">
@@ -16,8 +18,8 @@
         </testsuite>
     </testsuites>
     <php>
-        <!-- Populate typo3Database* env vars via DDEV or locally before running. -->
-        <env name="TYPO3_PATH_ROOT" value="../../public"/>
+        <!-- Two TYPO3 instances (with / without EXT:workspaces) are booted in one process. -->
+        <ini name="memory_limit" value="1G"/>
     </php>
     <source>
         <include>
