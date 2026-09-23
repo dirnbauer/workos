@@ -17,8 +17,11 @@ use Webconsulting\WorkosAuth\Service\LabelTranslator;
 
 /**
  * The shared frame of the three WorkOS modules: title, document header
- * (shortcut, and Save for a module that edits settings) and flash messages
- * in the Core queue the Module layout renders.
+ * (shortcut, reload, and Save for a module that edits settings) and flash
+ * messages in the Core queue the Module layout renders.
+ *
+ * Save and reload carry this extension's labels, so they follow the backend
+ * user's language even where no Core language pack is installed.
  */
 final readonly class ModulePageFactory
 {
@@ -37,10 +40,19 @@ final readonly class ModulePageFactory
         $title = $this->translator->translate($titleKey);
         $view = $this->moduleTemplateFactory->create($request);
         $view->setTitle($title);
-        $view->getDocHeaderComponent()->setShortcutContext($routeIdentifier, $title);
+        $docHeader = $view->getDocHeaderComponent();
+        $docHeader->setShortcutContext($routeIdentifier, $title);
+        $docHeader->disableAutomaticReloadButton();
+        $view->addButtonToButtonBar(
+            $this->componentFactory->createReloadButton($request->getUri())->setTitle($this->translator->translate('module.button.reload')),
+            ButtonBar::BUTTON_POSITION_RIGHT,
+            90,
+        );
         if ($saveFormId !== '') {
             $view->addButtonToButtonBar(
-                $this->componentFactory->createSaveButton($saveFormId)->setShowLabelText(true),
+                $this->componentFactory->createSaveButton($saveFormId)
+                    ->setTitle($this->translator->translate('module.button.save'))
+                    ->setShowLabelText(true),
                 ButtonBar::BUTTON_POSITION_LEFT,
                 10,
             );

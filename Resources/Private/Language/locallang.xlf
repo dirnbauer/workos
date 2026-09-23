@@ -1993,5 +1993,36 @@
         <source>MCP server status</source>
       </segment>
     </unit>
+    <!--Backend modules: buttons and WorkOS sign-in-->
+    <unit id="module.button.save">
+      <segment>
+        <source>Save</source>
+      </segment>
+    </unit>
+    <unit id="module.button.reload">
+      <segment>
+        <source>Reload</source>
+      </segment>
+    </unit>
+    <unit id="module.users.noWorkosSession.title">
+      <segment>
+        <source>No WorkOS session for this backend user</source>
+      </segment>
+    </unit>
+    <unit id="module.users.noWorkosSession.description">
+      <segment>
+        <source>You signed in to TYPO3 with your TYPO3 password, and this backend user is not linked to a WorkOS user yet. The User Management widget acts on behalf of a WorkOS user, so it needs a WorkOS sign-in first.</source>
+      </segment>
+    </unit>
+    <unit id="module.users.noWorkosSession.action">
+      <segment>
+        <source>Sign in with WorkOS</source>
+      </segment>
+    </unit>
+    <unit id="module.users.noWorkosSession.hint">
+      <segment>
+        <source>Afterwards you come back to this module. The two accounts are linked through the verified email address of the WorkOS user.</source>
+      </segment>
+    </unit>
   </file>
 </xliff>

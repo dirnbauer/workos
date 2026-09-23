@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Tests\Functional\Controller;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\ModuleProvider;
 use TYPO3\CMS\Backend\Routing\Route;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Http\NormalizedParams;
@@ -115,12 +117,74 @@ final class BackendModulesTest extends FunctionalTestCase
         self::assertStringNotContainsString('bg-success', $body, 'Badges use the Core tokens, not Bootstrap utilities');
     }
 
-    public function testTheUserModuleExplainsWhatIsMissing(): void
+    public function testAPasswordSessionWithoutWorkosLinkOffersTheWorkosSignIn(): void
     {
+        // Core keeps the backend user in $GLOBALS['BE_USER'] only; the request
+        // carries no "backend.user" attribute, exactly as in a real backend.
         $body = (string)$this->get(UserManagementController::class)->indexAction($this->moduleRequest('workos_users'))->getBody();
 
         self::assertStringContainsString('module-docheader', $body);
-        self::assertStringContainsString('callout', $body);
+        self::assertStringContainsString('No WorkOS session for this backend user', $body);
+        self::assertStringContainsString(
+            'href="/typo3/workos-auth/backend/login?returnTo=%2Ftypo3%2Fmain%3Fredirect%3Dworkos_users"',
+            $body,
+            'The sign-in starts the backend WorkOS login and returns to this module',
+        );
+        self::assertStringContainsString('class="btn btn-primary"', $body);
+        self::assertStringNotContainsString('No backend user session could be detected', $body);
+    }
+
+    public function testARequestWithoutBackendUserAsksToLogInAgain(): void
+    {
+        // A backend user object without a user record: no session behind it.
+        $request = $this->moduleRequest('workos_users')->withAttribute('backend.user', new BackendUserAuthentication());
+
+        $body = (string)$this->get(UserManagementController::class)->indexAction($request)->getBody();
+
+        self::assertStringContainsString('No backend user session could be detected. Please log in again.', $body);
+        self::assertStringNotContainsString('workos-auth/backend/login', $body);
+    }
+
+    /**
+     * One module per test: the document header's button bar is a shared
+     * service, so a second render in the same process would see the first
+     * module's buttons.
+     *
+     * @return array<string, array{string, bool}>
+     */
+    public static function modules(): array
+    {
+        return [
+            'setup' => ['workos_setup', true],
+            'mcp' => ['workos_mcp', true],
+            'users' => ['workos_users', false],
+        ];
+    }
+
+    #[DataProvider('modules')]
+    public function testEveryModuleSpeaksGermanIncludingTheDocumentHeader(string $route, bool $hasSaveButton): void
+    {
+        $this->setUpBackendUser(2);
+        $GLOBALS['LANG'] = $this->get(LanguageServiceFactory::class)->createFromUserPreferences($GLOBALS['BE_USER']);
+        $request = $this->moduleRequest($route);
+
+        $response = match ($route) {
+            'workos_setup' => $this->get(SetupAssistantController::class)->indexAction($request),
+            'workos_mcp' => $this->get(McpConfigurationController::class)->indexAction($request),
+            default => $this->get(UserManagementController::class)->indexAction($request),
+        };
+        $body = (string)$response->getBody();
+
+        self::assertStringContainsString('title="Neu laden"', $body, 'Reload is German');
+        self::assertStringNotContainsString('title="Reload"', $body);
+        if ($hasSaveButton) {
+            self::assertMatchesRegularExpression('/<button[^>]*title="Speichern"[^>]*>.*?Speichern/s', $body, 'Save is German');
+            self::assertStringNotContainsString('title="Save"', $body);
+        } else {
+            self::assertStringContainsString('Keine WorkOS-Sitzung für diesen Backend-Benutzer', $body);
+            self::assertStringContainsString('Mit WorkOS anmelden', $body);
+            self::assertStringContainsString('login_hint=redakteurin%40example.com', $body, 'The sign-in suggests the email of the backend user');
+        }
     }
 
     private function moduleRequest(string $routeIdentifier, string $method = 'GET'): ServerRequestInterface
@@ -139,7 +203,6 @@ final class BackendModulesTest extends FunctionalTestCase
             ->withAttribute('applicationType', 2)
             ->withAttribute('normalizedParams', NormalizedParams::createFromServerParams($serverParams))
             ->withAttribute('route', new Route($serverParams['REQUEST_URI'], ['_identifier' => $routeIdentifier, 'packageName' => 'webconsulting/workos-auth']))
-            ->withAttribute('module', $this->get(ModuleProvider::class)->getModule($moduleIdentifier))
-            ->withAttribute('backend.user', $GLOBALS['BE_USER']);
+            ->withAttribute('module', $this->get(ModuleProvider::class)->getModule($moduleIdentifier));
     }
 }

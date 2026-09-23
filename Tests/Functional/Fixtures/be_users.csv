@@ -1,3 +1,4 @@
-"be_users",,,,,,
-,"uid","pid","username","admin","disable","deleted"
-,1,0,"workos-admin",1,0,0
+"be_users",,,,,,,,
+,"uid","pid","username","admin","disable","deleted","lang","email"
+,1,0,"workos-admin",1,0,0,"default",""
+,2,0,"workos-admin-de",1,0,0,"de","redakteurin@example.com"

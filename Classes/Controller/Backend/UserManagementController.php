@@ -43,7 +43,11 @@ use WorkOS\Service\RoleSingle;
  * mints a short-lived widget token. A backend user who is not yet a member of
  * a WorkOS organization gets a self-service screen to join or create one.
  *
- * @phpstan-type WidgetStatus array{canLoadWidget: bool, message?: string, workosUserId?: string, organizationId?: string, email?: string}
+ * A backend user who signed in with the TYPO3 password and was never linked
+ * to a WorkOS user gets a "Sign in with WorkOS" action that starts the
+ * backend WorkOS login and returns to this module.
+ *
+ * @phpstan-type WidgetStatus array{canLoadWidget: bool, message?: string, needsWorkosLogin?: bool, workosUserId?: string, organizationId?: string, email?: string}
  */
 #[Autoconfigure(public: true)]
 final class UserManagementController implements LoggerAwareInterface
@@ -80,6 +84,7 @@ final class UserManagementController implements LoggerAwareInterface
             'createOrgUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_users.createOrganization'),
             'setupUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_setup'),
             'status' => $status,
+            'workosLoginUri' => ($status['needsWorkosLogin'] ?? false) ? $this->workosLoginUri($request) : '',
             'availableOrganizations' => $availableOrganizations,
             'suggestedOrganizationName' => $this->suggestOrganizationName($request),
             'requestTokenName' => RequestToken::PARAM_NAME,
@@ -238,7 +243,7 @@ final class UserManagementController implements LoggerAwareInterface
             return ['canLoadWidget' => false, 'message' => $this->translator->translate('module.users.error.notConfigured')];
         }
 
-        $beUser = $request->getAttribute('backend.user');
+        $beUser = self::backendUser($request);
         $beUserUid = $beUser instanceof BackendUserAuthentication ? MixedCaster::int($beUser->user['uid'] ?? null) : 0;
         if (!$beUser instanceof BackendUserAuthentication || $beUserUid <= 0) {
             return ['canLoadWidget' => false, 'message' => $this->translator->translate('module.users.error.noSession')];
@@ -250,7 +255,14 @@ final class UserManagementController implements LoggerAwareInterface
             $workosUserId = MixedCaster::string($identity['workos_user_id'] ?? null);
         }
         if ($workosUserId === '') {
-            return ['canLoadWidget' => false, 'message' => $this->translator->translate('module.users.error.noWorkosIdentity')];
+            // Signed in with the TYPO3 password and never linked: the widget
+            // acts on behalf of a WorkOS user, so one WorkOS sign-in is needed.
+            return [
+                'canLoadWidget' => false,
+                'needsWorkosLogin' => true,
+                'message' => $this->translator->translate('module.users.noWorkosSession.title'),
+                'email' => MixedCaster::string($beUser->user['email'] ?? null),
+            ];
         }
 
         $email = MixedCaster::string($identity['email'] ?? null);
@@ -265,6 +277,37 @@ final class UserManagementController implements LoggerAwareInterface
         }
 
         return ['canLoadWidget' => true, 'workosUserId' => $workosUserId, 'organizationId' => $organizationId, 'email' => $email];
+    }
+
+    /**
+     * Starts the backend WorkOS login and comes back to this module: the
+     * backend entry point opens the module through its `redirect` parameter,
+     * so the target needs no module token of the session being replaced.
+     * The login endpoint validates `returnTo` (same-host paths only) and
+     * binds the flow to a single-use state cookie.
+     */
+    private function workosLoginUri(ServerRequestInterface $request): string
+    {
+        $backendBasePath = PathUtility::guessBackendBasePath($request->getUri()->getPath());
+        $query = ['returnTo' => PathUtility::joinBaseAndPath($backendBasePath, '/main') . '?redirect=workos_users'];
+        $email = trim(MixedCaster::string(self::backendUser($request)?->user['email'] ?? null));
+        if ($email !== '') {
+            $query['login_hint'] = $email;
+        }
+
+        return PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendLoginPath())
+            . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+    }
+
+    /**
+     * The backend user of the request. TYPO3 keeps it in $GLOBALS['BE_USER'];
+     * a `backend.user` request attribute (sub-requests, tests) wins.
+     */
+    private static function backendUser(ServerRequestInterface $request): ?BackendUserAuthentication
+    {
+        $backendUser = $request->getAttribute('backend.user') ?? $GLOBALS['BE_USER'] ?? null;
+
+        return $backendUser instanceof BackendUserAuthentication ? $backendUser : null;
     }
 
     /**
@@ -372,8 +415,6 @@ final class UserManagementController implements LoggerAwareInterface
      */
     private static function isAdmin(ServerRequestInterface $request): bool
     {
-        $beUser = $request->getAttribute('backend.user');
-
-        return $beUser instanceof BackendUserAuthentication && $beUser->isAdmin();
+        return self::backendUser($request)?->isAdmin() ?? false;
     }
 }
