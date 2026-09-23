@@ -1,155 +1,78 @@
-// Handles WorkOS login actions on the TYPO3 backend login page.
-//
-// Problem: The TYPO3 backend wraps every login provider's fields inside
-// <form id="typo3-login-form">. Any field/button we inject there can
-// inadvertently participate in TYPO3's own username/password login flow.
-//
-// Solution: On init we take our WorkOS region (div.workos-login-root)
-// out of TYPO3's form and wrap it in a dedicated form. Clicking one of
-// our buttons sets the form action to the matching WorkOS endpoint
-// (password auth, magic-auth send or magic-auth verify) and submits it
-// natively. No AJAX, no interference with TYPO3's own JS.
+/**
+ * WorkOS login provider on the TYPO3 backend login screen.
+ *
+ * The Core renders a provider's fields inside its own login form, whose
+ * submit handling belongs to the username/password login. The WorkOS fields
+ * therefore move into a form of their own. Every submit button names its
+ * endpoint (data-workos-action) and the fields it needs
+ * (data-workos-requires); the browser then posts natively to that endpoint.
+ * Pressing Enter uses the first button of the step, as in any form.
+ */
+const ENDPOINTS = {
+  password: 'passwordAuthUrl',
+  'magic-send': 'magicSendUrl',
+  'magic-verify': 'magicVerifyUrl',
+  'email-verify': 'emailVerifyUrl',
+  'email-verify-resend': 'emailVerifyResendUrl',
+};
 
 function mountWorkosLogin() {
-    const region = document.querySelector('.workos-login-root');
-    if (!region) {
-        return;
-    }
+  const region = document.querySelector('[data-workos-login]');
+  if (!region) {
+    return;
+  }
 
-    const passwordUrl = region.getAttribute('data-workos-password-url') || '';
-    const magicSendUrl = region.getAttribute('data-workos-magic-send-url') || '';
-    const magicVerifyUrl = region.getAttribute('data-workos-magic-verify-url') || '';
-    const emailVerifyUrl = region.getAttribute('data-workos-email-verify-url') || '';
+  const form = document.createElement('form');
+  form.method = 'post';
+  form.noValidate = true;
+  const hostForm = region.closest('form');
+  if (hostForm) {
+    hostForm.after(form);
+  } else {
+    region.before(form);
+  }
+  form.append(region);
 
-    const hostForm = region.closest('#typo3-login-form');
-
-    const newForm = document.createElement('form');
-    newForm.method = 'POST';
-    newForm.action = passwordUrl || magicVerifyUrl || magicSendUrl || '';
-    newForm.setAttribute('novalidate', 'novalidate');
-    newForm.className = 'workos-login-form';
-
-    newForm.appendChild(region);
-    if (hostForm && hostForm.parentNode) {
-        hostForm.parentNode.insertBefore(newForm, hostForm.nextSibling);
+  const buttons = [...region.querySelectorAll('button[data-workos-action]')];
+  for (const button of buttons) {
+    const url = region.dataset[ENDPOINTS[button.dataset.workosAction] ?? ''] ?? '';
+    if (url === '') {
+      button.disabled = true;
     } else {
-        document.body.appendChild(newForm);
+      button.formAction = url;
+    }
+  }
+
+  form.addEventListener('submit', (event) => {
+    const submitter = event.submitter;
+    if (!(submitter instanceof HTMLButtonElement) || !buttons.includes(submitter)) {
+      event.preventDefault();
+      return;
     }
 
-    const emailInput = region.querySelector('#workos-email');
-    const passwordInput = region.querySelector('#workos-password');
-    const magicEmailInput = region.querySelector('#workos-magic-email');
-    if (emailInput) {
-        emailInput.name = 'email';
+    const required = (submitter.dataset.workosRequires ?? '').split(' ').filter(Boolean);
+    for (const control of form.querySelectorAll('input[name]:not([type="hidden"])')) {
+      control.required = required.includes(control.name);
+      // A request for a sign-in code never carries the password along.
+      control.disabled = control.name === 'password' && !required.includes('password');
     }
-    if (passwordInput) {
-        passwordInput.name = 'password';
+    if (!form.reportValidity()) {
+      event.preventDefault();
+      return;
     }
-    if (magicEmailInput) {
-        magicEmailInput.name = 'magic_email';
-    }
+    submitter.setAttribute('aria-busy', 'true');
+  });
 
-    const passwordBtn = region.querySelector('#workos-password-submit');
-    const magicSendBtn = region.querySelector('#workos-magic-send-submit');
-    const magicVerifyBtn = region.querySelector('#workos-magic-verify-submit');
-    const emailVerifyBtn = region.querySelector('#workos-email-verify-submit');
-
-    // Only one field should be submitted under name="email" per request.
-    // Swap the role based on which button the user clicks.
-    const usePasswordEmailField = () => {
-        if (emailInput) {
-            emailInput.disabled = false;
-            emailInput.name = 'email';
-        }
-        if (magicEmailInput) {
-            magicEmailInput.disabled = true;
-            magicEmailInput.removeAttribute('required');
-        }
-    };
-    const useMagicEmailField = () => {
-        if (magicEmailInput) {
-            magicEmailInput.disabled = false;
-            magicEmailInput.name = 'email';
-            magicEmailInput.setAttribute('required', 'required');
-        }
-        if (emailInput) {
-            emailInput.disabled = true;
-            emailInput.removeAttribute('required');
-        }
-        if (passwordInput) {
-            passwordInput.disabled = true;
-            passwordInput.removeAttribute('required');
-        }
-    };
-
-    const submitWith = (action, { requirePassword = false, requireCode = false } = {}) => {
-        if (!action) {
-            return;
-        }
-        if (requirePassword) {
-            usePasswordEmailField();
-            if (emailInput) emailInput.setAttribute('required', 'required');
-            if (passwordInput) passwordInput.setAttribute('required', 'required');
-        } else if (!requireCode) {
-            if (emailInput) emailInput.setAttribute('required', 'required');
-            if (passwordInput) passwordInput.removeAttribute('required');
-        }
-        if (!newForm.reportValidity()) {
-            return;
-        }
-        newForm.action = action;
-        newForm.submit();
-    };
-
-    if (passwordBtn) {
-        passwordBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            usePasswordEmailField();
-            submitWith(passwordUrl, { requirePassword: true });
-        });
+  // Coming back through the history must not leave fields disabled.
+  window.addEventListener('pageshow', () => {
+    for (const control of form.querySelectorAll('input[disabled]')) {
+      control.disabled = false;
     }
-    if (magicSendBtn) {
-        magicSendBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            useMagicEmailField();
-            submitWith(magicSendUrl);
-        });
-    }
-    if (magicVerifyBtn) {
-        magicVerifyBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            submitWith(magicVerifyUrl, { requireCode: true });
-        });
-    }
-    if (emailVerifyBtn) {
-        emailVerifyBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            submitWith(emailVerifyUrl, { requireCode: true });
-        });
-    }
-
-    const verifyCodeInput = region.querySelector('#workos-magic-code');
-    if (verifyCodeInput && magicVerifyBtn) {
-        verifyCodeInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                magicVerifyBtn.click();
-            }
-        });
-    }
-    const emailVerifyCodeInput = region.querySelector('#workos-email-code');
-    if (emailVerifyCodeInput && emailVerifyBtn) {
-        emailVerifyCodeInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                emailVerifyBtn.click();
-            }
-        });
-    }
+  });
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mountWorkosLogin, { once: true });
+  document.addEventListener('DOMContentLoaded', mountWorkosLogin, { once: true });
 } else {
-    mountWorkosLogin();
+  mountWorkosLogin();
 }

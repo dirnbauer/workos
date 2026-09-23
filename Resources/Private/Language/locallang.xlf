@@ -273,31 +273,6 @@
       </segment>
     </unit>
     <!--Backend login provider-->
-    <unit id="backend.login.heading.workos">
-      <segment>
-        <source>Sign in with &lt;strong&gt;WorkOS&lt;/strong&gt;</source>
-      </segment>
-    </unit>
-    <unit id="backend.login.heading.classic">
-      <segment>
-        <source>Classic sign-in</source>
-      </segment>
-    </unit>
-    <unit id="backend.login.switch.toClassic">
-      <segment>
-        <source>switch to Login with username and password</source>
-      </segment>
-    </unit>
-    <unit id="backend.login.switch.toWorkos">
-      <segment>
-        <source>switch to login with WorkOS</source>
-      </segment>
-    </unit>
-    <unit id="backend.login.socialHint">
-      <segment>
-        <source>Or sign in with</source>
-      </segment>
-    </unit>
     <unit id="backend.login.email">
       <segment>
         <source>Email</source>
@@ -321,11 +296,6 @@
     <unit id="backend.login.magic.send">
       <segment>
         <source>Email me a sign-in code</source>
-      </segment>
-    </unit>
-    <unit id="backend.login.magic.emailLabel">
-      <segment>
-        <source>E-Mail for sign-in code</source>
       </segment>
     </unit>
     <unit id="backend.login.magic.codeSent">
@@ -1954,6 +1924,42 @@
     <unit id="team.error.loadInvitations">
       <segment>
         <source>Invitations for this organization could not be loaded.</source>
+      </segment>
+    </unit>
+    <!--Sign-in outcomes-->
+    <unit id="backend.login.continueWith">
+      <segment>
+        <source>Continue with {provider}</source>
+      </segment>
+    </unit>
+    <unit id="error.accountNotLinked">
+      <segment>
+        <source>This WorkOS account is not linked to a TYPO3 account.</source>
+      </segment>
+    </unit>
+    <unit id="error.impersonationNotAllowed">
+      <segment>
+        <source>A session started by impersonation in WorkOS cannot sign in to the TYPO3 backend.</source>
+      </segment>
+    </unit>
+    <unit id="error.domainNotAllowed">
+      <segment>
+        <source>Accounts with this email domain cannot create a TYPO3 backend account.</source>
+      </segment>
+    </unit>
+    <unit id="error.emailNotVerified">
+      <segment>
+        <source>Confirm your email address with WorkOS first, then sign in again.</source>
+      </segment>
+    </unit>
+    <unit id="error.accountDisabled">
+      <segment>
+        <source>The TYPO3 account linked to this WorkOS account is disabled or has expired.</source>
+      </segment>
+    </unit>
+    <unit id="error.accountAmbiguous">
+      <segment>
+        <source>Several TYPO3 accounts use this email address. An administrator has to link one of them to the WorkOS account.</source>
       </segment>
     </unit>
   </file>

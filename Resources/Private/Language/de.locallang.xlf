@@ -326,36 +326,6 @@
       </segment>
     </unit>
     <!--Backend login provider-->
-    <unit id="backend.login.heading.workos">
-      <segment>
-        <source>Sign in with &lt;strong&gt;WorkOS&lt;/strong&gt;</source>
-        <target>Mit &lt;strong&gt;WorkOS&lt;/strong&gt; anmelden</target>
-      </segment>
-    </unit>
-    <unit id="backend.login.heading.classic">
-      <segment>
-        <source>Classic sign-in</source>
-        <target>Klassische Anmeldung</target>
-      </segment>
-    </unit>
-    <unit id="backend.login.switch.toClassic">
-      <segment>
-        <source>switch to Login with username and password</source>
-        <target>Zur klassischen Anmeldung wechseln</target>
-      </segment>
-    </unit>
-    <unit id="backend.login.switch.toWorkos">
-      <segment>
-        <source>switch to login with WorkOS</source>
-        <target>Zur WorkOS-Anmeldung wechseln</target>
-      </segment>
-    </unit>
-    <unit id="backend.login.socialHint">
-      <segment>
-        <source>Or sign in with</source>
-        <target>Oder anmelden mit</target>
-      </segment>
-    </unit>
     <unit id="backend.login.email">
       <segment>
         <source>Email</source>
@@ -384,12 +354,6 @@
       <segment>
         <source>Email me a sign-in code</source>
         <target>Anmeldecode per E-Mail senden</target>
-      </segment>
-    </unit>
-    <unit id="backend.login.magic.emailLabel">
-      <segment>
-        <source>E-Mail for sign-in code</source>
-        <target>E-Mail-Adresse für Anmeldecode</target>
       </segment>
     </unit>
     <unit id="backend.login.magic.codeSent">
@@ -2342,6 +2306,49 @@
       <segment>
         <source>Invitations for this organization could not be loaded.</source>
         <target>Einladungen für diese Organisation konnten nicht geladen werden.</target>
+      </segment>
+    </unit>
+    <!--Sign-in outcomes-->
+    <unit id="backend.login.continueWith">
+      <segment>
+        <source>Continue with {provider}</source>
+        <target>Weiter mit {provider}</target>
+      </segment>
+    </unit>
+    <unit id="error.accountNotLinked">
+      <segment>
+        <source>This WorkOS account is not linked to a TYPO3 account.</source>
+        <target>Dieses WorkOS-Konto ist mit keinem TYPO3-Konto verknüpft.</target>
+      </segment>
+    </unit>
+    <unit id="error.impersonationNotAllowed">
+      <segment>
+        <source>A session started by impersonation in WorkOS cannot sign in to the TYPO3 backend.</source>
+        <target>Eine in WorkOS per Identitätswechsel gestartete Sitzung kann sich nicht im TYPO3-Backend anmelden.</target>
+      </segment>
+    </unit>
+    <unit id="error.domainNotAllowed">
+      <segment>
+        <source>Accounts with this email domain cannot create a TYPO3 backend account.</source>
+        <target>Konten mit dieser E-Mail-Domain können kein TYPO3-Backend-Konto anlegen.</target>
+      </segment>
+    </unit>
+    <unit id="error.emailNotVerified">
+      <segment>
+        <source>Confirm your email address with WorkOS first, then sign in again.</source>
+        <target>Bestätigen Sie zuerst Ihre E-Mail-Adresse bei WorkOS und melden Sie sich dann erneut an.</target>
+      </segment>
+    </unit>
+    <unit id="error.accountDisabled">
+      <segment>
+        <source>The TYPO3 account linked to this WorkOS account is disabled or has expired.</source>
+        <target>Das mit diesem WorkOS-Konto verknüpfte TYPO3-Konto ist deaktiviert oder abgelaufen.</target>
+      </segment>
+    </unit>
+    <unit id="error.accountAmbiguous">
+      <segment>
+        <source>Several TYPO3 accounts use this email address. An administrator has to link one of them to the WorkOS account.</source>
+        <target>Mehrere TYPO3-Konten verwenden diese E-Mail-Adresse. Ein Administrator muss eines davon mit dem WorkOS-Konto verknüpfen.</target>
       </segment>
     </unit>
   </file>

@@ -1,206 +1,211 @@
+<html
+    xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+
 <f:layout name="Login" />
 
 <f:section name="loginFormFields">
-
-    <div class="workos-login-root"
-         data-workos-password-url="{passwordAuthUrl}"
-         data-workos-magic-send-url="{magicSendUrl}"
-         data-workos-magic-verify-url="{magicVerifyUrl}"
-         data-workos-email-verify-url="{emailVerifyUrl}">
+    <f:comment>
+        The Core wraps these fields into its own login form. workos-login.js
+        moves them into a form of their own, so nothing here reaches the
+        username/password login, and every button posts to its WorkOS endpoint.
+    </f:comment>
+    <div
+        class="workos-login"
+        data-workos-login
+        data-password-auth-url="{passwordAuthUrl}"
+        data-magic-send-url="{magicSendUrl}"
+        data-magic-verify-url="{magicVerifyUrl}"
+        data-email-verify-url="{emailVerifyUrl}"
+        data-email-verify-resend-url="{emailVerifyResendUrl}"
+    >
         <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
-        <h2 class="workos-login-heading">
-            <f:format.raw><f:translate key="workos_auth.messages:backend.login.heading.workos" /></f:format.raw>
-        </h2>
+
+        <f:if condition="{authError}">
+            <div class="mb-3" role="alert">
+                <div class="alert alert-danger">
+                    <f:if condition="{notLinked}">
+                        <f:then>
+                            <div class="alert-title"><f:translate key="workos_auth.messages:backend.login.error.notLinked.title" /></div>
+                            <div class="alert-message">
+                                <p><f:translate key="workos_auth.messages:backend.login.error.notLinked.summary" arguments="{email: notLinked.email}" /></p>
+                                <dl class="mb-2">
+                                    <dt><f:translate key="workos_auth.messages:backend.login.error.emailLabel" /></dt>
+                                    <dd>{notLinked.email}</dd>
+                                    <dt><f:translate key="workos_auth.messages:backend.login.error.userIdLabel" /></dt>
+                                    <dd><code>{notLinked.userId}</code></dd>
+                                </dl>
+                                <p class="mb-0"><f:translate key="workos_auth.messages:backend.login.error.notLinked.hint" /></p>
+                            </div>
+                        </f:then>
+                        <f:else>
+                            <div class="alert-title"><f:translate key="workos_auth.messages:backend.login.error.title" /></div>
+                            <div class="alert-message">{authError}</div>
+                        </f:else>
+                    </f:if>
+                </div>
+            </div>
+        </f:if>
+        <f:if condition="{authNotice}">
+            <div class="mb-3" role="status">
+                <div class="alert alert-success">
+                    <div class="alert-message">{authNotice}</div>
+                </div>
+            </div>
+        </f:if>
+
         <f:if condition="{enabled}">
             <f:then>
                 <f:if condition="{configured}">
                     <f:then>
-                        <f:if condition="{authError}">
-                            <div class="workos-alert workos-alert--danger" role="alert">
-                                <span class="workos-alert__icon" aria-hidden="true">!</span>
-                                <div class="workos-alert__body">
-                                    <f:if condition="{authErrorDetails}">
-                                        <f:then>
-                                            <p class="workos-alert__title">{authErrorDetails.title}</p>
-                                            <p class="workos-alert__summary">{authErrorDetails.summary}</p>
-                                            <f:if condition="{authErrorDetails.email}">
-                                                <p class="workos-alert__meta">
-                                                    <span class="workos-alert__meta-label"><f:translate key="workos_auth.messages:backend.login.error.emailLabel" default="E-Mail" />:</span>{authErrorDetails.email}
-                                                </p>
-                                            </f:if>
-                                            <f:if condition="{authErrorDetails.userId}">
-                                                <p class="workos-alert__meta">
-                                                    <span class="workos-alert__meta-label"><f:translate key="workos_auth.messages:backend.login.error.userIdLabel" default="WorkOS ID" />:</span>{authErrorDetails.userId}
-                                                </p>
-                                            </f:if>
-                                            <f:if condition="{authErrorDetails.hint}">
-                                                <p class="workos-alert__hint">{authErrorDetails.hint}</p>
-                                            </f:if>
-                                            <f:if condition="{authErrorDetails.actionUrl}">
-                                                <a class="workos-alert__action" href="{authErrorDetails.actionUrl}">{authErrorDetails.actionLabel}</a>
-                                            </f:if>
-                                        </f:then>
-                                        <f:else>
-                                            <p class="workos-alert__summary">{authError}</p>
-                                        </f:else>
-                                    </f:if>
-                                </div>
-                            </div>
-                        </f:if>
-                        <f:if condition="{authNotice}">
-                            <div class="workos-alert workos-alert--success" role="status">
-                                <span class="workos-alert__icon" aria-hidden="true">&#10003;</span>
-                                <div class="workos-alert__body">
-                                    <p class="workos-alert__summary">{authNotice}</p>
-                                </div>
-                            </div>
-                        </f:if>
-
                         <f:if condition="{emailVerificationState}">
-                            <f:then>
-                                <div class="workos-magic-note">
-                                    <f:translate key="workos_auth.messages:backend.login.verifyEmail.subtitle"
-                                                 arguments="{email: emailVerificationEmail}" />
-                                </div>
-                                <div class="workos-field">
-                                    <label for="workos-email-code"><f:translate key="workos_auth.messages:backend.login.verifyEmail.codeLabel" /></label>
-                                    <input type="text"
-                                           id="workos-email-code"
-                                           name="code"
-                                           inputmode="numeric"
-                                           autocomplete="one-time-code"
-                                           pattern="[0-9]*"
-                                           spellcheck="false"
-                                           class="form-control"
-                                           required="required" />
-                                </div>
-                                <input type="hidden" name="emailVerificationState" value="{emailVerificationState}" />
-                                <button type="button"
-                                        id="workos-email-verify-submit"
-                                        class="btn btn-login workos-primary-btn">
-                                    <f:translate key="workos_auth.messages:backend.login.verifyEmail.submit" />
-                                </button>
-                                <f:if condition="{emailVerificationCanResend}">
-                                    <form action="{emailVerifyResendUrl}" method="post" style="margin:0 0 0.5rem;">
-                                        <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
-                                        <input type="hidden" name="emailVerificationState" value="{emailVerificationState}" />
-                                        <button type="submit" class="btn workos-secondary-btn">
-                                            <f:translate key="workos_auth.messages:backend.login.verifyEmail.resend" />
-                                        </button>
-                                    </form>
-                                </f:if>
-                                <div class="workos-authkit-link">
-                                    <a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a>
-                                </div>
-                            </f:then>
-                            <f:else>
-                        <f:if condition="{magicAuthState}">
-                            <f:then>
-                                <div class="workos-magic-note">
-                                    <f:translate key="workos_auth.messages:backend.login.magic.codeSent"
-                                                 arguments="{email: magicAuthEmail}" />
-                                </div>
-                                <div class="workos-field">
-                                    <label for="workos-magic-code"><f:translate key="workos_auth.messages:backend.login.magic.codeLabel" /></label>
-                                    <input type="text"
-                                           id="workos-magic-code"
-                                           name="code"
-                                           inputmode="numeric"
-                                           autocomplete="one-time-code"
-                                           pattern="[0-9]*"
-                                           spellcheck="false"
-                                           class="form-control"
-                                           required="required" />
-                                </div>
-                                <input type="hidden" name="magicAuthState" value="{magicAuthState}" />
-                                <button type="button"
-                                        id="workos-magic-verify-submit"
-                                        class="btn btn-login workos-primary-btn">
-                                    <f:translate key="workos_auth.messages:backend.login.magic.verify" />
-                                </button>
-                                <div class="workos-authkit-link">
-                                    <a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a>
-                                </div>
-                            </f:then>
-                            <f:else>
-                                <div class="workos-field">
-                                    <label for="workos-email"><f:translate key="workos_auth.messages:backend.login.email" /></label>
-                                    <input type="email"
-                                           id="workos-email"
-                                           autocomplete="email"
-                                           spellcheck="false"
-                                           autocapitalize="off"
-                                           class="form-control"
-                                           required="required" />
-                                </div>
-                                <div class="workos-field">
-                                    <label for="workos-password"><f:translate key="workos_auth.messages:backend.login.password" /></label>
-                                    <input type="password"
-                                           id="workos-password"
-                                           autocomplete="current-password"
-                                           class="form-control" />
-                                </div>
-
-                                <button type="button"
-                                        id="workos-password-submit"
-                                        class="btn btn-login workos-primary-btn">
-                                    <f:translate key="workos_auth.messages:backend.login.signIn" />
-                                </button>
-
-                                <div class="workos-divider"><f:translate key="workos_auth.messages:common.or" /></div>
-
-                                <div class="workos-field">
-                                    <label for="workos-magic-email"><f:translate key="workos_auth.messages:backend.login.magic.emailLabel" /></label>
-                                    <input type="email"
-                                           id="workos-magic-email"
-                                           name="magic_email"
-                                           autocomplete="email"
-                                           spellcheck="false"
-                                           autocapitalize="off"
-                                           class="form-control" />
-                                </div>
-                                <button type="button"
-                                        id="workos-magic-send-submit"
-                                        class="btn workos-secondary-btn">
-                                    <f:translate key="workos_auth.messages:backend.login.magic.send" />
-                                </button>
-
-                                <div class="workos-hint"><f:translate key="workos_auth.messages:backend.login.socialHint" /></div>
-                                <div class="workos-social-row">
-                                    <f:for each="{socialProviders}" as="provider">
-                                        <f:render partial="SocialButton" arguments="{provider: provider}" />
-                                    </f:for>
-                                </div>
-
-                                <div class="workos-authkit-link" data-workos-relocate>
-                                    <a href="{loginUrl}"><f:translate key="workos_auth.messages:backend.login.moreOptions" /></a>
-                                </div>
-                            </f:else>
-                        </f:if>
-                            </f:else>
+                            <f:then><f:render section="EmailVerification" arguments="{_all}" /></f:then>
+                            <f:else if="{magicAuthState}"><f:render section="MagicAuthCode" arguments="{_all}" /></f:else>
+                            <f:else><f:render section="SignIn" arguments="{_all}" /></f:else>
                         </f:if>
                     </f:then>
                     <f:else>
-                        <div class="alert alert-warning">
+                        <f:be.infobox state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}">
                             <f:if condition="{backendCookieSameSiteCompatible}">
-                                <f:then>
-                                    <f:translate key="workos_auth.messages:backend.login.notConfigured" />
-                                </f:then>
-                                <f:else>
-                                    <f:translate key="workos_auth.messages:backend.login.cookieSameSiteUnsupported"
-                                                 arguments="{sameSite: backendCookieSameSite}" />
-                                </f:else>
+                                <f:then><f:translate key="workos_auth.messages:backend.login.notConfigured" /></f:then>
+                                <f:else><f:translate key="workos_auth.messages:backend.login.cookieSameSiteUnsupported" arguments="{sameSite: backendCookieSameSite}" /></f:else>
                             </f:if>
-                            <a href="{setupUrl}"><f:translate key="workos_auth.messages:backend.login.openSetup" /></a>.
-                        </div>
+                            <a href="{setupUrl}"><f:translate key="workos_auth.messages:backend.login.openSetup" /></a>
+                        </f:be.infobox>
                     </f:else>
                 </f:if>
             </f:then>
             <f:else>
-                <div class="alert alert-info">
+                <f:be.infobox state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO')}">
                     <f:translate key="workos_auth.messages:backend.login.disabled" />
-                </div>
+                </f:be.infobox>
             </f:else>
         </f:if>
     </div>
 </f:section>
+
+<f:section name="SignIn">
+    <div class="form-group">
+        <div class="form-control-wrap">
+            <div class="form-control-holder">
+                <label class="form-label" for="workos-email"><f:translate key="workos_auth.messages:backend.login.email" /></label>
+                <div class="input-group">
+                    <input
+                        type="email"
+                        id="workos-email"
+                        name="email"
+                        class="form-control input-login"
+                        autocomplete="username"
+                        autocapitalize="off"
+                        spellcheck="false"
+                        autofocus="autofocus"
+                        required="required"
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="form-control-wrap">
+            <div class="form-control-holder">
+                <label class="form-label" for="workos-password"><f:translate key="workos_auth.messages:backend.login.password" /></label>
+                <div class="input-group">
+                    <input
+                        type="password"
+                        id="workos-password"
+                        name="password"
+                        class="form-control input-login"
+                        autocomplete="current-password"
+                        spellcheck="false"
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group d-grid mb-2">
+        <button type="submit" class="btn btn-login d-block" data-workos-action="password" data-workos-requires="email password">
+            <f:translate key="workos_auth.messages:backend.login.signIn" />
+        </button>
+    </div>
+    <div class="form-group d-grid">
+        <button type="submit" class="btn btn-default d-block" data-workos-action="magic-send" data-workos-requires="email">
+            <f:translate key="workos_auth.messages:backend.login.magic.send" />
+        </button>
+    </div>
+
+    <ul class="list-unstyled d-grid gap-2 mb-2 workos-login-providers" role="list">
+        <f:for each="{socialProviders}" as="provider">
+            <li>
+                <a class="btn btn-default d-flex w-100" href="{provider.url}">
+                    <span class="workos-login-provider-icon" aria-hidden="true"><f:render partial="SocialIcon" arguments="{provider: provider}" /></span>
+                    <span>{provider.label}</span>
+                </a>
+            </li>
+        </f:for>
+        <li>
+            <a class="btn btn-default d-flex w-100" href="{loginUrl}">
+                <core:icon identifier="actions-key" size="small" />
+                <span><f:translate key="workos_auth.messages:backend.login.moreOptions" /></span>
+            </a>
+        </li>
+    </ul>
+</f:section>
+
+<f:section name="MagicAuthCode">
+    <p><f:translate key="workos_auth.messages:backend.login.magic.codeSent" arguments="{email: magicAuthEmail}" /></p>
+    <input type="hidden" name="magicAuthState" value="{magicAuthState}" />
+    <f:render section="CodeField" arguments="{id: 'workos-magic-code', label: 'backend.login.magic.codeLabel'}" />
+    <div class="form-group d-grid mb-2">
+        <button type="submit" class="btn btn-login d-block" data-workos-action="magic-verify" data-workos-requires="code">
+            <f:translate key="workos_auth.messages:backend.login.magic.verify" />
+        </button>
+    </div>
+    <p class="text-end"><a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a></p>
+</f:section>
+
+<f:section name="EmailVerification">
+    <p><f:translate key="workos_auth.messages:backend.login.verifyEmail.subtitle" arguments="{email: emailVerificationEmail}" /></p>
+    <input type="hidden" name="emailVerificationState" value="{emailVerificationState}" />
+    <f:render section="CodeField" arguments="{id: 'workos-email-code', label: 'backend.login.verifyEmail.codeLabel'}" />
+    <div class="form-group d-grid mb-2">
+        <button type="submit" class="btn btn-login d-block" data-workos-action="email-verify" data-workos-requires="code">
+            <f:translate key="workos_auth.messages:backend.login.verifyEmail.submit" />
+        </button>
+    </div>
+    <f:if condition="{emailVerificationCanResend}">
+        <div class="form-group d-grid">
+            <button type="submit" class="btn btn-default d-block" data-workos-action="email-verify-resend">
+                <f:translate key="workos_auth.messages:backend.login.verifyEmail.resend" />
+            </button>
+        </div>
+    </f:if>
+    <p class="text-end"><a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a></p>
+</f:section>
+
+<f:section name="CodeField">
+    <div class="form-group">
+        <div class="form-control-wrap">
+            <div class="form-control-holder">
+                <label class="form-label" for="{id}"><f:translate key="workos_auth.messages:{label}" /></label>
+                <div class="input-group">
+                    <input
+                        type="text"
+                        id="{id}"
+                        name="code"
+                        class="form-control input-login"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        pattern="[0-9]*"
+                        spellcheck="false"
+                        autofocus="autofocus"
+                        required="required"
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+</f:section>
+
+</html>
