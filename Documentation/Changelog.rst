@@ -8,6 +8,25 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
+..  _changelog-2-3-1:
+
+2.3.1 - User management sign-in and German buttons
+==================================================
+
+..  rubric:: Fixed
+
+-   The user management module read the backend user from a request
+    attribute TYPO3 does not set and told every administrator to log in
+    again. It now uses the backend session, and keeps that message for
+    requests without a backend user.
+-   An administrator who signed in with the TYPO3 password and is not linked
+    to a WorkOS user gets a :guilabel:`Sign in with WorkOS` action: it starts
+    the backend WorkOS login (validated ``returnTo``, single-use state, PKCE)
+    and comes back to the module; the accounts are linked through the
+    verified email address.
+-   Save and reload in the document header of all three modules use this
+    extension's English and German labels.
+
 ..  _changelog-2-3-0:
 
 2.3.0 - Security review and Core screens

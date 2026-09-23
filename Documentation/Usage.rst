@@ -111,7 +111,11 @@ Backend modules
     *   -   :guilabel:`User Management` (``/module/workos/users``)
         -   Embeds the WorkOS User Management widget scoped to the first
             active organization of the signed-in backend user; users without
-            an organization can join an existing one or create one.
+            an organization can join an existing one or create one. The
+            widget acts on behalf of a WorkOS user: an administrator who
+            signed in with the TYPO3 password and is not linked yet gets a
+            :guilabel:`Sign in with WorkOS` action that links the account
+            and returns to the module.
     *   -   :guilabel:`MCP Server` (``/module/workos/mcp``)
         -   The MCP settings (edited only here), endpoint URLs per site with
             copy buttons, and the database schema status.

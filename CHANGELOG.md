@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.3.1 - 2026-09-23
+
+### Fixed
+
+- **User management said "log in again" to logged-in users:** the module looked for the backend user in a `backend.user` request attribute that TYPO3 does not set, so every administrator saw "No backend user session could be detected". It now reads the backend user from the session, as Core does, and keeps that message for requests without a backend user.
+- **Password sessions without WorkOS link:** an administrator who signed in with the TYPO3 password and was never linked to a WorkOS user now reads that the User Management widget needs a WorkOS user, with a primary "Sign in with WorkOS" action. It starts the backend WorkOS login (validated `returnTo`, single-use state, PKCE, the backend user's email as login hint) and comes back to the module; the accounts are linked through the verified email address.
+- **English buttons in a German backend:** the document header's Save and reload buttons of the three modules carry this extension's labels in English and German instead of Core labels, which stay English without a Core language pack.
+
+### Tests
+
+- Functional tests render the modules without the `backend.user` attribute, as a real backend request does, cover the missing-session and the WorkOS sign-in states, and check the German document header and sign-in labels in all three modules.
+
 ## 2.3.0 - 2026-09-23
 
 A security review of the sign-in flows, and backend screens rebuilt from Core markup.
