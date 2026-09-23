@@ -10,6 +10,7 @@ use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Domain\AuthenticatedSession;
 use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Domain\SocialProvider;
 use Webconsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
@@ -23,7 +24,6 @@ use Webconsulting\WorkosAuth\Service\RequestBody;
 use Webconsulting\WorkosAuth\Service\Typo3SessionService;
 use Webconsulting\WorkosAuth\Service\UserProvisioningService;
 use Webconsulting\WorkosAuth\Service\WorkosAuthenticationService;
-use WorkOS\Resource\User;
 
 /**
  * "WorkOS Login" plugin: native password / magic-auth / sign-up forms and
@@ -147,9 +147,9 @@ final class LoginController extends AbstractFrontendController implements Logger
 
         try {
             $this->workosAuthenticationService->createUser($email, $password, $formData['firstName'], $formData['lastName']);
-            $workosUser = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
+            $session = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
 
-            return $this->createLoginResponse($workosUser, $formData['returnTo']);
+            return $this->createLoginResponse($session, $formData['returnTo']);
         } catch (EmailVerificationRequiredException $e) {
             return $this->startEmailVerificationFlow($e, $formData['returnTo']);
         } catch (\Throwable $e) {
@@ -174,9 +174,9 @@ final class LoginController extends AbstractFrontendController implements Logger
         }
 
         try {
-            $workosUser = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
+            $session = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
 
-            return $this->createLoginResponse($workosUser, $returnTo);
+            return $this->createLoginResponse($session, $returnTo);
         } catch (EmailVerificationRequiredException $e) {
             return $this->startEmailVerificationFlow($e, $returnTo);
         } catch (\Throwable $e) {
@@ -241,10 +241,10 @@ final class LoginController extends AbstractFrontendController implements Logger
 
         $returnTo = MixedCaster::string($sessionData['returnTo'] ?? null, '/');
         try {
-            $workosUser = $this->workosAuthenticationService->authenticateWithMagicAuth($this->request, $code, $email);
+            $session = $this->workosAuthenticationService->authenticateWithMagicAuth($this->request, $code, $email);
             $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_MAGIC_AUTH, null);
 
-            return $this->createLoginResponse($workosUser, $returnTo);
+            return $this->createLoginResponse($session, $returnTo);
         } catch (EmailVerificationRequiredException $e) {
             $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_MAGIC_AUTH, null);
 
@@ -289,14 +289,14 @@ final class LoginController extends AbstractFrontendController implements Logger
         }
 
         try {
-            $workosUser = $this->workosAuthenticationService->authenticateWithEmailVerification(
+            $session = $this->workosAuthenticationService->authenticateWithEmailVerification(
                 $this->request,
                 $code,
                 MixedCaster::string($sessionData['pendingToken'])
             );
             $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_EMAIL_VERIFICATION, null);
 
-            return $this->createLoginResponse($workosUser, MixedCaster::string($sessionData['returnTo'] ?? null, '/'));
+            return $this->createLoginResponse($session, MixedCaster::string($sessionData['returnTo'] ?? null, '/'));
         } catch (\Throwable $e) {
             return $this->redirectToVerifyEmailWithError($this->resolveAuthenticationError($e));
         }
@@ -344,12 +344,13 @@ final class LoginController extends AbstractFrontendController implements Logger
         return $email === '' ? null : 'https://www.gravatar.com/avatar/' . hash('sha256', $email) . '?d=identicon&s=128';
     }
 
-    private function createLoginResponse(User $workosUser, string $returnTo): ResponseInterface
+    private function createLoginResponse(AuthenticatedSession $session, string $returnTo): ResponseInterface
     {
         return $this->typo3SessionService->createFrontendLoginResponse(
             $this->request,
-            $this->userProvisioningService->resolve(LoginContext::Frontend, $workosUser),
-            $returnTo !== '' ? $returnTo : '/'
+            $this->userProvisioningService->resolve(LoginContext::Frontend, $session->user),
+            $returnTo !== '' ? $returnTo : '/',
+            $session->sessionId,
         );
     }
 
@@ -410,6 +411,6 @@ final class LoginController extends AbstractFrontendController implements Logger
     {
         $this->logger?->error('WorkOS auth error: ' . SecretRedactor::redact($exception->getMessage()));
 
-        return $this->translate($this->errorMessageResolver->resolveAuthentication($exception->getMessage()));
+        return $this->translate($this->errorMessageResolver->resolveLogin($exception));
     }
 }

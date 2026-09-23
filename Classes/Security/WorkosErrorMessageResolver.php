@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Security;
 
+use Webconsulting\WorkosAuth\Exception\AccountNotLinkedException;
+use Webconsulting\WorkosAuth\Exception\ImpersonationNotAllowedException;
+
 /**
  * Maps raw WorkOS / SDK error text to stable translation keys.
  *
@@ -13,6 +16,23 @@ namespace Webconsulting\WorkosAuth\Security;
  */
 final class WorkosErrorMessageResolver
 {
+    /**
+     * Label key for a failed sign-in: account-resolution failures by their
+     * exception, everything the SDK raised by its message.
+     */
+    public function resolveLogin(\Throwable $exception): string
+    {
+        return match (true) {
+            $exception instanceof AccountNotLinkedException => 'error.accountNotLinked',
+            $exception instanceof ImpersonationNotAllowedException => 'error.impersonationNotAllowed',
+            $exception->getCode() === 1744277608 => 'error.domainNotAllowed',
+            $exception->getCode() === 1744277609, $exception->getCode() === 1744277611 => 'error.emailNotVerified',
+            $exception->getCode() === 1744277610 => 'error.accountDisabled',
+            $exception->getCode() === 1744277612 => 'error.accountAmbiguous',
+            default => $this->resolveAuthentication($exception->getMessage()),
+        };
+    }
+
     public function resolveAuthentication(string $message): string
     {
         $lower = strtolower($message);

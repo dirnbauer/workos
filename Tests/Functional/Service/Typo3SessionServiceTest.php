@@ -6,6 +6,7 @@ namespace Webconsulting\WorkosAuth\Tests\Functional\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\NullLogger;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\ServerRequest;
@@ -112,7 +113,8 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
             $this->createRequest('https://app.local/typo3/workos-auth/backend/callback'),
             $userRow,
             '/typo3/main',
-            'user_123'
+            'user_123',
+            'session_456'
         );
 
         self::assertSame(200, $response->getStatusCode());
@@ -120,6 +122,39 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
         self::assertNotSame('', $response->getHeaderLine('Set-Cookie'));
         self::assertStringContainsString('Continue to the TYPO3 backend', (string)$response->getBody());
         self::assertStringContainsString('/typo3/main', (string)$response->getBody());
+        // The meta refresh navigates; an inline script would only trip the backend CSP.
+        self::assertStringNotContainsString('<script', (string)$response->getBody());
+
+        $backendUser = $GLOBALS['BE_USER'];
+        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
+        self::assertSame('user_123', $backendUser->getSessionData(Typo3SessionService::SESSION_WORKOS_USER_ID));
+        self::assertSame('session_456', $backendUser->getSessionData(Typo3SessionService::SESSION_WORKOS_SESSION_ID));
+    }
+
+    public function testTheFrontendSessionRemembersTheWorkosSession(): void
+    {
+        $this->connectionPool()->getConnectionForTable('fe_users')->insert(
+            'fe_users',
+            [
+                'pid' => 1,
+                'username' => 'frontend-session',
+                'password' => 'unused',
+                'email' => 'frontend-session@example.com',
+                'disable' => 0,
+                'deleted' => 0,
+            ]
+        );
+        $userRow = $this->fetchUserRow('fe_users', (int)$this->connectionPool()->getConnectionForTable('fe_users')->lastInsertId());
+        $request = $this->createRequest('https://app.local/workos-auth/frontend/callback');
+        $frontendUser = new FrontendUserAuthentication();
+        $frontendUser->setLogger(new NullLogger());
+        $frontendUser->start($request);
+
+        $service = $this->get(Typo3SessionService::class);
+        self::assertInstanceOf(Typo3SessionService::class, $service);
+        $service->createFrontendLoginResponse($request->withAttribute('frontend.user', $frontendUser), $userRow, '/welcome', 'session_789');
+
+        self::assertSame('session_789', $frontendUser->getSessionData(Typo3SessionService::SESSION_WORKOS_SESSION_ID));
     }
 
     private function createRequest(string $uri): ServerRequestInterface

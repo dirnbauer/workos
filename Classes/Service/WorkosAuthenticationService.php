@@ -9,12 +9,17 @@ use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Domain\AuthenticatedSession;
 use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Domain\SocialProvider;
 use Webconsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use Webconsulting\WorkosAuth\Security\AccessTokenClaims;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Security\StateService;
 use WorkOS\Exception\ApiException;
+use WorkOS\PKCEHelper;
+use WorkOS\RequestOptions;
+use WorkOS\Resource\AuthenticateResponse;
 use WorkOS\Resource\RadarStandaloneAssessRequestAction;
 use WorkOS\Resource\User;
 use WorkOS\Resource\UserCreateResponse;
@@ -26,6 +31,10 @@ use WorkOS\Service\UserManagement;
  * WorkOS AuthKit / User Management calls used by the login flows: hosted
  * authorization URLs, the OAuth callback, password / magic-auth / email
  * verification authentication and sign-up.
+ *
+ * The hosted flow uses PKCE on top of the client secret (RFC 9700): the
+ * verifier stays in the server-side state of the login attempt, so an
+ * authorization code intercepted on its way back is useless on its own.
  */
 final readonly class WorkosAuthenticationService
 {
@@ -92,10 +101,10 @@ final readonly class WorkosAuthenticationService
     }
 
     /**
-     * Exchange the OAuth callback code for the WorkOS user and consume the
+     * Exchange the OAuth callback code for the WorkOS session and consume the
      * single-use state token issued by buildAuthorizationUrl().
      *
-     * @return array{workosUser: User, returnTo: string}
+     * @return array{session: AuthenticatedSession, returnTo: string}
      */
     public function handleCallback(ServerRequestInterface $request, LoginContext $expectedContext): array
     {
@@ -108,20 +117,23 @@ final readonly class WorkosAuthenticationService
         $stateToken = $this->stateService->extractTokenFromCallbackState(MixedCaster::string($queryParameters['state'] ?? null));
         $payload = $this->stateService->consume($request, $expectedContext->value, $stateToken);
 
+        $codeVerifier = MixedCaster::string($payload['codeVerifier'] ?? null);
         $userManagement = $this->userManagement();
         $response = $userManagement->authenticateWithCode(
             code: $code,
+            // Login attempts started before PKCE was introduced carry no verifier.
+            codeVerifier: $codeVerifier !== '' ? $codeVerifier : null,
             ipAddress: $this->getRemoteAddress($request),
             userAgent: $this->getUserAgent($request),
         );
 
         return [
-            'workosUser' => $this->enrichUser($userManagement, $response->user),
+            'session' => $this->toSession($userManagement, $response),
             'returnTo' => MixedCaster::string($payload['returnTo'] ?? null, '/'),
         ];
     }
 
-    public function authenticateWithPassword(ServerRequestInterface $request, string $email, string $password): User
+    public function authenticateWithPassword(ServerRequestInterface $request, string $email, string $password): AuthenticatedSession
     {
         $userManagement = $this->userManagement();
         try {
@@ -135,14 +147,14 @@ final readonly class WorkosAuthenticationService
             throw $this->toEmailVerificationException($exception, $email) ?? $exception;
         }
 
-        return $this->enrichUser($userManagement, $response->user);
+        return $this->toSession($userManagement, $response);
     }
 
     /**
      * Complete an authentication that previously failed with
      * `email_verification_required` by submitting the emailed code.
      */
-    public function authenticateWithEmailVerification(ServerRequestInterface $request, string $code, string $pendingAuthenticationToken): User
+    public function authenticateWithEmailVerification(ServerRequestInterface $request, string $code, string $pendingAuthenticationToken): AuthenticatedSession
     {
         $userManagement = $this->userManagement();
         $response = $userManagement->authenticateWithEmailVerification(
@@ -152,7 +164,7 @@ final readonly class WorkosAuthenticationService
             userAgent: $this->getUserAgent($request),
         );
 
-        return $this->enrichUser($userManagement, $response->user);
+        return $this->toSession($userManagement, $response);
     }
 
     public function resendEmailVerification(string $userId): void
@@ -171,7 +183,7 @@ final readonly class WorkosAuthenticationService
         $this->userManagement()->createMagicAuth($email);
     }
 
-    public function authenticateWithMagicAuth(ServerRequestInterface $request, string $code, string $email): User
+    public function authenticateWithMagicAuth(ServerRequestInterface $request, string $code, string $email): AuthenticatedSession
     {
         $userManagement = $this->userManagement();
         try {
@@ -185,7 +197,16 @@ final readonly class WorkosAuthenticationService
             throw $this->toEmailVerificationException($exception, $email) ?? $exception;
         }
 
-        return $this->enrichUser($userManagement, $response->user);
+        return $this->toSession($userManagement, $response);
+    }
+
+    /**
+     * Ends a WorkOS session, so the hosted login asks for credentials again.
+     */
+    public function revokeSession(string $sessionId): void
+    {
+        // Runs while a user logs out: a slow API must not hold that up.
+        $this->userManagement()->revokeSession($sessionId, new RequestOptions(timeout: 5, maxRetries: 0));
     }
 
     public function createUser(string $email, string $password, string $firstName = '', string $lastName = ''): UserCreateResponse
@@ -213,21 +234,39 @@ final readonly class WorkosAuthenticationService
         ?string $organizationId = null,
     ): array {
         $userManagement = $this->userManagement();
-        $issuedState = $this->stateService->issue($request, $context->value, $cookiePath, ['returnTo' => $returnTo]);
+        $pkce = PKCEHelper::generate();
+        $issuedState = $this->stateService->issue($request, $context->value, $cookiePath, [
+            'returnTo' => $returnTo,
+            'codeVerifier' => $pkce['code_verifier'],
+        ]);
+
+        // WorkOS takes exactly one connection selector: a social provider the
+        // editor picked, else the configured SSO connection, else AuthKit
+        // (which may be pinned to an organization).
+        $connectionId = $provider === null ? $this->configuration->getAuthkitConnectionId() : null;
+        $sdkProvider = match (true) {
+            $provider !== null => $provider->toSdk(),
+            $connectionId !== null => null,
+            default => UserManagementAuthenticationProvider::Authkit,
+        };
 
         return [
             'url' => $userManagement->getAuthorizationUrl(
                 redirectUri: $callbackUrl,
+                codeChallengeMethod: $pkce['code_challenge_method'],
+                codeChallenge: $pkce['code_challenge'],
                 domainHint: $this->configuration->getAuthkitDomainHint(),
-                connectionId: $this->configuration->getAuthkitConnectionId(),
-                // A direct social provider skips the hosted AuthKit screen, so a screen hint does not apply.
-                screenHint: $provider === null
+                connectionId: $connectionId,
+                // Only the hosted AuthKit screen knows sign-in and sign-up screens.
+                screenHint: $sdkProvider === UserManagementAuthenticationProvider::Authkit
                     ? RadarStandaloneAssessRequestAction::tryFrom($screenHint) ?? RadarStandaloneAssessRequestAction::SignIn
                     : null,
                 loginHint: $loginHint,
-                provider: $provider?->toSdk() ?? UserManagementAuthenticationProvider::Authkit,
+                provider: $sdkProvider,
                 state: json_encode(['token' => $issuedState['token']], JSON_THROW_ON_ERROR),
-                organizationId: self::nullIfEmpty($organizationId ?? '') ?? $this->configuration->getAuthkitOrganizationId(),
+                organizationId: $sdkProvider === UserManagementAuthenticationProvider::Authkit
+                    ? self::nullIfEmpty($organizationId ?? '') ?? $this->configuration->getAuthkitOrganizationId()
+                    : null,
             ),
             'cookie' => $issuedState['cookie'],
         ];
@@ -262,6 +301,15 @@ final readonly class WorkosAuthenticationService
     private function userManagement(): UserManagement
     {
         return $this->workosClientFactory->client()->userManagement();
+    }
+
+    private function toSession(UserManagement $userManagement, AuthenticateResponse $response): AuthenticatedSession
+    {
+        return AuthenticatedSession::fromResponse(
+            $response,
+            $this->enrichUser($userManagement, $response->user),
+            AccessTokenClaims::sessionId($response->accessToken),
+        );
     }
 
     /**

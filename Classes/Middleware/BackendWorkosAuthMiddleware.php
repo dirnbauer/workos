@@ -16,9 +16,12 @@ use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Middleware\RequestTokenMiddleware;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
+use Webconsulting\WorkosAuth\Domain\AuthenticatedSession;
 use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Domain\SocialProvider;
+use Webconsulting\WorkosAuth\Exception\AccountNotLinkedException;
 use Webconsulting\WorkosAuth\Exception\EmailVerificationRequiredException;
+use Webconsulting\WorkosAuth\Exception\ImpersonationNotAllowedException;
 use Webconsulting\WorkosAuth\LoginProvider\WorkosBackendLoginProvider;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 use Webconsulting\WorkosAuth\Security\RequestTokenService;
@@ -32,12 +35,16 @@ use Webconsulting\WorkosAuth\Service\ResponseUtility;
 use Webconsulting\WorkosAuth\Service\Typo3SessionService;
 use Webconsulting\WorkosAuth\Service\UserProvisioningService;
 use Webconsulting\WorkosAuth\Service\WorkosAuthenticationService;
-use WorkOS\Resource\User;
 
 /**
  * Backend login endpoints below the TYPO3 entry point (e.g. `/typo3`):
  * the configurable AuthKit redirect + callback pair and five fixed POST
- * endpoints used by the "Continue with WorkOS" login form.
+ * endpoints used by the WorkOS login provider form.
+ *
+ * Messages for the login screen never travel as text in the URL: they are
+ * stored server-side (StateService, bound to this browser) and the login
+ * provider shows them once. A crafted login link can therefore not put
+ * words of its own onto the TYPO3 login page.
  */
 #[Autoconfigure(public: true)]
 final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAwareInterface
@@ -51,15 +58,22 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
     public const string EMAIL_VERIFY_RESEND_PATH = '/workos-auth/backend/email-verify-resend';
 
     /**
-     * StateService contexts of the two multi-step flows (shared with the login provider).
+     * StateService contexts of the two multi-step flows and of the one-shot
+     * login screen message (shared with the login provider).
      */
     public const string EMAIL_VERIFICATION_CONTEXT = 'backend_email_verification';
     public const string MAGIC_AUTH_CONTEXT = 'backend_magic_auth';
+    public const string LOGIN_MESSAGE_CONTEXT = 'backend_login_message';
+
+    /**
+     * Query parameter carrying the token of the one-shot login screen message.
+     */
+    public const string LOGIN_MESSAGE_PARAMETER = 'workosMessage';
 
     /**
      * @var list<string>
      */
-    private const POST_ENDPOINTS = [
+    private const array POST_ENDPOINTS = [
         self::PASSWORD_AUTH_PATH,
         self::MAGIC_AUTH_SEND_PATH,
         self::MAGIC_AUTH_VERIFY_PATH,
@@ -161,16 +175,15 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
     private function handleCallback(ServerRequestInterface $request, string $backendBasePath): ResponseInterface
     {
         if (!$this->configuration->isBackendReady()) {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.backendLoginNotSupported'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.backendLoginNotSupported'));
         }
 
         try {
             $result = $this->workosAuthenticationService->handleCallback($request, LoginContext::Backend);
 
-            return $this->createLoginResponse($request, $result['workosUser'], $result['returnTo']);
+            return $this->createLoginResponse($request, $result['session'], $result['returnTo']);
         } catch (\Throwable $exception) {
-            $this->logger?->error('WorkOS backend callback error: ' . SecretRedactor::redact($exception->getMessage()));
-            return $this->redirectToLoginWithError($backendBasePath, $this->resolveAuthenticationError($exception));
+            return $this->redirectToLoginWithFailure($request, $backendBasePath, $exception, 'callback');
         }
     }
 
@@ -181,21 +194,20 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         $password = $body->string('password');
 
         if ($email === '' || $password === '') {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.enterEmailAndPassword'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.enterEmailAndPassword'));
         }
         if (!$this->hasValidBackendRequestToken()) {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.csrfTokenInvalid'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.csrfTokenInvalid'));
         }
 
         try {
-            $workosUser = $this->workosAuthenticationService->authenticateWithPassword($request, $email, $password);
+            $session = $this->workosAuthenticationService->authenticateWithPassword($request, $email, $password);
 
-            return $this->createLoginResponse($request, $workosUser, $this->successUrl($backendBasePath));
+            return $this->createLoginResponse($request, $session, $this->successUrl($backendBasePath));
         } catch (EmailVerificationRequiredException $e) {
             return $this->redirectToEmailVerification($request, $backendBasePath, $e);
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend password auth error: ' . SecretRedactor::redact($e->getMessage()));
-            return $this->redirectToLoginWithError($backendBasePath, $this->resolveAuthenticationError($e));
+            return $this->redirectToLoginWithFailure($request, $backendBasePath, $e, 'password auth');
         }
     }
 
@@ -204,20 +216,19 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         $email = RequestBody::fromRequest($request)->trimmedString('email');
 
         if ($email === '') {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.enterEmail'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.enterEmail'));
         }
         if (!$this->hasValidBackendRequestToken()) {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.csrfTokenInvalid'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.csrfTokenInvalid'));
         }
 
         try {
             $this->workosAuthenticationService->sendMagicAuthCode($email);
             $issuedState = $this->stateService->issue($request, self::MAGIC_AUTH_CONTEXT, $backendBasePath, ['email' => $email]);
 
-            return $this->redirectToLogin($backendBasePath, ['magicAuthState' => $issuedState['token']], $issuedState['cookie']);
+            return $this->redirectToLogin($request, $backendBasePath, ['magicAuthState' => $issuedState['token']], cookies: [$issuedState['cookie']]);
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend magic auth send error: ' . SecretRedactor::redact($e->getMessage()));
-            return $this->redirectToLoginWithError($backendBasePath, $this->resolveAuthenticationError($e));
+            return $this->redirectToLoginWithFailure($request, $backendBasePath, $e, 'magic auth send');
         }
     }
 
@@ -228,29 +239,30 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         $magicAuthState = $body->trimmedString('magicAuthState');
 
         if ($code === '' || $magicAuthState === '') {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.invalidMagicAuthSession'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.invalidMagicAuthSession'));
         }
         if (!$this->hasValidBackendRequestToken()) {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.csrfTokenInvalid'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.csrfTokenInvalid'));
         }
 
         try {
             $payload = $this->stateService->consume($request, self::MAGIC_AUTH_CONTEXT, $magicAuthState);
-            $email = MixedCaster::string($payload['email'] ?? null);
-            if ($email === '') {
-                return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.invalidMagicAuthSession'));
-            }
+        } catch (\RuntimeException) {
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.invalidMagicAuthSession'));
+        }
+        $email = MixedCaster::string($payload['email'] ?? null);
+        if ($email === '') {
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.invalidMagicAuthSession'));
+        }
 
-            $workosUser = $this->workosAuthenticationService->authenticateWithMagicAuth($request, $code, $email);
+        try {
+            $session = $this->workosAuthenticationService->authenticateWithMagicAuth($request, $code, $email);
 
-            return $this->createLoginResponse($request, $workosUser, $this->successUrl($backendBasePath));
+            return $this->createLoginResponse($request, $session, $this->successUrl($backendBasePath));
         } catch (EmailVerificationRequiredException $e) {
             return $this->redirectToEmailVerification($request, $backendBasePath, $e);
-        } catch (\RuntimeException) {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.invalidMagicAuthSession'));
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend magic auth verify error: ' . SecretRedactor::redact($e->getMessage()));
-            return $this->redirectToLoginWithError($backendBasePath, $this->resolveAuthenticationError($e));
+            return $this->redirectToLoginWithFailure($request, $backendBasePath, $e, 'magic auth verify');
         }
     }
 
@@ -262,33 +274,34 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         $backToVerification = ['emailVerificationState' => $emailVerificationState];
 
         if ($emailVerificationState === '') {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.verificationSessionExpired'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.verificationSessionExpired'));
         }
         if (!$this->hasValidBackendRequestToken()) {
-            return $this->redirectToLogin($backendBasePath, $backToVerification + ['workosAuthError' => $this->translator->translate('error.csrfTokenInvalid')]);
+            return $this->redirectToLogin($request, $backendBasePath, $backToVerification, error: $this->translator->translate('error.csrfTokenInvalid'));
         }
         if ($code === '') {
-            return $this->redirectToLogin($backendBasePath, $backToVerification);
+            return $this->redirectToLogin($request, $backendBasePath, $backToVerification);
         }
 
         try {
             $payload = $this->stateService->peek($request, self::EMAIL_VERIFICATION_CONTEXT, $emailVerificationState);
-            $pendingToken = MixedCaster::string($payload['pendingToken'] ?? null);
-            if ($pendingToken === '') {
-                return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.verificationSessionExpired'));
-            }
+        } catch (\RuntimeException) {
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.verificationSessionExpired'));
+        }
+        $pendingToken = MixedCaster::string($payload['pendingToken'] ?? null);
+        if ($pendingToken === '') {
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.verificationSessionExpired'));
+        }
 
-            $workosUser = $this->workosAuthenticationService->authenticateWithEmailVerification($request, $code, $pendingToken);
+        try {
+            $session = $this->workosAuthenticationService->authenticateWithEmailVerification($request, $code, $pendingToken);
             $this->stateService->remove($emailVerificationState);
 
-            return $this->createLoginResponse($request, $workosUser, $this->successUrl($backendBasePath));
+            return $this->createLoginResponse($request, $session, $this->successUrl($backendBasePath));
         } catch (EmailVerificationRequiredException $e) {
             return $this->redirectToEmailVerification($request, $backendBasePath, $e);
-        } catch (\RuntimeException) {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.verificationSessionExpired'));
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend email verify error: ' . SecretRedactor::redact($e->getMessage()));
-            return $this->redirectToLogin($backendBasePath, $backToVerification + ['workosAuthError' => $this->resolveAuthenticationError($e)]);
+            return $this->redirectToLoginWithFailure($request, $backendBasePath, $e, 'email verify', $backToVerification);
         }
     }
 
@@ -298,39 +311,49 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         $backToVerification = ['emailVerificationState' => $emailVerificationState];
 
         if ($emailVerificationState === '') {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.verificationSessionExpired'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.verificationSessionExpired'));
         }
         if (!$this->hasValidBackendRequestToken()) {
-            return $this->redirectToLogin($backendBasePath, $backToVerification + ['workosAuthError' => $this->translator->translate('error.csrfTokenInvalid')]);
+            return $this->redirectToLogin($request, $backendBasePath, $backToVerification, error: $this->translator->translate('error.csrfTokenInvalid'));
         }
 
         try {
             $payload = $this->stateService->peek($request, self::EMAIL_VERIFICATION_CONTEXT, $emailVerificationState);
         } catch (\RuntimeException) {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.verificationSessionExpired'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.verificationSessionExpired'));
         }
         $userId = MixedCaster::string($payload['userId'] ?? null);
         if ($userId === '') {
-            return $this->redirectToLoginWithError($backendBasePath, $this->translator->translate('error.verificationSessionExpired'));
+            return $this->redirectToLogin($request, $backendBasePath, error: $this->translator->translate('error.verificationSessionExpired'));
         }
 
         try {
             $this->workosAuthenticationService->resendEmailVerification($userId);
 
-            return $this->redirectToLogin($backendBasePath, $backToVerification + ['workosAuthNotice' => $this->translator->translate('message.verificationCodeResent')]);
+            return $this->redirectToLogin($request, $backendBasePath, $backToVerification, notice: $this->translator->translate('message.verificationCodeResent'));
         } catch (\Throwable $e) {
-            $this->logger?->error('WorkOS backend email verify resend error: ' . SecretRedactor::redact($e->getMessage()));
-            return $this->redirectToLogin($backendBasePath, $backToVerification + ['workosAuthError' => $this->resolveAuthenticationError($e)]);
+            return $this->redirectToLoginWithFailure($request, $backendBasePath, $e, 'email verify resend', $backToVerification);
         }
     }
 
-    private function createLoginResponse(ServerRequestInterface $request, User $workosUser, string $redirectUrl): ResponseInterface
+    private function createLoginResponse(ServerRequestInterface $request, AuthenticatedSession $session, string $redirectUrl): ResponseInterface
     {
+        if ($session->isImpersonated()) {
+            $this->logger?->warning(sprintf(
+                'Refused a WorkOS impersonation session for the TYPO3 backend: %s impersonated %s (reason: %s).',
+                $session->impersonatorEmail,
+                $session->user->email,
+                $session->impersonationReason ?? 'none given',
+            ));
+            throw new ImpersonationNotAllowedException('Impersonated WorkOS sessions cannot sign in to the TYPO3 backend.', 1758200002);
+        }
+
         return $this->typo3SessionService->createBackendLoginResponse(
             $request,
-            $this->userProvisioningService->resolve(LoginContext::Backend, $workosUser),
+            $this->userProvisioningService->resolve(LoginContext::Backend, $session->user),
             $redirectUrl,
-            $workosUser->id,
+            $session->user->id,
+            $session->sessionId,
         );
     }
 
@@ -345,7 +368,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             'userId' => $exception->userId,
         ]);
 
-        return $this->redirectToLogin($backendBasePath, ['emailVerificationState' => $issuedState['token']], $issuedState['cookie']);
+        return $this->redirectToLogin($request, $backendBasePath, ['emailVerificationState' => $issuedState['token']], cookies: [$issuedState['cookie']]);
     }
 
     private function successUrl(string $backendBasePath): string
@@ -353,14 +376,33 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
         return PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendSuccessPath());
     }
 
-    private function resolveAuthenticationError(\Throwable $exception): string
-    {
-        return $this->translator->translate($this->errorMessageResolver->resolveAuthentication($exception->getMessage()));
-    }
+    /**
+     * Logs a failed step and sends the browser back to the login screen with
+     * a message the editor can act on. The raw error only reaches the log.
+     *
+     * @param array<string, string> $parameters
+     */
+    private function redirectToLoginWithFailure(
+        ServerRequestInterface $request,
+        string $backendBasePath,
+        \Throwable $exception,
+        string $step,
+        array $parameters = [],
+    ): ResponseInterface {
+        $this->logger?->error(sprintf('WorkOS backend %s error: %s', $step, SecretRedactor::redact($exception->getMessage())));
 
-    private function redirectToLoginWithError(string $backendBasePath, string $message): ResponseInterface
-    {
-        return $this->redirectToLogin($backendBasePath, ['workosAuthError' => $message]);
+        $details = [];
+        if ($exception instanceof AccountNotLinkedException) {
+            $details = ['email' => $exception->email, 'userId' => $exception->workosUserId];
+        }
+
+        return $this->redirectToLogin(
+            $request,
+            $backendBasePath,
+            $parameters,
+            error: $this->translator->translate($this->errorMessageResolver->resolveLogin($exception)),
+            details: $details,
+        );
     }
 
     private function errorResponse(string $message, int $statusCode): ResponseInterface
@@ -369,16 +411,41 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
     }
 
     /**
-     * @param array<string, string> $parameters
+     * @param array<string, string> $parameters query parameters of the login screen
+     * @param array<string, string> $details structured context for an error, e.g. the unlinked account
+     * @param list<Cookie|null> $cookies binding cookies of states issued for this redirect
      */
-    private function redirectToLogin(string $backendBasePath, array $parameters, ?Cookie $cookie = null): ResponseInterface
-    {
-        $loginUrl = PathUtility::appendQueryParameters(
-            PathUtility::joinBaseAndPath($backendBasePath, '/login'),
-            ['loginProvider' => WorkosBackendLoginProvider::IDENTIFIER] + $parameters
-        );
+    private function redirectToLogin(
+        ServerRequestInterface $request,
+        string $backendBasePath,
+        array $parameters = [],
+        string $error = '',
+        string $notice = '',
+        array $details = [],
+        array $cookies = [],
+    ): ResponseInterface {
+        if ($error !== '' || $notice !== '') {
+            $message = $this->stateService->issue($request, self::LOGIN_MESSAGE_CONTEXT, $backendBasePath, [
+                'error' => $error,
+                'notice' => $notice,
+                'details' => $details,
+            ]);
+            $parameters[self::LOGIN_MESSAGE_PARAMETER] = $message['token'];
+            $cookies[] = $message['cookie'];
+        }
 
-        return ResponseUtility::withCookie(new RedirectResponse($loginUrl, 303), $cookie);
+        $response = new RedirectResponse(
+            PathUtility::appendQueryParameters(
+                PathUtility::joinBaseAndPath($backendBasePath, '/login'),
+                ['loginProvider' => WorkosBackendLoginProvider::IDENTIFIER] + $parameters
+            ),
+            303
+        );
+        foreach ($cookies as $cookie) {
+            $response = ResponseUtility::withCookie($response, $cookie);
+        }
+
+        return $response;
     }
 
     /**
@@ -403,7 +470,7 @@ final class BackendWorkosAuthMiddleware implements MiddlewareInterface, LoggerAw
             }
         };
 
-        return (new RequestTokenMiddleware($this->context))->process($request, $handler);
+        return new RequestTokenMiddleware($this->context)->process($request, $handler);
     }
 
     private function hasValidBackendRequestToken(): bool

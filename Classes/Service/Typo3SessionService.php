@@ -31,6 +31,13 @@ final readonly class Typo3SessionService
      */
     public const string SESSION_WORKOS_USER_ID = 'workos_auth_user_id';
 
+    /**
+     * FE and BE session key holding the WorkOS session the sign-in opened;
+     * {@see \Webconsulting\WorkosAuth\EventListener\EndWorkosSessionOnLogout}
+     * ends it together with the TYPO3 session.
+     */
+    public const string SESSION_WORKOS_SESSION_ID = 'workos_auth_session_id';
+
     public function __construct(
         private LoggerInterface $logger,
     ) {}
@@ -38,13 +45,20 @@ final readonly class Typo3SessionService
     /**
      * @param array<string, mixed> $userRow
      */
-    public function createFrontendLoginResponse(ServerRequestInterface $request, array $userRow, string $redirectUrl): ResponseInterface
-    {
+    public function createFrontendLoginResponse(
+        ServerRequestInterface $request,
+        array $userRow,
+        string $redirectUrl,
+        ?string $workosSessionId = null,
+    ): ResponseInterface {
         $frontendUser = $this->resolveFrontendUserAuthentication($request);
         $loginRequest = $this->createPendingLoginRequest($request, LoginContext::Frontend, $userRow);
         $frontendUser->start($loginRequest);
         $this->assertAuthenticatedUser($frontendUser, $userRow, LoginContext::Frontend);
         $frontendUser->fetchGroupData($loginRequest);
+        if ($workosSessionId !== null && $workosSessionId !== '') {
+            $frontendUser->setAndSaveSessionData(self::SESSION_WORKOS_SESSION_ID, $workosSessionId);
+        }
 
         return $frontendUser->appendCookieToResponse(
             new RedirectResponse($redirectUrl, 303),
@@ -72,6 +86,7 @@ final readonly class Typo3SessionService
         array $userRow,
         string $redirectUrl,
         string $workosUserId,
+        ?string $workosSessionId = null,
     ): ResponseInterface {
         $backendUser = new BackendUserAuthentication();
         $backendUser->setLogger($this->logger);
@@ -82,6 +97,9 @@ final readonly class Typo3SessionService
         $backendUser->initializeBackendLogin($loginRequest);
         if ($workosUserId !== '') {
             $backendUser->setAndSaveSessionData(self::SESSION_WORKOS_USER_ID, $workosUserId);
+        }
+        if ($workosSessionId !== null && $workosSessionId !== '') {
+            $backendUser->setAndSaveSessionData(self::SESSION_WORKOS_SESSION_ID, $workosSessionId);
         }
 
         return $backendUser->appendCookieToResponse(
@@ -110,6 +128,8 @@ final readonly class Typo3SessionService
     /**
      * Break the external WorkOS redirect chain with a same-origin page so the
      * default SameSite=Strict backend cookie is sent on the final navigation.
+     * The meta refresh does the navigation; an inline script would only be
+     * blocked by the backend's Content Security Policy.
      */
     private function buildBackendBounceResponse(string $redirectUrl): ResponseInterface
     {
@@ -118,9 +138,8 @@ final readonly class Typo3SessionService
         return new HtmlResponse(
             '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
             . '<meta http-equiv="refresh" content="0;url=' . $escapedUrl . '">'
-            . '<title>Signing in...</title></head><body>'
-            . '<p><a id="workos-continue" href="' . $escapedUrl . '">Continue to the TYPO3 backend</a></p>'
-            . '<script>document.getElementById("workos-continue").click();</script>'
+            . '<title>Signing in…</title></head><body>'
+            . '<p><a href="' . $escapedUrl . '">Continue to the TYPO3 backend</a></p>'
             . '</body></html>'
         );
     }

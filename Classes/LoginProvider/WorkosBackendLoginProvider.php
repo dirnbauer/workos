@@ -60,7 +60,8 @@ final readonly class WorkosBackendLoginProvider implements LoginProviderInterfac
             $templatePaths->setPartialRootPaths([...$templatePaths->getPartialRootPaths(), 'EXT:workos_auth/Resources/Private/Partials']);
         }
 
-        $authError = MixedCaster::string($queryParams['workosAuthError'] ?? null);
+        $message = $this->takeLoginMessage($request, MixedCaster::string($queryParams[BackendWorkosAuthMiddleware::LOGIN_MESSAGE_PARAMETER] ?? null));
+        $authError = $message['error'];
         $endpoint = static fn(string $path): string => PathUtility::joinBaseAndPath($backendBasePath, $path);
 
         $magicAuthState = trim(MixedCaster::string($queryParams['magicAuthState'] ?? null));
@@ -122,12 +123,14 @@ final readonly class WorkosBackendLoginProvider implements LoginProviderInterfac
             'emailVerificationCanResend' => $emailVerificationCanResend,
             'socialProviders' => array_map(fn(SocialProvider $provider): array => [
                 'key' => $provider->value,
-                'label' => $this->translator->translate($provider->labelKey()),
+                'label' => $this->translator->translate('backend.login.continueWith', [
+                    'provider' => $this->translator->translate($provider->labelKey()),
+                ]),
                 'url' => PathUtility::appendQueryParameters($loginUrl, ['provider' => $provider->value]),
             ], SocialProvider::cases()),
             'authError' => $authError,
-            'authErrorDetails' => $this->buildAuthErrorDetails($authError, $endpoint('/module/workos/setup')),
-            'authNotice' => MixedCaster::string($queryParams['workosAuthNotice'] ?? null),
+            'notLinked' => $message['details'],
+            'authNotice' => $message['notice'],
             'backendCookieSameSite' => $this->configuration->getBackendCookieSameSite(),
             'backendCookieSameSiteCompatible' => $this->configuration->isBackendCookieSameSiteCompatible(),
             'requestTokenName' => RequestToken::PARAM_NAME,
@@ -138,46 +141,32 @@ final readonly class WorkosBackendLoginProvider implements LoginProviderInterfac
     }
 
     /**
-     * Turn the "not linked / provisioning disabled" message of
-     * UserProvisioningService into an actionable error card.
+     * The message the login middleware stored for this browser, shown once.
+     * An unknown, foreign or expired token shows nothing: the login page
+     * never displays text taken from its URL.
      *
-     * @return array<string, string|bool>|null
+     * @return array{error: string, notice: string, details: array{email: string, userId: string}|null}
      */
-    private function buildAuthErrorDetails(string $rawMessage, string $setupUrl): ?array
+    private function takeLoginMessage(ServerRequestInterface $request, string $token): array
     {
-        $rawMessage = trim($rawMessage);
-        if ($rawMessage === '') {
-            return null;
+        $message = ['error' => '', 'notice' => '', 'details' => null];
+        if (trim($token) === '') {
+            return $message;
         }
 
-        $notLinked = preg_match(
-            '/No backend user matched the WorkOS account \(email "([^"]*)", id "([^"]*)"\) and automatic backend provisioning is disabled\./i',
-            $rawMessage,
-            $matches
-        ) === 1;
-
-        if (!$notLinked) {
-            return [
-                'title' => $this->translator->translate('backend.login.error.title'),
-                'summary' => $rawMessage,
-                'email' => '',
-                'userId' => '',
-                'hint' => '',
-                'actionUrl' => '',
-                'actionLabel' => '',
-                'isProvisioningDisabled' => false,
-            ];
+        try {
+            $payload = $this->stateService->consume($request, BackendWorkosAuthMiddleware::LOGIN_MESSAGE_CONTEXT, trim($token));
+        } catch (\RuntimeException) {
+            return $message;
         }
+
+        $details = MixedCaster::stringKeyedArray($payload['details'] ?? null) ?? [];
+        $email = MixedCaster::string($details['email'] ?? null);
 
         return [
-            'title' => $this->translator->translate('backend.login.error.notLinked.title'),
-            'summary' => $this->translator->translate('backend.login.error.notLinked.summary', ['email' => $matches[1]]),
-            'email' => $matches[1],
-            'userId' => $matches[2],
-            'hint' => $this->translator->translate('backend.login.error.notLinked.hint'),
-            'actionUrl' => $setupUrl,
-            'actionLabel' => $this->translator->translate('backend.login.error.notLinked.action'),
-            'isProvisioningDisabled' => true,
+            'error' => MixedCaster::string($payload['error'] ?? null),
+            'notice' => MixedCaster::string($payload['notice'] ?? null),
+            'details' => $email !== '' ? ['email' => $email, 'userId' => MixedCaster::string($details['userId'] ?? null)] : null,
         ];
     }
 }

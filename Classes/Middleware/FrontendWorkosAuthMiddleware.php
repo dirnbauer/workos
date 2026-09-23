@@ -95,11 +95,21 @@ final class FrontendWorkosAuthMiddleware implements MiddlewareInterface, LoggerA
     {
         try {
             $result = $this->workosAuthenticationService->handleCallback($request, LoginContext::Frontend);
+            $session = $result['session'];
+            if ($session->isImpersonated()) {
+                $this->logger?->notice(sprintf(
+                    'WorkOS impersonation session on the frontend: %s signed in as %s (reason: %s).',
+                    $session->impersonatorEmail,
+                    $session->user->email,
+                    $session->impersonationReason ?? 'none given',
+                ));
+            }
 
             return $this->typo3SessionService->createFrontendLoginResponse(
                 $request,
-                $this->userProvisioningService->resolve(LoginContext::Frontend, $result['workosUser']),
-                $result['returnTo']
+                $this->userProvisioningService->resolve(LoginContext::Frontend, $session->user),
+                $result['returnTo'],
+                $session->sessionId,
             );
         } catch (\Throwable $exception) {
             $this->logger?->error('WorkOS frontend callback error: ' . SecretRedactor::redact($exception->getMessage()));

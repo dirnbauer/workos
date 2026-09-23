@@ -6,6 +6,9 @@ namespace Webconsulting\WorkosAuth\Tests\Unit\Security;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Webconsulting\WorkosAuth\Domain\LoginContext;
+use Webconsulting\WorkosAuth\Exception\AccountNotLinkedException;
+use Webconsulting\WorkosAuth\Exception\ImpersonationNotAllowedException;
 use Webconsulting\WorkosAuth\Security\WorkosErrorMessageResolver;
 
 final class WorkosErrorMessageResolverTest extends TestCase
@@ -100,5 +103,32 @@ final class WorkosErrorMessageResolverTest extends TestCase
     public function testResolveInvitation(string $message, string $expectedKey): void
     {
         self::assertSame($expectedKey, $this->resolver->resolveInvitation($message));
+    }
+
+    /**
+     * @return array<string, array{0: \Throwable, 1: string}>
+     */
+    public static function loginFailureProvider(): array
+    {
+        return [
+            'account not linked' => [
+                new AccountNotLinkedException(LoginContext::Backend, 'a@example.com', 'user_01', 'No backend user matched', 1744277605),
+                'error.accountNotLinked',
+            ],
+            'impersonation' => [new ImpersonationNotAllowedException('refused', 1758200002), 'error.impersonationNotAllowed'],
+            'domain not allowed' => [new \RuntimeException('not allowed', 1744277608), 'error.domainNotAllowed'],
+            'unverified email, linking' => [new \RuntimeException('not verified', 1744277609), 'error.emailNotVerified'],
+            'unverified email, creating' => [new \RuntimeException('not verified', 1744277611), 'error.emailNotVerified'],
+            'linked account disabled' => [new \RuntimeException('disabled', 1744277610), 'error.accountDisabled'],
+            'ambiguous email' => [new \RuntimeException('ambiguous', 1744277612), 'error.accountAmbiguous'],
+            'sdk error by message' => [new \RuntimeException('Invalid credentials provided'), 'error.invalidEmailOrPassword'],
+            'anything else' => [new \LogicException('boom'), 'error.generic'],
+        ];
+    }
+
+    #[DataProvider('loginFailureProvider')]
+    public function testResolveLogin(\Throwable $exception, string $expectedKey): void
+    {
+        self::assertSame($expectedKey, $this->resolver->resolveLogin($exception));
     }
 }
