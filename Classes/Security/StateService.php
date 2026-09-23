@@ -20,6 +20,9 @@ final readonly class StateService
     private const string COOKIE_PREFIX = 'workos_auth_state_';
     private const int TTL = 600;
 
+    /** What issue() hands out: 32 random bytes, hex encoded. */
+    private const string TOKEN_PATTERN = '/^[a-f0-9]{64}$/';
+
     public function __construct(
         private CacheManager $cacheManager,
     ) {}
@@ -83,7 +86,7 @@ final readonly class StateService
     public function remove(string $token): void
     {
         $token = trim($token);
-        if ($token !== '') {
+        if (preg_match(self::TOKEN_PATTERN, $token) === 1) {
             $this->cacheManager->getCache(self::CACHE_IDENTIFIER)->remove($token);
         }
     }
@@ -119,7 +122,10 @@ final readonly class StateService
      */
     private function resolve(ServerRequestInterface $request, string $expectedContext, string $token, bool $consume): array
     {
-        if ($token === '') {
+        // Tokens arrive in URLs and form fields; anything but the issued
+        // format is refused here, before it can reach the cache backend
+        // (which rejects odd identifiers with an exception of its own).
+        if (preg_match(self::TOKEN_PATTERN, $token) !== 1) {
             throw new \RuntimeException('Invalid WorkOS state token format.', 1744277401);
         }
 

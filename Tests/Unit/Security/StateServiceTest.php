@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Tests\Unit\Security;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
@@ -135,6 +136,35 @@ final class StateServiceTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionCode(1744277402);
         $this->stateService->peek(self::callbackRequest($cookie->getName(), (string)$cookie->getValue()), 'frontend', $issued['token']);
+    }
+
+    /**
+     * @return array<string, array{0: string}>
+     */
+    public static function malformedTokenProvider(): array
+    {
+        return [
+            'empty' => [''],
+            'free text' => ['Your account is locked, call +43 1 234567'],
+            'markup' => ['<script>alert(1)</script>'],
+            'upper-case hex' => [str_repeat('A', 64)],
+            'too short' => [str_repeat('a', 63)],
+            'too long' => [str_repeat('a', 65)],
+        ];
+    }
+
+    /**
+     * Tokens come from URLs and form fields: anything but the issued format
+     * must end as the flow's own "invalid state" error, not reach the cache
+     * backend, which rejects odd identifiers with an exception of its own.
+     */
+    #[DataProvider('malformedTokenProvider')]
+    public function testMalformedTokensAreRejectedBeforeTheCacheSeesThem(string $token): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(1744277401);
+
+        $this->stateService->peek(self::request('/typo3/login'), 'backend_login_message', $token);
     }
 
     public function testCallbackStateWrappedInJsonIsUnwrapped(): void
