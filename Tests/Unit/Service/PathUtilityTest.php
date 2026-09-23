@@ -70,6 +70,14 @@ final class PathUtilityTest extends TestCase
             'backslash protocol' => ['\\\\evil.example/path'],
             'mixed forward-back' => ['/\\evil.example/path'],
             'mixed back-forward' => ['\\/evil.example/path'],
+            // Browsers strip tabs and line breaks from a Location header
+            // before resolving it: each of these becomes //evil.example.
+            'tab between slashes' => ["/\t/evil.example/path"],
+            'newline between slashes' => ["/\n/evil.example/path"],
+            'carriage return between slashes' => ["/\r/evil.example/path"],
+            'backslash after the path start' => ['/path\\..\\\\evil.example'],
+            'absolute URL with a backslash host trick' => ['https://app.local\\@evil.example/'],
+            'raw space' => ['/ /evil.example'],
         ];
     }
 

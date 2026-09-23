@@ -171,8 +171,14 @@ final class PathUtility
             return $fallback;
         }
 
-        // Reject protocol-relative URLs (`//evil.com/path`) and their
-        // backslash variants (`/\`, `\\`, `\/`). Browsers follow
+        // Browsers drop tabs and line breaks while parsing a URL and treat a
+        // backslash like a slash, so `/<TAB>/evil.com` or `/\evil.com` become
+        // `//evil.com`. A legitimate target never contains either, raw.
+        if (preg_match('/[\x00-\x20\x7F\\\\]/', $candidate) === 1) {
+            return $fallback;
+        }
+
+        // Reject protocol-relative URLs (`//evil.com/path`). Browsers follow
         // `Location: //host/path` as `scheme://host/path`, so these
         // would be open redirects if treated as safe paths.
         if (self::startsWithTwoSlashVariant($candidate)) {
