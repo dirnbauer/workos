@@ -5,6 +5,7 @@
 // the esm.sh code-splitting that breaks the Radix ThemeContext.
 
 import { mount as mountWorkosWidget } from '@webconsulting/workos-auth/user-management-widget.bundle.js';
+import labels from '~labels/workos_auth.messages';
 
 function ensureStylesheet(href, id) {
     if (document.getElementById(id)) {
@@ -34,7 +35,7 @@ async function fetchWidgetToken(tokenUri, requestToken) {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || !payload.token) {
-        const message = payload && payload.error ? payload.error : `Token request failed (${response.status})`;
+        const message = payload && payload.error ? payload.error : labels.get('module.users.error.tokenFailed');
         throw new Error(message);
     }
     return payload.token;
@@ -281,7 +282,7 @@ async function bootstrap() {
     }
     const tokenUri = mountEl.getAttribute('data-token-uri') || '';
     if (!tokenUri) {
-        renderError(mountEl, 'Missing token endpoint.');
+        renderError(mountEl, labels.get('module.users.error.generic'));
         return;
     }
     const requestToken = mountEl.getAttribute('data-request-token') || '';
@@ -310,7 +311,7 @@ async function bootstrap() {
         const stopObservingAppearance = observeAppearanceChanges(mountEl, renderWidget);
         window.addEventListener('beforeunload', stopObservingAppearance, { once: true });
     } catch (error) {
-        const message = error && error.message ? error.message : 'Unable to load the WorkOS widget.';
+        const message = error && error.message ? error.message : labels.get('module.users.error.generic');
         renderError(mountEl, message);
     }
 }

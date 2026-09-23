@@ -10,12 +10,9 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
-use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Messaging\FlashMessage;
-use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Security\RequestToken;
@@ -58,14 +55,13 @@ final class UserManagementController implements LoggerAwareInterface
     private const string CREATE_ORGANIZATION_REQUEST_SCOPE = 'workos/backend/users/create-organization';
 
     public function __construct(
-        private readonly ModuleTemplateFactory $moduleTemplateFactory,
+        private readonly ModulePageFactory $modulePageFactory,
         private readonly WorkosConfiguration $configuration,
         private readonly WorkosClientFactory $workosClientFactory,
         private readonly IdentityService $identityService,
         private readonly UriBuilder $uriBuilder,
         private readonly LabelTranslator $translator,
         private readonly PageRenderer $pageRenderer,
-        private readonly FlashMessageService $flashMessageService,
         private readonly RequestTokenService $requestTokenService,
     ) {}
 
@@ -76,8 +72,7 @@ final class UserManagementController implements LoggerAwareInterface
             ? $this->listAvailableOrganizations()
             : [];
 
-        $moduleTemplate = $this->moduleTemplateFactory->create($request);
-        $moduleTemplate->setTitle($this->translator->translate('module.users.title'));
+        $moduleTemplate = $this->modulePageFactory->create($request, 'workos_users', 'module.users.title');
         $moduleTemplate->assignMultiple([
             'configured' => $this->configuration->isBackendReady(),
             'tokenUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_users.token'),
@@ -365,9 +360,7 @@ final class UserManagementController implements LoggerAwareInterface
 
     private function flashAndRedirect(string $body, ContextualFeedbackSeverity $severity): ResponseInterface
     {
-        $this->flashMessageService
-            ->getMessageQueueByIdentifier('workos-auth-users')
-            ->addMessage(new FlashMessage($body, $this->translator->translate('module.users.flashTitle'), $severity, true));
+        $this->modulePageFactory->flash($body, $severity, $this->translator->translate('module.users.flashTitle'));
 
         return new RedirectResponse((string)$this->uriBuilder->buildUriFromRoute('workos_users'));
     }

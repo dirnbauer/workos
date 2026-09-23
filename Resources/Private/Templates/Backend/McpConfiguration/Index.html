@@ -1,276 +1,188 @@
-<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<html
+    xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
 
-<div class="module-body">
-    <f:flashMessages queueIdentifier="workos-auth-mcp" />
+<f:layout name="Module" />
 
-    <div class="row mb-4">
-        <div class="col-xl-8">
-            <h1 class="mb-2"><f:translate key="workos_auth.messages:module.mcp.title" /></h1>
-            <p class="text-muted mb-0">
-                <f:translate key="workos_auth.messages:module.mcp.description" />
-            </p>
-        </div>
-        <div class="col-xl-4 mt-3 mt-xl-0">
-            <div class="card">
-                <div class="card-body py-3">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="text-muted"><f:translate key="workos_auth.messages:module.mcp.status.context" /></span>
-                        <code>{status.context}</code>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="text-muted"><f:translate key="workos_auth.messages:module.mcp.status.endpoint" /></span>
-                        <f:if condition="{status.enabled}">
-                            <f:then><span class="badge bg-success"><f:translate key="workos_auth.messages:module.mcp.status.enabled" /></span></f:then>
-                            <f:else><span class="badge bg-secondary"><f:translate key="workos_auth.messages:module.mcp.status.disabled" /></span></f:else>
-                        </f:if>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between">
-                        <span class="text-muted"><f:translate key="workos_auth.messages:module.mcp.status.auth" /></span>
-                        <f:if condition="{status.workosRequired}">
-                            <f:then><span class="badge bg-warning text-dark"><f:translate key="workos_auth.messages:module.mcp.status.workosRequired" /></span></f:then>
-                            <f:else><span class="badge bg-info text-dark"><f:translate key="workos_auth.messages:module.mcp.status.anonymous" /></span></f:else>
-                        </f:if>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<f:section name="Content">
+    <h1><f:translate key="workos_auth.messages:module.mcp.title" /></h1>
+    <p><f:translate key="workos_auth.messages:module.mcp.description" /></p>
 
     <f:if condition="{status.ready}">
         <f:then>
-            <div class="callout callout-success mb-4">
-                <div class="callout-body">
-                    <strong><f:translate key="workos_auth.messages:module.mcp.ready.title" /></strong>
-                    <div class="text-muted"><f:translate key="workos_auth.messages:module.mcp.ready.description" /></div>
-                </div>
-            </div>
+            <f:be.infobox
+                title="{f:translate(key: 'workos_auth.messages:module.mcp.ready.title')}"
+                state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::OK')}"
+            >
+                <f:translate key="workos_auth.messages:module.mcp.ready.description" />
+            </f:be.infobox>
         </f:then>
         <f:else>
-            <div class="callout callout-warning mb-4">
-                <div class="callout-body">
-                    <strong><f:translate key="workos_auth.messages:module.mcp.notReady.title" /></strong>
-                    <div class="text-muted"><f:translate key="workos_auth.messages:module.mcp.notReady.description" /></div>
-                </div>
-            </div>
+            <f:be.infobox
+                title="{f:translate(key: 'workos_auth.messages:module.mcp.notReady.title')}"
+                state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}"
+            >
+                <f:translate key="workos_auth.messages:module.mcp.notReady.description" />
+            </f:be.infobox>
         </f:else>
     </f:if>
 
+    <div class="table-fit">
+        <table class="table table-striped">
+            <caption class="visually-hidden"><f:translate key="workos_auth.messages:module.mcp.status.caption" /></caption>
+            <tbody>
+                <tr>
+                    <th scope="row"><f:translate key="workos_auth.messages:module.mcp.status.context" /></th>
+                    <td><code>{status.context}</code></td>
+                </tr>
+                <tr>
+                    <th scope="row"><f:translate key="workos_auth.messages:module.mcp.status.endpoint" /></th>
+                    <td>
+                        <f:if condition="{status.enabled}">
+                            <f:then><span class="badge badge-success"><f:translate key="workos_auth.messages:module.mcp.status.enabled" /></span></f:then>
+                            <f:else><span class="badge badge-default"><f:translate key="workos_auth.messages:module.mcp.status.disabled" /></span></f:else>
+                        </f:if>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><f:translate key="workos_auth.messages:module.mcp.status.auth" /></th>
+                    <td>
+                        <f:if condition="{status.workosRequired}">
+                            <f:then><span class="badge badge-info"><f:translate key="workos_auth.messages:module.mcp.status.workosRequired" /></span></f:then>
+                            <f:else><span class="badge badge-warning"><f:translate key="workos_auth.messages:module.mcp.status.anonymous" /></span></f:else>
+                        </f:if>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
     <div class="row">
         <div class="col-xl-7">
-            <form method="post" action="{saveUri}">
-                <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}">
+            <form id="{formId}" method="post" action="{saveUri}" novalidate>
+                <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
 
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="card-title"><f:translate key="workos_auth.messages:module.mcp.section.endpoint" /></h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-check form-switch mb-3">
-                            <input type="hidden" name="configuration[mcpEnabled]" value="0">
-                            <input id="mcpEnabled" class="form-check-input" type="checkbox" name="configuration[mcpEnabled]" value="1" <f:if condition="{formValues.mcpEnabled}">checked</f:if>>
-                            <label class="form-check-label" for="mcpEnabled"><f:translate key="workos_auth.messages:setup.mcp.enable" /></label>
-                            <small class="form-text text-muted d-block">
-                                <f:translate key="workos_auth.messages:setup.mcp.enable.description" />
-                            </small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="mcpServerPath" class="form-label">
-                                <strong><f:translate key="workos_auth.messages:setup.mcp.serverPath" /></strong>
-                            </label>
-                            <input id="mcpServerPath" class="form-control" type="text" name="configuration[mcpServerPath]" value="{formValues.mcpServerPath}">
-                            <div class="form-text">
-                                <f:translate key="workos_auth.messages:setup.mcp.serverPath.description" />
-                            </div>
-                        </div>
-
-                        <div class="mb-0">
-                            <label for="mcpServerLimit" class="form-label">
-                                <strong><f:translate key="workos_auth.messages:setup.mcp.serverLimit" /></strong>
-                            </label>
-                            <input id="mcpServerLimit" class="form-control" type="number" min="1" max="10" name="configuration[mcpServerLimit]" value="{formValues.mcpServerLimit}">
-                            <div class="form-text">
-                                <f:translate key="workos_auth.messages:setup.mcp.serverLimit.description" />
-                            </div>
-                        </div>
-                    </div>
+                <h2><f:translate key="workos_auth.messages:module.mcp.section.endpoint" /></h2>
+                <f:render partial="Backend/Field" section="Switch" arguments="{name: 'mcpEnabled', label: 'setup.mcp.enable', description: 'setup.mcp.enable.description', checked: formValues.mcpEnabled}" />
+                <div class="row">
+                    <div class="col-md"><f:render partial="Backend/Field" section="Text" arguments="{name: 'mcpServerPath', label: 'setup.mcp.serverPath', description: 'setup.mcp.serverPath.description', value: formValues.mcpServerPath}" /></div>
+                    <div class="col-md"><f:render partial="Backend/Field" section="Text" arguments="{name: 'mcpServerLimit', label: 'setup.mcp.serverLimit', description: 'setup.mcp.serverLimit.description', value: formValues.mcpServerLimit, type: 'number', min: '1', max: '10', inputmode: 'numeric'}" /></div>
                 </div>
 
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="card-title"><f:translate key="workos_auth.messages:module.mcp.section.security" /></h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="mcpAuthenticationMode" class="form-label">
-                                <strong><f:translate key="workos_auth.messages:setup.mcp.authenticationMode" /></strong>
-                            </label>
-                            <select id="mcpAuthenticationMode" class="form-select" name="configuration[mcpAuthenticationMode]">
-                                <f:for each="{modeOptions}" as="option">
-                                    <option value="{option.value}" <f:if condition="{option.selected}">selected</f:if>>{option.label}</option>
-                                </f:for>
-                            </select>
-                            <f:for each="{modeOptions}" as="option">
-                                <f:if condition="{option.selected}">
-                                    <div class="form-text">{option.description}</div>
-                                </f:if>
-                            </f:for>
-                            <f:if condition="{errors.mcpAuthenticationMode}">
-                                <div class="text-danger mt-1">{errors.mcpAuthenticationMode}</div>
-                            </f:if>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="mcpAuthkitDomain" class="form-label">
-                                <strong><f:translate key="workos_auth.messages:setup.mcp.authkitDomain" /></strong>
-                            </label>
-                            <input id="mcpAuthkitDomain" class="form-control" type="url" name="configuration[mcpAuthkitDomain]" value="{formValues.mcpAuthkitDomain}" placeholder="https://your-project.authkit.app">
-                            <div class="form-text">
-                                <f:translate key="workos_auth.messages:setup.mcp.authkitDomain.description" />
-                            </div>
-                            <f:if condition="{errors.mcpAuthkitDomain}">
-                                <div class="text-danger mt-1">{errors.mcpAuthkitDomain}</div>
-                            </f:if>
-                        </div>
-
-                        <div class="form-check form-switch mb-0">
-                            <input type="hidden" name="configuration[mcpVerboseLogging]" value="0">
-                            <input id="mcpVerboseLogging" class="form-check-input" type="checkbox" name="configuration[mcpVerboseLogging]" value="1" <f:if condition="{formValues.mcpVerboseLogging}">checked</f:if>>
-                            <label class="form-check-label" for="mcpVerboseLogging"><f:translate key="workos_auth.messages:setup.mcp.verboseLogging" /></label>
-                            <small class="form-text text-muted d-block">
-                                <f:translate key="workos_auth.messages:setup.mcp.verboseLogging.description" />
-                            </small>
-                        </div>
+                <h2><f:translate key="workos_auth.messages:module.mcp.section.security" /></h2>
+                <div class="form-group{f:if(condition: errors.mcpAuthenticationMode, then: ' has-error')}">
+                    <label class="form-label" for="mcpAuthenticationMode"><f:translate key="workos_auth.messages:setup.mcp.authenticationMode" /></label>
+                    <select id="mcpAuthenticationMode" class="form-select" name="configuration[mcpAuthenticationMode]" aria-describedby="mcpAuthenticationMode-description">
+                        <f:for each="{modeOptions}" as="option">
+                            <option value="{option.value}" {f:if(condition: option.selected, then: 'selected') -> f:format.raw()}>{option.label}</option>
+                        </f:for>
+                    </select>
+                    <f:if condition="{errors.mcpAuthenticationMode}">
+                        <div class="form-text"><strong>{errors.mcpAuthenticationMode}</strong></div>
+                    </f:if>
+                    <div class="form-text" id="mcpAuthenticationMode-description">
+                        <ul class="mb-0">
+                            <f:for each="{modeOptions}" as="option"><li><strong>{option.label}:</strong> {option.description}</li></f:for>
+                        </ul>
                     </div>
                 </div>
+                <f:render partial="Backend/Field" section="Text" arguments="{name: 'mcpAuthkitDomain', label: 'setup.mcp.authkitDomain', description: 'setup.mcp.authkitDomain.description', value: formValues.mcpAuthkitDomain, error: errors.mcpAuthkitDomain, type: 'url', placeholder: 'https://your-project.authkit.app'}" />
+                <f:render partial="Backend/Field" section="Switch" arguments="{name: 'mcpVerboseLogging', label: 'setup.mcp.verboseLogging', description: 'setup.mcp.verboseLogging.description', checked: formValues.mcpVerboseLogging}" />
 
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="card-title"><f:translate key="workos_auth.messages:module.mcp.section.workos" /></h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-check form-switch mb-0">
-                            <input type="hidden" name="configuration[mcpWorkosDiscovery]" value="0">
-                            <input id="mcpWorkosDiscovery" class="form-check-input" type="checkbox" name="configuration[mcpWorkosDiscovery]" value="1" <f:if condition="{formValues.mcpWorkosDiscovery}">checked</f:if>>
-                            <label class="form-check-label" for="mcpWorkosDiscovery"><f:translate key="workos_auth.messages:setup.mcp.workosDiscovery" /></label>
-                            <small class="form-text text-muted d-block">
-                                <f:translate key="workos_auth.messages:setup.mcp.workosDiscovery.description" />
-                            </small>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="btn btn-primary" type="submit">
-                    <f:translate key="workos_auth.messages:module.mcp.save" />
-                </button>
+                <h2><f:translate key="workos_auth.messages:module.mcp.section.workos" /></h2>
+                <f:render partial="Backend/Field" section="Switch" arguments="{name: 'mcpWorkosDiscovery', label: 'setup.mcp.workosDiscovery', description: 'setup.mcp.workosDiscovery.description', checked: formValues.mcpWorkosDiscovery}" />
             </form>
         </div>
 
         <div class="col-xl-5">
-            <div class="card mb-4">
+            <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title"><f:translate key="workos_auth.messages:module.mcp.schema.title" /></h2>
+                    <div class="card-icon"><core:icon identifier="actions-database" size="medium" /></div>
+                    <div class="card-header-body">
+                        <h2 class="card-title"><f:translate key="workos_auth.messages:module.mcp.schema.title" /></h2>
+                        <span class="card-subtitle">
+                            <f:if condition="{databaseSchema.ready}">
+                                <f:then><span class="badge badge-success"><f:translate key="workos_auth.messages:module.mcp.schema.ready" /></span></f:then>
+                                <f:else><span class="badge badge-warning"><f:translate key="workos_auth.messages:module.mcp.schema.pending" /></span></f:else>
+                            </f:if>
+                        </span>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-muted"><f:translate key="workos_auth.messages:module.mcp.schema.status" /></span>
-                        <f:if condition="{databaseSchema.ready}">
-                            <f:then><span class="badge bg-success"><f:translate key="workos_auth.messages:module.mcp.schema.ready" /></span></f:then>
-                            <f:else><span class="badge bg-warning text-dark"><f:translate key="workos_auth.messages:module.mcp.schema.pending" /></span></f:else>
-                        </f:if>
-                    </div>
-                    <div class="mb-3">
-                        <div class="text-muted mb-1"><f:translate key="workos_auth.messages:module.mcp.schema.tables" /></div>
-                        <f:for each="{databaseSchema.managedTables}" as="tableName">
-                            <code class="me-1">{tableName}</code>
+                    <p>
+                        <f:translate key="workos_auth.messages:module.mcp.schema.tables" />
+                        <f:for each="{databaseSchema.managedTables}" as="tableName" iteration="iterator">
+                            <code>{tableName}</code>{f:if(condition: iterator.isLast, else: ', ')}
                         </f:for>
-                    </div>
+                    </p>
                     <f:if condition="{databaseSchema.error}">
                         <f:then>
-                            <div class="alert alert-danger mb-0">{databaseSchema.error}</div>
+                            <f:be.infobox state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::ERROR')}">{databaseSchema.error}</f:be.infobox>
                         </f:then>
+                        <f:else if="{databaseSchema.ready}">
+                            <p class="mb-0"><f:translate key="workos_auth.messages:module.mcp.schema.ready.description" /></p>
+                        </f:else>
                         <f:else>
-                            <f:if condition="{databaseSchema.ready}">
-                                <f:then>
-                                    <p class="text-muted mb-0">
-                                        <f:translate key="workos_auth.messages:module.mcp.schema.ready.description" />
-                                    </p>
-                                </f:then>
-                                <f:else>
-                                    <p class="text-muted">
-                                        <f:translate key="workos_auth.messages:module.mcp.schema.pending.description" />
-                                    </p>
-                                    <form method="post" action="{schemaUri}">
-                                        <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}">
-                                        <button class="btn btn-default" type="submit">
-                                            <f:translate key="workos_auth.messages:module.mcp.schema.apply" />
-                                        </button>
-                                    </form>
-                                </f:else>
-                            </f:if>
+                            <p><f:translate key="workos_auth.messages:module.mcp.schema.pending.description" /></p>
+                            <form method="post" action="{schemaUri}">
+                                <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
+                                <button class="btn btn-default" type="submit">
+                                    <core:icon identifier="actions-database-import" size="small" />
+                                    <f:translate key="workos_auth.messages:module.mcp.schema.apply" />
+                                </button>
+                            </form>
                         </f:else>
                     </f:if>
                 </div>
             </div>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h2 class="card-title"><f:translate key="workos_auth.messages:module.mcp.endpoints.title" /></h2>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th><f:translate key="workos_auth.messages:module.mcp.endpoints.label" /></th>
-                                    <th><f:translate key="workos_auth.messages:module.mcp.endpoints.url" /></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <f:for each="{endpointUrls}" as="endpointSet">
-                                    <tr>
-                                        <td><strong>{endpointSet.label}</strong></td>
-                                        <td><code>{endpointSet.endpoint}</code></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-muted"><f:translate key="workos_auth.messages:module.mcp.endpoints.protectedResource" /></td>
-                                        <td><code>{endpointSet.protectedResource}</code></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-muted"><f:translate key="workos_auth.messages:module.mcp.endpoints.authorizationServer" /></td>
-                                        <td><code>{endpointSet.authorizationServer}</code></td>
-                                    </tr>
-                                </f:for>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title"><f:translate key="workos_auth.messages:module.mcp.checklist.title" /></h2>
-                </div>
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item d-flex align-items-start gap-2">
-                        <span class="badge bg-success mt-1">1</span>
-                        <div><f:translate key="workos_auth.messages:module.mcp.checklist.endpoint" /></div>
-                    </div>
-                    <div class="list-group-item d-flex align-items-start gap-2">
-                        <span class="badge bg-success mt-1">2</span>
-                        <div><f:translate key="workos_auth.messages:module.mcp.checklist.authkit" /></div>
-                    </div>
-                    <div class="list-group-item d-flex align-items-start gap-2">
-                        <span class="badge bg-success mt-1">3</span>
-                        <div><f:translate key="workos_auth.messages:module.mcp.checklist.mapping" /></div>
-                    </div>
-                    <div class="list-group-item d-flex align-items-start gap-2">
-                        <span class="badge bg-success mt-1">4</span>
-                        <div><f:translate key="workos_auth.messages:module.mcp.checklist.client" /></div>
-                    </div>
-                </div>
-            </div>
+            <h2><f:translate key="workos_auth.messages:module.mcp.checklist.title" /></h2>
+            <ol>
+                <li><f:translate key="workos_auth.messages:module.mcp.checklist.endpoint" /></li>
+                <li><f:translate key="workos_auth.messages:module.mcp.checklist.authkit" /></li>
+                <li><f:translate key="workos_auth.messages:module.mcp.checklist.mapping" /></li>
+                <li><f:translate key="workos_auth.messages:module.mcp.checklist.client" /></li>
+            </ol>
         </div>
     </div>
-</div>
+
+    <h2><f:translate key="workos_auth.messages:module.mcp.endpoints.title" /></h2>
+    <div class="table-fit">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th scope="col"><f:translate key="workos_auth.messages:module.mcp.endpoints.label" /></th>
+                    <th scope="col"><f:translate key="workos_auth.messages:module.mcp.endpoints.url" /></th>
+                    <th scope="col" class="col-control"><span class="visually-hidden"><f:translate key="workos_auth.messages:setup.redirectUrls.copy" /></span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <f:for each="{endpointUrls}" as="endpointSet">
+                    <f:render section="EndpointRow" arguments="{label: endpointSet.label, url: endpointSet.endpoint, strong: 1}" />
+                    <f:render section="EndpointRow" arguments="{label: '{f:translate(key: \'workos_auth.messages:module.mcp.endpoints.protectedResource\')}', url: endpointSet.protectedResource}" />
+                    <f:render section="EndpointRow" arguments="{label: '{f:translate(key: \'workos_auth.messages:module.mcp.endpoints.authorizationServer\')}', url: endpointSet.authorizationServer}" />
+                </f:for>
+            </tbody>
+        </table>
+    </div>
+</f:section>
+
+<f:section name="EndpointRow">
+    <tr>
+        <td><f:if condition="{strong}"><f:then><strong>{label}</strong></f:then><f:else>{label}</f:else></f:if></td>
+        <td><code>{url}</code></td>
+        <td class="col-control">
+            <typo3-copy-to-clipboard
+                text="{url}"
+                class="btn btn-default btn-sm"
+                title="{f:translate(key: 'workos_auth.messages:setup.redirectUrls.copyOne', arguments: {where: label})}"
+            >
+                <core:icon identifier="actions-clipboard" size="small" />
+            </typo3-copy-to-clipboard>
+        </td>
+    </tr>
+</f:section>
+
 </html>

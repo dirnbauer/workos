@@ -416,12 +416,6 @@
         <target>Bitten Sie eine Administratorin oder einen Administrator, diese E-Mail-Adresse an Ihrem Backend-Benutzer einzutragen, oder öffnen Sie den WorkOS-Einrichtungsassistenten und aktivieren Sie das automatische Anlegen für vertrauenswürdige Domains.</target>
       </segment>
     </unit>
-    <unit id="backend.login.error.notLinked.action">
-      <segment>
-        <source>Open WorkOS setup assistant</source>
-        <target>WorkOS-Einrichtungsassistent öffnen</target>
-      </segment>
-    </unit>
     <unit id="backend.login.verifyEmail.subtitle">
       <segment>
         <source>We sent a verification code to {email}. Enter it below to finish signing in.</source>
@@ -682,40 +676,16 @@
         <target>Alle Callback-URLs kopieren</target>
       </segment>
     </unit>
-    <unit id="setup.redirectUrls.showUrls">
-      <segment>
-        <source>Show callback URLs</source>
-        <target>Callback-URLs anzeigen</target>
-      </segment>
-    </unit>
     <unit id="setup.redirectUrls.backend">
       <segment>
         <source>Backend</source>
         <target>Backend</target>
       </segment>
     </unit>
-    <unit id="setup.redirectUrls.frontend">
-      <segment>
-        <source>Frontend</source>
-        <target>Frontend</target>
-      </segment>
-    </unit>
-    <unit id="setup.redirectUrls.noSites">
-      <segment>
-        <source>No frontend sites configured yet.</source>
-        <target>Noch keine Frontend-Sites konfiguriert.</target>
-      </segment>
-    </unit>
     <unit id="setup.redirectUrls.whereToAdd">
       <segment>
         <source>Where to add them in WorkOS</source>
         <target>Wo sie in WorkOS hinzugefügt werden</target>
-      </segment>
-    </unit>
-    <unit id="setup.redirectUrls.instruction">
-      <segment>
-        <source>Open your WorkOS Dashboard, go to Redirects, and add each callback URL listed above. Use the + Add button to add one URL at a time, then click Save changes.</source>
-        <target>Öffnen Sie Ihr WorkOS-Dashboard, gehen Sie zu Redirects und fügen Sie jede oben aufgeführte Callback-URL hinzu. Verwenden Sie die Schaltfläche + Add, um jeweils eine URL hinzuzufügen, und klicken Sie dann auf Save changes.</target>
       </segment>
     </unit>
     <unit id="setup.redirectUrls.instruction.openDashboard">
@@ -1018,12 +988,6 @@
         <target>Domain-Hinweis</target>
       </segment>
     </unit>
-    <unit id="setup.mcp.title">
-      <segment>
-        <source>TYPO3 MCP server</source>
-        <target>TYPO3-MCP-Server</target>
-      </segment>
-    </unit>
     <unit id="setup.mcp.enable">
       <segment>
         <source>Enable TYPO3 MCP server</source>
@@ -1072,12 +1036,6 @@
         <target>Anonymen Zugriff erlauben</target>
       </segment>
     </unit>
-    <unit id="setup.mcp.authenticationMode.description">
-      <segment>
-        <source>Use anonymous only for trusted development or deliberately public MCP endpoints.</source>
-        <target>Anonym nur für vertrauenswürdige Entwicklung oder bewusst öffentliche MCP-Endpunkte verwenden.</target>
-      </segment>
-    </unit>
     <unit id="setup.mcp.authkitDomain">
       <segment>
         <source>AuthKit domain</source>
@@ -1124,12 +1082,6 @@
       <segment>
         <source>Maximum number of authorized WorkOS Connect applications to expose through TYPO3. Capped at 10.</source>
         <target>Maximale Anzahl autorisierter WorkOS-Connect-Anwendungen, die TYPO3 bereitstellt. Auf 10 begrenzt.</target>
-      </segment>
-    </unit>
-    <unit id="setup.save">
-      <segment>
-        <source>Save configuration</source>
-        <target>Konfiguration speichern</target>
       </segment>
     </unit>
     <!--Backend MCP module-->
@@ -1227,12 +1179,6 @@
       <segment>
         <source>WorkOS discovery</source>
         <target>WorkOS-Discovery</target>
-      </segment>
-    </unit>
-    <unit id="module.mcp.save">
-      <segment>
-        <source>Save MCP configuration</source>
-        <target>MCP-Konfiguration speichern</target>
       </segment>
     </unit>
     <unit id="module.mcp.endpoints.title">
@@ -1341,12 +1287,6 @@
       <segment>
         <source>Database schema</source>
         <target>Datenbankschema</target>
-      </segment>
-    </unit>
-    <unit id="module.mcp.schema.status">
-      <segment>
-        <source>Status</source>
-        <target>Status</target>
       </segment>
     </unit>
     <unit id="module.mcp.schema.ready">
@@ -1614,12 +1554,6 @@
       <segment>
         <source>Production MCP authentication requires an AuthKit domain.</source>
         <target>MCP-Authentifizierung in Production benötigt eine AuthKit-Domain.</target>
-      </segment>
-    </unit>
-    <unit id="setup.backend.cookieSameSiteCompatible">
-      <segment>
-        <source>TYPO3 core backend cookies are configured with SameSite "{sameSite}", which is compatible with the WorkOS login flow.</source>
-        <target>Die TYPO3-Core-Backend-Cookies sind mit SameSite „{sameSite}“ konfiguriert und damit mit der WorkOS-Anmeldung kompatibel.</target>
       </segment>
     </unit>
     <unit id="setup.backend.cookieSameSiteUnsupported">
@@ -2349,6 +2283,109 @@
       <segment>
         <source>Several TYPO3 accounts use this email address. An administrator has to link one of them to the WorkOS account.</source>
         <target>Mehrere TYPO3-Konten verwenden diese E-Mail-Adresse. Ein Administrator muss eines davon mit dem WorkOS-Konto verknüpfen.</target>
+      </segment>
+    </unit>
+    <!--Setup and MCP modules-->
+    <unit id="setup.intro">
+      <segment>
+        <source>Connect TYPO3 to your WorkOS environment and decide who may sign in to the frontend and the backend. The MCP server has a module of its own.</source>
+        <target>Verbinden Sie TYPO3 mit Ihrer WorkOS-Umgebung und legen Sie fest, wer sich im Frontend und im Backend anmelden darf. Der MCP-Server hat ein eigenes Modul.</target>
+      </segment>
+    </unit>
+    <unit id="setup.status.ready">
+      <segment>
+        <source>Sign-in is ready</source>
+        <target>Die Anmeldung ist bereit</target>
+      </segment>
+    </unit>
+    <unit id="setup.status.ready.description">
+      <segment>
+        <source>The credentials are complete and every enabled sign-in has what it needs.</source>
+        <target>Die Zugangsdaten sind vollständig, und jede aktivierte Anmeldung hat alles, was sie braucht.</target>
+      </segment>
+    </unit>
+    <unit id="setup.status.notReady">
+      <segment>
+        <source>Sign-in is not ready yet</source>
+        <target>Die Anmeldung ist noch nicht bereit</target>
+      </segment>
+    </unit>
+    <unit id="setup.redirectUrls.where">
+      <segment>
+        <source>Where</source>
+        <target>Wo</target>
+      </segment>
+    </unit>
+    <unit id="setup.redirectUrls.uri">
+      <segment>
+        <source>Redirect URI</source>
+        <target>Weiterleitungs-URI</target>
+      </segment>
+    </unit>
+    <unit id="setup.redirectUrls.copy">
+      <segment>
+        <source>Copy</source>
+        <target>Kopieren</target>
+      </segment>
+    </unit>
+    <unit id="setup.redirectUrls.copyOne">
+      <segment>
+        <source>Copy the URI for {where}</source>
+        <target>URI für {where} kopieren</target>
+      </segment>
+    </unit>
+    <unit id="setup.credentials.apiKey.stored">
+      <segment>
+        <source>A key is stored. Leave the field empty to keep it, or enter a new one to replace it.</source>
+        <target>Ein Schlüssel ist gespeichert. Lassen Sie das Feld leer, um ihn zu behalten, oder geben Sie einen neuen ein, um ihn zu ersetzen.</target>
+      </segment>
+    </unit>
+    <unit id="setup.credentials.apiKey.missing">
+      <segment>
+        <source>The secret key from the WorkOS dashboard (API Keys). It starts with "sk_" and is never shown again after saving.</source>
+        <target>Der geheime Schlüssel aus dem WorkOS-Dashboard (API Keys). Er beginnt mit „sk_“ und wird nach dem Speichern nicht mehr angezeigt.</target>
+      </segment>
+    </unit>
+    <unit id="setup.credentials.clientId.description">
+      <segment>
+        <source>The client ID from the same page of the WorkOS dashboard. It starts with "client_".</source>
+        <target>Die Client-ID von derselben Seite im WorkOS-Dashboard. Sie beginnt mit „client_“.</target>
+      </segment>
+    </unit>
+    <unit id="setup.authkit.description">
+      <segment>
+        <source>Optional. Without them, the hosted login offers every sign-in method enabled in WorkOS.</source>
+        <target>Optional. Ohne diese Angaben bietet die gehostete Anmeldung jede in WorkOS aktivierte Anmeldemethode an.</target>
+      </segment>
+    </unit>
+    <unit id="setup.authkit.organizationId.description">
+      <segment>
+        <source>Limits the hosted login to one organization.</source>
+        <target>Beschränkt die gehostete Anmeldung auf eine Organisation.</target>
+      </segment>
+    </unit>
+    <unit id="setup.authkit.connectionId.description">
+      <segment>
+        <source>Sends every hosted login straight to this SSO connection.</source>
+        <target>Leitet jede gehostete Anmeldung direkt zu dieser SSO-Verbindung.</target>
+      </segment>
+    </unit>
+    <unit id="setup.authkit.domainHint.description">
+      <segment>
+        <source>Suggests the SSO connection of this email domain.</source>
+        <target>Schlägt die SSO-Verbindung dieser E-Mail-Domain vor.</target>
+      </segment>
+    </unit>
+    <unit id="setup.mcpHint">
+      <segment>
+        <source>The MCP server is configured in its own module:</source>
+        <target>Der MCP-Server wird in einem eigenen Modul konfiguriert:</target>
+      </segment>
+    </unit>
+    <unit id="module.mcp.status.caption">
+      <segment>
+        <source>MCP server status</source>
+        <target>Status des MCP-Servers</target>
       </segment>
     </unit>
   </file>

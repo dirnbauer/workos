@@ -1,0 +1,62 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+
+<f:comment>
+    One setting of the configuration form, in Core form markup.
+    Arguments: name (setting key), label and description (label keys in
+    workos_auth.messages), value / checked, error (message or empty) and,
+    for text fields, type, placeholder, inputmode, autocomplete, min, max.
+</f:comment>
+
+<f:section name="Text">
+    <div class="form-group{f:if(condition: error, then: ' has-error')}">
+        <label class="form-label" for="{name}"><f:translate key="workos_auth.messages:{label}" /></label>
+        <input
+            id="{name}"
+            class="form-control"
+            type="{f:if(condition: type, then: type, else: 'text')}"
+            name="configuration[{name}]"
+            value="{value}"
+            {f:if(condition: placeholder, then: 'placeholder="{placeholder}"') -> f:format.raw()}
+            {f:if(condition: inputmode, then: 'inputmode="{inputmode}"') -> f:format.raw()}
+            {f:if(condition: min, then: 'min="{min}"') -> f:format.raw()}
+            {f:if(condition: max, then: 'max="{max}"') -> f:format.raw()}
+            autocomplete="{f:if(condition: autocomplete, then: autocomplete, else: 'off')}"
+            spellcheck="false"
+            aria-invalid="{f:if(condition: error, then: 'true', else: 'false')}"
+            aria-describedby="{name}-description{f:if(condition: error, then: ' {name}-error')}"
+        />
+        <f:if condition="{error}">
+            <div class="form-text" id="{name}-error"><strong>{error}</strong></div>
+        </f:if>
+        <div class="form-text" id="{name}-description">
+            <f:if condition="{description}"><f:translate key="workos_auth.messages:{description}" /></f:if>
+        </div>
+    </div>
+</f:section>
+
+<f:section name="Switch">
+    <div class="form-group">
+        <input type="hidden" name="configuration[{name}]" value="0" />
+        <div class="form-check form-switch">
+            <input
+                id="{name}"
+                class="form-check-input"
+                type="checkbox"
+                role="switch"
+                name="configuration[{name}]"
+                value="1"
+                {f:if(condition: checked, then: 'checked') -> f:format.raw()}
+                aria-describedby="{name}-description"
+            />
+            <label class="form-check-label" for="{name}"><f:translate key="workos_auth.messages:{label}" /></label>
+        </div>
+        <div class="form-text" id="{name}-description">
+            <f:if condition="{description}"><f:translate key="workos_auth.messages:{description}" /></f:if>
+        </div>
+    </div>
+</f:section>
+
+</html>

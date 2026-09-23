@@ -1,129 +1,127 @@
-<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<html
+    xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
 
-<div class="module-body">
-    <f:flashMessages queueIdentifier="workos-auth-users" />
+<f:layout name="Module" />
 
-    <h1 class="mb-3"><f:translate key="workos_auth.messages:module.users.title" /></h1>
-    <p class="text-muted">
-        <f:translate key="workos_auth.messages:module.users.description" />
-    </p>
+<f:section name="Content">
+    <h1><f:translate key="workos_auth.messages:module.users.title" /></h1>
+    <p><f:translate key="workos_auth.messages:module.users.description" /></p>
 
     <f:if condition="{status.canLoadWidget}">
         <f:then>
-            <div class="card">
-                <div class="card-body p-0">
-                    <div data-workos-user-management-mount
-                         data-token-uri="{tokenUri}"
-                         data-request-token="{tokenRequestTokenValue}"
-                         style="min-height:600px;">
-                        <div class="p-4 text-muted">
-                            <f:translate key="workos_auth.messages:module.users.loading" />
+            <div
+                class="workos-user-management"
+                data-workos-user-management-mount
+                data-token-uri="{tokenUri}"
+                data-request-token="{tokenRequestTokenValue}"
+                aria-live="polite"
+            >
+                <p class="workos-user-management-loading">
+                    <core:icon identifier="spinner-circle" size="small" />
+                    <f:translate key="workos_auth.messages:module.users.loading" />
+                </p>
+            </div>
+            <p class="text-variant"><small><f:translate key="workos_auth.messages:module.users.footerNote" /></small></p>
+        </f:then>
+        <f:else if="{status.workosUserId}">
+            <f:be.infobox
+                title="{f:translate(key: 'workos_auth.messages:module.users.join.title')}"
+                state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO')}"
+            >
+                <f:translate key="workos_auth.messages:module.users.join.intro" />
+            </f:be.infobox>
+
+            <div class="card-container">
+                <f:if condition="{availableOrganizations -> f:count()}">
+                    <div class="card card-size-medium">
+                        <div class="card-header">
+                            <div class="card-icon"><core:icon identifier="actions-users" size="medium" /></div>
+                            <div class="card-header-body">
+                                <h2 class="card-title"><f:translate key="workos_auth.messages:module.users.join.existing.title" /></h2>
+                            </div>
+                        </div>
+                        <form method="post" action="{joinUri}">
+                            <input type="hidden" name="{requestTokenName}" value="{joinRequestTokenValue}" />
+                            <div class="card-body">
+                                <f:if condition="{availableOrganizations -> f:count()} > 1">
+                                    <f:then>
+                                        <div class="form-group">
+                                            <label class="form-label" for="workos-org-select"><f:translate key="workos_auth.messages:module.users.join.existing.label" /></label>
+                                            <select id="workos-org-select" name="organizationId" class="form-select" required>
+                                                <f:for each="{availableOrganizations}" as="organization">
+                                                    <option value="{organization.id}">{organization.name}</option>
+                                                </f:for>
+                                            </select>
+                                        </div>
+                                    </f:then>
+                                    <f:else>
+                                        <f:for each="{availableOrganizations}" as="organization">
+                                            <p><f:translate key="workos_auth.messages:module.users.join.existing.single" arguments="{organization: organization.name}" /></p>
+                                            <input type="hidden" name="organizationId" value="{organization.id}" />
+                                        </f:for>
+                                    </f:else>
+                                </f:if>
+                            </div>
+                            <div class="card-footer">
+                                <f:if condition="{availableOrganizations -> f:count()} > 1">
+                                    <f:then>
+                                        <button type="submit" class="btn btn-primary"><f:translate key="workos_auth.messages:module.users.join.existing.submit" /></button>
+                                    </f:then>
+                                    <f:else>
+                                        <f:for each="{availableOrganizations}" as="organization">
+                                            <button type="submit" class="btn btn-primary"><f:translate key="workos_auth.messages:module.users.join.existing.singleSubmit" arguments="{organization: organization.name}" /></button>
+                                        </f:for>
+                                    </f:else>
+                                </f:if>
+                            </div>
+                        </form>
+                    </div>
+                </f:if>
+
+                <div class="card card-size-medium">
+                    <div class="card-header">
+                        <div class="card-icon"><core:icon identifier="actions-plus" size="medium" /></div>
+                        <div class="card-header-body">
+                            <h2 class="card-title"><f:translate key="workos_auth.messages:module.users.create.title" /></h2>
                         </div>
                     </div>
+                    <form method="post" action="{createOrgUri}">
+                        <input type="hidden" name="{requestTokenName}" value="{createOrganizationRequestTokenValue}" />
+                        <div class="card-body">
+                            <p><f:translate key="workos_auth.messages:module.users.create.intro" /></p>
+                            <div class="form-group">
+                                <label class="form-label" for="workos-org-name"><f:translate key="workos_auth.messages:module.users.create.label" /></label>
+                                <input id="workos-org-name" name="name" type="text" class="form-control" value="{suggestedOrganizationName}" required />
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-default"><f:translate key="workos_auth.messages:module.users.create.submit" /></button>
+                        </div>
+                    </form>
                 </div>
             </div>
-            <p class="text-muted mt-3 small">
-                <f:translate key="workos_auth.messages:module.users.footerNote" />
+
+            <p>
+                <f:translate key="workos_auth.messages:module.users.join.advancedHint" />
+                <a href="{setupUri}"><f:translate key="workos_auth.messages:module.users.cta.openSetup" /></a>
             </p>
-        </f:then>
+        </f:else>
         <f:else>
-            <f:if condition="{status.workosUserId}">
-                <f:then>
-                    <div class="callout callout-warning mb-3">
-                        <div class="callout-body">
-                            <p class="mb-1"><strong><f:translate key="workos_auth.messages:module.users.join.title" /></strong></p>
-                            <p class="mb-0 text-muted">
-                                <f:translate key="workos_auth.messages:module.users.join.intro" />
-                            </p>
-                        </div>
-                    </div>
-
-                    <f:if condition="{availableOrganizations -> f:count()}">
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h2 class="h5 mb-0"><f:translate key="workos_auth.messages:module.users.join.existing.title" /></h2>
-                            </div>
-                            <div class="card-body">
-                                <form method="post" action="{joinUri}">
-                                    <input type="hidden" name="{requestTokenName}" value="{joinRequestTokenValue}" />
-                                    <f:if condition="{availableOrganizations -> f:count()} > 1">
-                                        <f:then>
-                                            <div class="mb-3">
-                                                <label for="workos-org-select" class="form-label">
-                                                    <f:translate key="workos_auth.messages:module.users.join.existing.label" />
-                                                </label>
-                                                <select id="workos-org-select" name="organizationId" class="form-select" required="required">
-                                                    <f:for each="{availableOrganizations}" as="organization">
-                                                        <option value="{organization.id}">{organization.name}</option>
-                                                    </f:for>
-                                                </select>
-                                            </div>
-                                            <button type="submit" class="btn btn-primary">
-                                                <f:translate key="workos_auth.messages:module.users.join.existing.submit" />
-                                            </button>
-                                        </f:then>
-                                        <f:else>
-                                            <f:for each="{availableOrganizations}" as="organization">
-                                                <p class="mb-3 text-muted">
-                                                    <f:translate key="workos_auth.messages:module.users.join.existing.single" arguments="{organization: organization.name}" />
-                                                </p>
-                                                <input type="hidden" name="organizationId" value="{organization.id}" />
-                                                <button type="submit" class="btn btn-primary">
-                                                    <f:translate key="workos_auth.messages:module.users.join.existing.singleSubmit" arguments="{organization: organization.name}" />
-                                                </button>
-                                            </f:for>
-                                        </f:else>
-                                    </f:if>
-                                </form>
-                            </div>
-                        </div>
-                    </f:if>
-
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h2 class="h5 mb-0"><f:translate key="workos_auth.messages:module.users.create.title" /></h2>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted">
-                                <f:translate key="workos_auth.messages:module.users.create.intro" />
-                            </p>
-                            <form method="post" action="{createOrgUri}">
-                                <input type="hidden" name="{requestTokenName}" value="{createOrganizationRequestTokenValue}" />
-                                <div class="mb-3">
-                                    <label for="workos-org-name" class="form-label">
-                                        <f:translate key="workos_auth.messages:module.users.create.label" />
-                                    </label>
-                                    <input id="workos-org-name" name="name" type="text" class="form-control"
-                                           value="{suggestedOrganizationName}" required="required" />
-                                </div>
-                                <button type="submit" class="btn btn-default">
-                                    <f:translate key="workos_auth.messages:module.users.create.submit" />
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <p class="text-muted small">
-                        <f:translate key="workos_auth.messages:module.users.join.advancedHint" />
-                        <a href="{setupUri}"><f:translate key="workos_auth.messages:module.users.cta.openSetup" /></a>
-                    </p>
-                </f:then>
-                <f:else>
-                    <div class="callout callout-warning">
-                        <div class="callout-body">
-                            <p class="mb-2"><strong>{status.message}</strong></p>
-                            <f:if condition="{configured}">
-                                <f:else>
-                                    <a href="{setupUri}" class="btn btn-primary btn-sm">
-                                        <f:translate key="workos_auth.messages:module.users.cta.openSetup" />
-                                    </a>
-                                </f:else>
-                            </f:if>
-                        </div>
-                    </div>
-                </f:else>
-            </f:if>
+            <f:be.infobox
+                title="{status.message}"
+                state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}"
+            >
+                <f:if condition="{configured}">
+                    <f:else>
+                        <a href="{setupUri}" class="btn btn-default"><f:translate key="workos_auth.messages:module.users.cta.openSetup" /></a>
+                    </f:else>
+                </f:if>
+            </f:be.infobox>
         </f:else>
     </f:if>
-</div>
+</f:section>
+
 </html>

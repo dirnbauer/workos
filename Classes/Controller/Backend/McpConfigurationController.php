@@ -8,11 +8,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
-use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Messaging\FlashMessage;
-use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
@@ -33,12 +31,14 @@ use Webconsulting\WorkosAuth\Service\RequestBody;
 #[Autoconfigure(public: true)]
 final readonly class McpConfigurationController
 {
+    public const string FORM_ID = 'workos-mcp';
+
     private const string REQUEST_TOKEN_SCOPE = 'workos/backend/mcp';
 
     /**
      * @var list<string>
      */
-    private const MCP_SETTINGS = [
+    private const array MCP_SETTINGS = [
         'mcpEnabled',
         'mcpServerPath',
         'mcpAuthenticationMode',
@@ -49,11 +49,11 @@ final readonly class McpConfigurationController
     ];
 
     public function __construct(
-        private ModuleTemplateFactory $moduleTemplateFactory,
+        private ModulePageFactory $modulePageFactory,
         private WorkosConfiguration $configuration,
         private RequestTokenService $requestTokenService,
         private UriBuilder $uriBuilder,
-        private FlashMessageService $flashMessageService,
+        private PageRenderer $pageRenderer,
         private SiteFinder $siteFinder,
         private LabelTranslator $translator,
         private ExtensionSchemaService $extensionSchemaService,
@@ -65,8 +65,9 @@ final readonly class McpConfigurationController
         $mode = $this->configuration->getMcpAuthenticationMode();
         $workosRequired = $this->configuration->mcpRequiresWorkos();
 
-        $moduleTemplate = $this->moduleTemplateFactory->create($request);
+        $moduleTemplate = $this->modulePageFactory->create($request, 'workos_mcp', 'module.mcp.title', self::FORM_ID);
         $moduleTemplate->assignMultiple([
+            'formId' => self::FORM_ID,
             'formValues' => $settings,
             'errors' => $this->mcpErrors($settings),
             'saveUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_mcp.save'),
@@ -88,7 +89,7 @@ final readonly class McpConfigurationController
                 'selected' => $option === $mode,
             ], McpAuthenticationMode::cases()),
         ]);
-        $moduleTemplate->setTitle($this->translator->translate('module.mcp.title'));
+        $this->pageRenderer->loadJavaScriptModule('@typo3/backend/copy-to-clipboard.js');
 
         return $moduleTemplate->renderResponse('Backend/McpConfiguration/Index');
     }
@@ -196,9 +197,7 @@ final readonly class McpConfigurationController
 
     private function flash(string $message, ContextualFeedbackSeverity $severity): void
     {
-        $this->flashMessageService
-            ->getMessageQueueByIdentifier('workos-auth-mcp')
-            ->addMessage(new FlashMessage($message, $this->translator->translate('module.mcp.flashTitle'), $severity, true));
+        $this->modulePageFactory->flash($message, $severity, $this->translator->translate('module.mcp.flashTitle'));
     }
 
     private function redirectToIndex(): ResponseInterface

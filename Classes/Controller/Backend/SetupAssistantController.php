@@ -8,10 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
-use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Messaging\FlashMessage;
-use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Site\SiteFinder;
@@ -23,21 +20,23 @@ use Webconsulting\WorkosAuth\Service\PathUtility;
 use Webconsulting\WorkosAuth\Service\RequestBody;
 
 /**
- * Backend module "WorkOS > Setup Assistant": edits the whole extension
- * configuration and lists the redirect URIs to register in WorkOS.
+ * Backend module "WorkOS > Setup": credentials, frontend and backend sign-in
+ * and the hosted-login options, plus the redirect URIs to register in
+ * WorkOS. The MCP server has a module of its own.
  */
 #[Autoconfigure(public: true)]
 final readonly class SetupAssistantController
 {
+    public const string FORM_ID = 'workos-setup';
+
     private const string REQUEST_TOKEN_SCOPE = 'workos/backend/setup';
 
     public function __construct(
-        private ModuleTemplateFactory $moduleTemplateFactory,
+        private ModulePageFactory $modulePageFactory,
         private WorkosConfiguration $configuration,
         private SiteFinder $siteFinder,
         private RequestTokenService $requestTokenService,
         private UriBuilder $uriBuilder,
-        private FlashMessageService $flashMessageService,
         private PageRenderer $pageRenderer,
         private LabelTranslator $translator,
     ) {}
@@ -48,34 +47,47 @@ final readonly class SetupAssistantController
 
         // Redirect URIs WorkOS must know: one for the backend, one per site.
         $backendBasePath = PathUtility::guessBackendBasePath($request->getUri()->getPath());
-        $backendCallbackUrl = PathUtility::buildAbsoluteUrlFromRequest(
-            $request,
-            PathUtility::joinBaseAndPath($backendBasePath, $settings['backendCallbackPath'])
-        );
-        $frontendSites = [];
+        $redirectUris = [[
+            'label' => $this->translator->translate('setup.redirectUrls.backend'),
+            'url' => PathUtility::buildAbsoluteUrlFromRequest(
+                $request,
+                PathUtility::joinBaseAndPath($backendBasePath, $settings['backendCallbackPath'])
+            ),
+        ]];
         foreach ($this->siteFinder->getAllSites() as $site) {
-            $frontendSites[] = [
-                'identifier' => $site->getIdentifier(),
-                'callbackUrl' => PathUtility::joinBaseUrlAndPath(PathUtility::siteBaseUrl($site, $request), $settings['frontendCallbackPath']),
+            $redirectUris[] = [
+                'label' => $site->getIdentifier(),
+                'url' => PathUtility::joinBaseUrlAndPath(PathUtility::siteBaseUrl($site, $request), $settings['frontendCallbackPath']),
             ];
         }
 
-        $moduleTemplate = $this->moduleTemplateFactory->create($request);
-        $moduleTemplate->assignMultiple([
-            'formValues' => $settings,
-            'errors' => $this->configuration->validate($settings),
+        $errors = array_filter(
+            $this->configuration->validate($settings),
+            static fn(string $key): bool => !str_starts_with($key, 'mcp'),
+            ARRAY_FILTER_USE_KEY
+        );
+
+        $view = $this->modulePageFactory->create($request, 'workos_setup', 'setup.title', self::FORM_ID);
+        $view->assignMultiple([
+            'formId' => self::FORM_ID,
+            // The API key is write-only: the page shows whether one is
+            // stored, never the key itself.
+            'formValues' => ['apiKey' => ''] + $settings,
+            'apiKeyStored' => $settings['apiKey'] !== '',
+            'apiKeyHint' => self::maskSecret($settings['apiKey']),
+            'errors' => $errors,
             'requestTokenName' => RequestToken::PARAM_NAME,
             'requestTokenValue' => $this->requestTokenService->createHashed(self::REQUEST_TOKEN_SCOPE),
             'saveUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_setup.save'),
-            'backendCallbackUrl' => $backendCallbackUrl,
-            'frontendSites' => $frontendSites,
+            'mcpUri' => (string)$this->uriBuilder->buildUriFromRoute('workos_mcp'),
+            'redirectUris' => $redirectUris,
+            'allRedirectUris' => implode("\n", array_column($redirectUris, 'url')),
             'backendCookieSameSite' => $this->configuration->getBackendCookieSameSite(),
             'backendCookieSameSiteCompatible' => $this->configuration->isBackendCookieSameSiteCompatible(),
         ]);
-        $moduleTemplate->setTitle($this->translator->translate('setup.title'));
-        $this->pageRenderer->loadJavaScriptModule('@webconsulting/workos-auth/copy-urls.js');
+        $this->pageRenderer->loadJavaScriptModule('@typo3/backend/copy-to-clipboard.js');
 
-        return $moduleTemplate->renderResponse('Backend/SetupAssistant/Index');
+        return $view->renderResponse('Backend/SetupAssistant/Index');
     }
 
     public function saveAction(ServerRequestInterface $request): ResponseInterface
@@ -85,7 +97,14 @@ final readonly class SetupAssistantController
             return $this->redirectToIndex();
         }
 
-        $settings = $this->configuration->normalizeInput(RequestBody::fromRequest($request)->group('configuration'));
+        $current = $this->configuration->all();
+        $submitted = RequestBody::fromRequest($request)->group('configuration');
+        // Settings this form does not show (the MCP server's) keep their values.
+        $submitted = array_intersect_key($submitted, $current);
+        if (trim(is_string($submitted['apiKey'] ?? null) ? $submitted['apiKey'] : '') === '') {
+            unset($submitted['apiKey']);
+        }
+        $settings = $this->configuration->normalizeInput(array_replace($current, $submitted));
         $errors = $this->configuration->validate($settings);
 
         try {
@@ -104,11 +123,22 @@ final readonly class SetupAssistantController
         return $this->redirectToIndex();
     }
 
+    /**
+     * "sk_…a1b2" for a stored key, '' when there is none.
+     */
+    private static function maskSecret(string $secret): string
+    {
+        if ($secret === '') {
+            return '';
+        }
+        $prefix = str_contains($secret, '_') ? strstr($secret, '_', true) . '_' : '';
+
+        return $prefix . '…' . substr($secret, -4);
+    }
+
     private function flash(string $body, ContextualFeedbackSeverity $severity): void
     {
-        $this->flashMessageService
-            ->getMessageQueueByIdentifier('workos-auth-setup')
-            ->addMessage(new FlashMessage($body, $this->translator->translate('setup.flashTitle'), $severity, true));
+        $this->modulePageFactory->flash($body, $severity, $this->translator->translate('setup.flashTitle'));
     }
 
     private function redirectToIndex(): ResponseInterface
