@@ -13,7 +13,7 @@ namespace Webconsulting\WorkosAuth\Security;
  */
 final class SecretRedactor
 {
-    private const PATTERNS = [
+    private const array PATTERNS = [
         // WorkOS API keys (live + test)
         '/sk_(live|test)_[A-Za-z0-9]{16,}/',
         // WorkOS client IDs (less sensitive but still internal)

@@ -168,7 +168,7 @@ final class McpServerMiddlewareTest extends TestCase
     private function passThroughHandler(): RequestHandlerInterface
     {
         $handler = self::createStub(RequestHandlerInterface::class);
-        $handler->method('handle')->willReturn((new JsonResponse(['passed']))->withBody(self::stream('passed')));
+        $handler->method('handle')->willReturn(new JsonResponse(['passed'])->withBody(self::stream('passed')));
 
         return $handler;
     }

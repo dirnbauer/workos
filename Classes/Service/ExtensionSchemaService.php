@@ -18,12 +18,12 @@ final readonly class ExtensionSchemaService
     /**
      * @var list<string>
      */
-    public const MANAGED_TABLES = ['tx_workosauth_identity'];
+    public const array MANAGED_TABLES = ['tx_workosauth_identity'];
 
     /**
      * Non-destructive update suggestion groups of SchemaMigrator::getUpdateSuggestions().
      */
-    private const APPLY_ACTIONS = ['add', 'change', 'create_table', 'change_table'];
+    private const array APPLY_ACTIONS = ['add', 'change', 'create_table', 'change_table'];
 
     public function __construct(
         private SqlReader $sqlReader,

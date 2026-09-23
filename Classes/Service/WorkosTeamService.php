@@ -24,14 +24,14 @@ final readonly class WorkosTeamService
      *
      * @var list<string>
      */
-    private const MANAGEMENT_ROLE_SLUGS = ['admin', 'owner'];
+    private const array MANAGEMENT_ROLE_SLUGS = ['admin', 'owner'];
 
     /**
      * Admin Portal intent => translation key, in dashboard order.
      *
      * @var array<string, string>
      */
-    public const PORTAL_INTENTS = [
+    public const array PORTAL_INTENTS = [
         'sso' => 'team.portal.intent.sso',
         'dsync' => 'team.portal.intent.dsync',
         'audit_logs' => 'team.portal.intent.auditLogs',

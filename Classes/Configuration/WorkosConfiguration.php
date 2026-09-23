@@ -59,7 +59,7 @@ final class WorkosConfiguration
     /**
      * @var WorkosSettings
      */
-    private const DEFAULTS = [
+    private const array DEFAULTS = [
         'apiKey' => '',
         'clientId' => '',
         'frontendEnabled' => true,
