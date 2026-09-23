@@ -1,5 +1,48 @@
 # Changelog
 
+## 2.3.0 - 2026-09-23
+
+A security review of the sign-in flows, and backend screens rebuilt from Core markup.
+
+### Security
+
+- **Account takeover through unverified email:** linking an existing TYPO3 account by email (on by default, backend administrators included) did not check that WorkOS had verified the address. Linking by email and creating backend users now require a verified email, and several accounts with one address are refused instead of letting the row order pick one.
+- **Open redirect:** `returnTo` values with a tab or line break between the slashes (`/<TAB>/evil.example`) passed the protocol-relative check; control characters and backslashes are now refused.
+- **Content injection on the login page:** the backend login printed any `workosAuthError` / `workosAuthNotice` text from its URL. Messages are now stored server-side, bound to the browser and shown once; the URL carries a token only.
+- **Logout left WorkOS signed in:** logging out of TYPO3 now revokes the WorkOS session the sign-in opened, so a shared computer does not sign the previous person in again.
+- **PKCE:** the hosted login sends a PKCE challenge on top of the client secret; the verifier stays in the server-side state of the login attempt.
+- **Impersonation:** sessions a WorkOS administrator started through impersonation are refused for the backend and logged for the frontend.
+- **Disabled accounts:** disabled accounts and accounts outside their start/end time no longer sign in through WorkOS or the MCP server, and a disabled linked account no longer falls through to another account.
+- **API key exposure:** the setup module no longer prints the stored API key into the page; the field is write-only with a masked hint.
+- **CSP:** the relaxation for the user management widget applied to the whole backend; it now applies to that module page only.
+- Malformed `state` tokens no longer crash the backend login page.
+
+### Changed
+
+- The WorkOS login provider uses Core login markup: Core inputs, the orange login button, default buttons for the sign-in code and "Continue with Google/Microsoft/GitHub/Apple", Core alerts and infoboxes. The heading box, the relocated provider switch and their script and stylesheet are gone.
+- Setup, MCP server and user management render inside the Core Module layout: document header with Save, reload and shortcut, h1, infoboxes, Core tables with copy-to-clipboard buttons, token-based badges, form labels and switches, Core flash messages. Shared field partials replace most of the hand-written form markup.
+- MCP settings are edited in the MCP module only; saving the setup form no longer resets them to their defaults.
+- Sign-in failures name the reason (not linked, email not verified, account disabled, ambiguous email, impersonation).
+- Exactly one connection selector is sent to WorkOS: a chosen social provider, else the configured connection, else AuthKit (optionally pinned to an organization).
+- Social buttons read "Continue with …"; the extension icon uses the v14 line-art colours.
+- Typed class constants throughout.
+
+### Removed
+
+- Infection (never wired into CI, and its configuration could not run), the custom copy-URLs script, the dashboard screenshot shown in the setup module, and eleven unused labels.
+
+### Dependencies
+
+- PHPUnit 12.5 → 13.3, typo3/coding-standards 0.8 → 0.9, phpat 0.11 → 0.12; `workos/workos-php` stays on 9.4.0, the newest release.
+- Widget build: React 19.3, TanStack Query 5.103.2, SWR 2.5.1, Radix Themes 3.3.0, `@workos-inc/widgets` 1.18.0 (newest); Playwright 1.63 for the E2E suite.
+- CI: PHP 8.5 is a required leg, MariaDB 11.4, Node 24, `actions/checkout` v7, `actions/cache` v6, `actions/setup-node` v7.
+
+### Upgrade notes
+
+- Backend users whose WorkOS account has **no verified email** can no longer be linked by email; verify the email in WorkOS or link the account explicitly.
+- If several `be_users` / `fe_users` share one email, link the right one to the WorkOS account (sign in once with linking disabled, or fix the duplicate emails).
+- Links that put `workosAuthError=<text>` on the backend login URL no longer show that text.
+
 ## 2.2.0 - 2026-09-18
 
 ### Changed

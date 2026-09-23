@@ -24,7 +24,7 @@ logging and backend MFA stay TYPO3 core behaviour.
             sessions, organizations), **Team** (invitations, one-time Admin
             Portal links)
     *   -   Backend
-        -   "Continue with WorkOS" login provider; **WorkOS** menu with
+        -   "Login with WorkOS" provider in Core login markup; **WorkOS** menu with
             *Setup Assistant*, *User Management* widget and *MCP Server*
             modules (admin only, LIVE workspace)
     *   -   Provisioning

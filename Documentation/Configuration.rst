@@ -7,9 +7,11 @@ Configuration
 =============
 
 Configure the extension in :guilabel:`WorkOS` -> :guilabel:`Setup Assistant`
-(admin only, LIVE workspace). Settings live in the extension configuration
+and, for the MCP server, :guilabel:`WorkOS` -> :guilabel:`MCP Server` (admin
+only, LIVE workspace). Settings live in the extension configuration
 ``EXTENSIONS.workos_auth`` in :file:`config/system/settings.php`; saving in
-the module flushes the ``system`` cache group.
+either module flushes the ``system`` cache group, and each module only
+changes the settings it shows.
 
 ..  _configuration-keys:
 
@@ -45,9 +47,9 @@ Keys and defaults
             'widgetCorsAutoRegister' => '1',      // register the backend origin as WorkOS CORS origin
             'widgetCorsOrigins' => '',            // additional origins, comma separated
 
-            'authkitOrganizationId' => '',        // optional AuthKit hints applied to every login
-            'authkitConnectionId' => '',
-            'authkitDomainHint' => '',
+            'authkitOrganizationId' => '',        // pins the hosted AuthKit login to one organization
+            'authkitConnectionId' => '',          // sends the hosted login straight to one SSO connection
+            'authkitDomainHint' => '',            // suggests the SSO connection of an email domain
 
             'mcpEnabled' => '1',
             'mcpServerPath' => '/workos-auth/mcp',
@@ -61,6 +63,10 @@ Keys and defaults
 
 Paths are normalized to a leading slash without a trailing slash;
 ``widgetCorsOrigins`` is reduced to ``scheme://host[:port]`` origins.
+
+WorkOS accepts one connection selector per login: a social provider chosen
+on the login screen wins, then ``authkitConnectionId``, then the hosted
+AuthKit screen (optionally pinned by ``authkitOrganizationId``).
 
 ..  _configuration-validation:
 

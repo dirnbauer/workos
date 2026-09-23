@@ -14,8 +14,9 @@ User Management backend module and a WorkOS-protected TYPO3 MCP server.
 | Area | Feature |
 |---|---|
 | Frontend plugins | **WorkOS Login** (password, email code, social sign-in, sign-up, email verification), **Account Center** (profile, password, TOTP, sessions, organizations), **Team** (invitations, Admin Portal links) |
-| Backend | "Continue with WorkOS" login provider; **WorkOS** menu with *Setup Assistant*, *User Management* widget and *MCP Server* modules |
-| Provisioning | Links or creates `fe_users` / `be_users` from WorkOS identities (`tx_workosauth_identity`); TYPO3's own auth service creates the session |
+| Backend | "Login with WorkOS" provider built from the Core login markup; **WorkOS** menu with *Setup Assistant*, *User Management* widget and *MCP Server* modules |
+| Provisioning | Links or creates `fe_users` / `be_users` from WorkOS identities (`tx_workosauth_identity`) - by email only when WorkOS verified it; TYPO3's own auth service creates the session, and logging out of TYPO3 ends the WorkOS session |
+| Security | PKCE plus client secret, single-use cookie-bound `state`, same-origin `returnTo`, no impersonated backend sessions, write-only API key in the backend |
 | MCP | Streamable HTTP endpoint `/workos-auth/mcp`: anonymous in `Development`, AuthKit bearer tokens in `Production` |
 
 ## Requirements
@@ -36,12 +37,13 @@ vendor/bin/typo3 extension:setup --extension=workos_auth
 
 ## Configure
 
-1. **WorkOS → Setup Assistant**: enter the WorkOS **API key** and **Client ID**.
+1. **WorkOS → Setup Assistant**: enter the WorkOS **API key** (write-only; the page shows a masked hint) and **Client ID**.
 2. Copy the listed **redirect URIs** into the WorkOS Dashboard (*Redirects*).
 3. Enable the methods you use in the Dashboard (*Authentication → Methods /
    Providers*). Methods are enabled in WorkOS, not in TYPO3.
 4. Optional: frontend storage PID and default groups, backend auto-create
-   with a domain allow-list, AuthKit hints, MCP mode and AuthKit domain.
+   with a domain allow-list, AuthKit hints. The MCP mode and AuthKit domain
+   are set in **WorkOS → MCP Server**.
 
 ## Use
 
@@ -49,8 +51,8 @@ vendor/bin/typo3 extension:setup --extension=workos_auth
   `screen`, `provider`, `login_hint`, `organization` and `returnTo`.
 - Add **WorkOS Account Center** to a "My account" page and **WorkOS Team**
   to a page for organization admins.
-- Backend users pick **WorkOS** on the login screen; the classic form stays
-  available.
+- Backend users pick **Login with WorkOS** on the login screen; the classic
+  form stays available.
 - Point an MCP client at `https://example.com/workos-auth/mcp`.
 
 ## Develop

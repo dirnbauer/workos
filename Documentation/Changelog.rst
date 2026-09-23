@@ -8,6 +8,49 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
+..  _changelog-2-3-0:
+
+2.3.0 - Security review and Core screens
+========================================
+
+..  rubric:: Security
+
+-   Linking an existing account by email, and creating backend accounts,
+    require an email address WorkOS has verified; several accounts with one
+    address are refused instead of letting the row order pick one.
+-   ``returnTo`` refuses control characters and backslashes, closing an open
+    redirect through ``/<TAB>/evil.example``.
+-   Backend login messages are stored server-side and shown once; the login
+    page no longer prints text taken from its URL.
+-   Logging out of TYPO3 revokes the WorkOS session.
+-   PKCE on top of the client secret for the hosted login.
+-   Impersonated WorkOS sessions are refused for the backend and logged for
+    the frontend.
+-   Disabled and expired accounts no longer sign in through WorkOS or the MCP
+    server.
+-   The setup module never prints the stored API key; the CSP relaxation for
+    the user management widget applies to that page only.
+-   Malformed ``state`` tokens no longer crash the backend login page.
+
+..  rubric:: Changed
+
+-   The login provider and the three modules are built from Core markup:
+    Module layout, document header, infoboxes, tables with copy buttons,
+    badges, form labels and switches, Core flash messages.
+-   MCP settings are edited in the MCP module only.
+-   Sign-in failures name the reason; exactly one connection selector is sent
+    to WorkOS; social buttons read "Continue with …".
+
+..  rubric:: Removed
+
+-   Infection, the copy-URLs script, the setup screenshot, unused labels.
+
+..  rubric:: Dependencies
+
+-   PHPUnit 13, typo3/coding-standards 0.9, phpat 0.12; widget build on
+    React 19.3 and TanStack Query 5.103; CI on PHP 8.4 and 8.5, MariaDB 11.4,
+    Node 24.
+
 ..  _changelog-2-2-0:
 
 2.2.0 - Thermo-nuclear cleanup

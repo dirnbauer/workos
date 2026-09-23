@@ -32,8 +32,13 @@ Architecture
             ``RequestBody``
     *   -   ``Security``
         -   ``StateService`` (single-use, cookie-bound state),
+            ``AccessTokenClaims`` (the WorkOS session id of a code exchange),
             ``RequestTokenService``, ``SecretRedactor``,
             ``WorkosErrorMessageResolver``, ``MixedCaster``
+    *   -   ``EventListener``
+        -   ``EndWorkosSessionOnLogout`` (revokes the WorkOS session when
+            TYPO3 logs out), ``AllowUserManagementWidgetSources`` (the CSP
+            of the user management page only), and the request-token listener
     *   -   ``Authentication``
         -   ``WorkosTypo3AuthenticationService``: TYPO3 auth service that
             completes the pending login created by ``Typo3SessionService``
@@ -48,8 +53,9 @@ providers or event listeners.
 Login handoff
 =============
 
-#.  A middleware or controller authenticates against WorkOS and calls
-    ``UserProvisioningService::resolve(LoginContext, User)``.
+#.  A middleware or controller authenticates against WorkOS and gets an
+    ``AuthenticatedSession`` (user, WorkOS session id, impersonator), then
+    calls ``UserProvisioningService::resolve(LoginContext, User)``.
 #.  ``Typo3SessionService`` adds the ``workos_auth.pending_login`` request
     attribute and starts ``FrontendUserAuthentication`` /
     ``BackendUserAuthentication``.
@@ -57,6 +63,28 @@ Login handoff
     ``processLoginData``, ``getUser`` and ``authUser`` for FE and BE) returns
     exactly that user row; ``AllowPendingWorkosLoginRequestTokenListener``
     issues the ``core/user-auth/fe|be`` token TYPO3 expects.
+#.  The WorkOS session id is stored in the TYPO3 session
+    (``Typo3SessionService::SESSION_WORKOS_SESSION_ID``) and revoked on
+    logout.
+
+Security notes
+==============
+
+-   The hosted login uses PKCE on top of the client secret; the verifier
+    lives in the ``StateService`` entry of the login attempt, never in the
+    browser.
+-   ``state`` tokens are 256-bit, single-use, expire after ten minutes and
+    are bound to an HttpOnly cookie; anything but the issued format is
+    refused before it reaches the cache.
+-   ``returnTo`` accepts same-origin targets only and rejects control
+    characters and backslashes, which browsers would turn into another host.
+-   Accounts are matched by email only for a WorkOS-verified email and only
+    when exactly one active account uses it; disabled or expired accounts
+    never sign in.
+-   The TYPO3 session is created by the Core authentication chain, which
+    regenerates the session id (no session fixation).
+-   Backend login messages are stored server-side; the login page never
+    prints text taken from its URL.
 
 Development
 ===========
@@ -65,13 +93,14 @@ Development
 
     composer install
     composer ci                     # validate, lint, cgl, phpstan, unit, functional
-    Build/Scripts/runTests.sh -s unit|functional|phpstan|cs|mutation
+    Build/Scripts/runTests.sh -s unit|functional|phpstan|cs
     typo3DatabaseDriver=pdo_sqlite Build/Scripts/runTests.sh -s functional
 
 -   PHPStan level 8 with ``saschaegerer/phpstan-typo3``, strict and
     deprecation rules; no baseline.
--   PHPUnit 12: unit tests in :file:`Tests/Unit`, functional tests
-    (sqlite locally, MariaDB 10.11 in CI) in :file:`Tests/Functional`.
+-   PHPUnit 13: unit tests in :file:`Tests/Unit`, functional tests
+    (sqlite locally, MariaDB 11.4 in CI, PHP 8.4 and 8.5) in
+    :file:`Tests/Functional`.
 -   The User Management widget bundle is built with esbuild in
     :file:`Build/user-management-widget` (``npm ci && npm run build``); the
     output in :file:`Resources/Public/JavaScript/` is committed and checked

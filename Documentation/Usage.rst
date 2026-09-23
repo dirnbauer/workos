@@ -56,23 +56,42 @@ Login URL parameters
 ``/workos-auth/frontend/logout?returnTo=...`` ends the TYPO3 frontend
 session.
 
+Signing out of TYPO3 - frontend or backend - also ends the WorkOS session
+the sign-in opened, so the next person at a shared computer is asked for
+their credentials again instead of being signed in silently.
+
 ..  _usage-backend:
 
 Backend login
 =============
 
-Backend users pick :guilabel:`WorkOS` on the login screen: email + password,
-:guilabel:`Email a login code`, social buttons or
-:guilabel:`More sign-in options` for the hosted AuthKit screen (SSO,
-passkeys). The classic username/password form stays available through the
-provider switcher.
+Backend users pick :guilabel:`Login with WorkOS` on the login screen. The
+form uses the Core login markup: email and password with the orange
+:guilabel:`Sign in` button, :guilabel:`Email me a sign-in code`,
+:guilabel:`Continue with Google / Microsoft / GitHub / Apple`, and
+:guilabel:`More sign-in options (SSO, passkey)` for the hosted AuthKit
+screen. The classic username/password form stays available through the
+Core provider switch.
 
-If WorkOS authenticates someone without a matching ``be_users`` row and
-``backendAutoCreateUsers`` is off, the login screen shows an error card with
-the email and WorkOS user id. Either set that email on the intended backend
-user (``backendLinkByEmail``), or enable auto-create together with
-``backendDefaultGroupUids`` and - strongly recommended - a
-``backendAllowedDomains`` allow-list.
+Who may sign in:
+
+-   An account that is already linked signs in, as long as the TYPO3
+    account is active (not disabled, inside its start and end time).
+-   ``backendLinkByEmail`` links an existing ``be_users`` account with the
+    same email - only when WorkOS has verified that address, and only when
+    exactly one active account uses it.
+-   ``backendAutoCreateUsers`` creates a new, non-admin account - again
+    only for a verified email, within ``backendAllowedDomains`` when that
+    list is set.
+-   A session a WorkOS administrator started through impersonation is
+    refused for the backend (and logged); frontend impersonation is allowed
+    and logged.
+
+When WorkOS authenticates someone TYPO3 cannot place, the login screen says
+why: not linked (with the email and WorkOS user id to link), email not
+verified, account disabled or expired, several accounts with that email, or
+an impersonated session. The message is stored on the server and shown
+once; the login URL only carries a token for it.
 
 ..  _usage-modules:
 
@@ -85,14 +104,17 @@ Backend modules
     *   -   Module
         -   Purpose
     *   -   :guilabel:`Setup Assistant` (``/module/workos/setup``)
-        -   All settings, validation warnings and the redirect URIs to
-            register in WorkOS.
+        -   Credentials, frontend and backend sign-in, hosted-login options,
+            readiness warnings and the redirect URIs to register in WorkOS,
+            each with a copy button. The API key field is write-only: the
+            page shows a masked hint, and an empty field keeps the stored key.
     *   -   :guilabel:`User Management` (``/module/workos/users``)
         -   Embeds the WorkOS User Management widget scoped to the first
             active organization of the signed-in backend user; users without
             an organization can join an existing one or create one.
     *   -   :guilabel:`MCP Server` (``/module/workos/mcp``)
-        -   MCP settings, endpoint URLs per site, database schema status.
+        -   The MCP settings (edited only here), endpoint URLs per site with
+            copy buttons, and the database schema status.
 
 ..  _usage-mcp:
 
