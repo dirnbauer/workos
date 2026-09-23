@@ -32,12 +32,6 @@ node_modules/
 .env
 .env.local
 
-# Infection
-/.infection/
-/infection.log
-infection-summary.log
-infection.html
-
 # Playwright
 /Tests/E2E/test-results/
 /Tests/E2E/playwright-report/

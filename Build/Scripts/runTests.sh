@@ -10,7 +10,6 @@
 #   Build/Scripts/runTests.sh -s phpstan      # PHPStan level 8 incl. phpat layering rules
 #   Build/Scripts/runTests.sh -s unit         # PHPUnit unit suite
 #   Build/Scripts/runTests.sh -s functional   # PHPUnit functional suite (needs typo3Database* env)
-#   Build/Scripts/runTests.sh -s mutation     # Infection mutation testing
 #   Build/Scripts/runTests.sh -s ci           # lint + cs + phpstan + unit + functional
 #
 # Local functional run without a database server:
@@ -77,10 +76,6 @@ case "$suite" in
         require_bin phpunit
         exec "$BIN/phpunit" -c Build/phpunit/FunctionalTests.xml
         ;;
-    mutation)
-        require_bin infection
-        exec "$BIN/infection" --threads=4 --no-progress
-        ;;
     ci)
         require_bin php-cs-fixer
         require_bin phpstan
@@ -92,7 +87,7 @@ case "$suite" in
         exec "$BIN/phpunit" -c Build/phpunit/FunctionalTests.xml
         ;;
     *)
-        echo "Unknown suite: $suite (valid: lint, cs, phpstan, unit, functional, mutation, ci)" >&2
+        echo "Unknown suite: $suite (valid: lint, cs, phpstan, unit, functional, ci)" >&2
         exit 2
         ;;
 esac

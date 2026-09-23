@@ -88,7 +88,7 @@ final class BackendLoginMessageTest extends FunctionalTestCase
     private function postToLoginEndpoint(string $endpoint): ResponseInterface
     {
         $request = $this->backendRequest('https://example.com/typo3' . $endpoint, 'POST')->withParsedBody([]);
-        $handler = new class () implements RequestHandlerInterface {
+        $handler = new class implements RequestHandlerInterface {
             #[\Override]
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
@@ -111,7 +111,7 @@ final class BackendLoginMessageTest extends FunctionalTestCase
                 BackendWorkosAuthMiddleware::LOGIN_MESSAGE_PARAMETER => $messageToken,
             ])
             ->withCookieParams($cookies);
-        $view = new class () implements ViewInterface {
+        $view = new class implements ViewInterface {
             /** @var array<string, mixed> */
             public array $variables = [];
 

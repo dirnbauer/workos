@@ -17,7 +17,7 @@ final class ExtensionSchemaServiceTest extends TestCase
     public function testStatusOnlyReportsWorkosSchemaSuggestions(): void
     {
         $schemaMigrator = $this->createMock(SchemaMigrator::class);
-        $schemaMigrator->expects(self::once())
+        $schemaMigrator->expects($this->once())
             ->method('getUpdateSuggestions')
             ->with([self::WORKOS_STATEMENT, self::OTHER_STATEMENT])
             ->willReturn(['Default' => $this->suggestions()]);
@@ -59,7 +59,7 @@ final class ExtensionSchemaServiceTest extends TestCase
         $workosHash = md5(self::WORKOS_STATEMENT);
         $schemaMigrator = $this->createMock(SchemaMigrator::class);
         $schemaMigrator->method('getUpdateSuggestions')->willReturn(['Default' => $this->suggestions()]);
-        $schemaMigrator->expects(self::once())
+        $schemaMigrator->expects($this->once())
             ->method('migrate')
             ->with([self::WORKOS_STATEMENT, self::OTHER_STATEMENT], [$workosHash => $workosHash])
             ->willReturn([]);
@@ -73,7 +73,7 @@ final class ExtensionSchemaServiceTest extends TestCase
     {
         $schemaMigrator = $this->createMock(SchemaMigrator::class);
         $schemaMigrator->method('getUpdateSuggestions')->willReturn([]);
-        $schemaMigrator->expects(self::never())->method('migrate');
+        $schemaMigrator->expects($this->never())->method('migrate');
 
         self::assertSame(
             ['appliedCount' => 0, 'errors' => []],

@@ -36,17 +36,16 @@
         "workos/workos-php": "^9.4"
     },
     "require-dev": {
-        "infection/infection": "^0.29",
-        "phpat/phpat": "^0.11",
+        "phpat/phpat": "^0.12",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpunit/phpunit": "^12.4 || ^13.0",
+        "phpunit/phpunit": "^13.0",
         "saschaegerer/phpstan-typo3": "^3.0",
         "typo3/cms-workspaces": "^14.3.7",
-        "typo3/coding-standards": "^0.8",
+        "typo3/coding-standards": "^0.9",
         "typo3/testing-framework": "^9.5"
     },
     "conflict": {
@@ -64,7 +63,6 @@
     },
     "config": {
         "allow-plugins": {
-            "infection/extension-installer": true,
             "phpstan/extension-installer": true,
             "typo3/class-alias-loader": true,
             "typo3/cms-composer-installers": true
@@ -95,7 +93,6 @@
         "lint": "Build/Scripts/runTests.sh -s lint",
         "phpstan": "phpstan analyse --memory-limit=1G --no-progress",
         "test:functional": "phpunit -c Build/phpunit/FunctionalTests.xml",
-        "test:mutation": "infection --threads=4 --no-progress",
         "test:unit": "phpunit -c Build/phpunit/UnitTests.xml"
     }
 }

@@ -38,7 +38,7 @@ final class LayeringTest
                 Selector::inNamespace('Webconsulting\\WorkosAuth\\EventListener'),
                 Selector::inNamespace('Webconsulting\\WorkosAuth\\Configuration'),
             )
-            ->shouldNotDependOn()
+            ->shouldNot()->dependOn()
             ->classes(Selector::inNamespace('Webconsulting\\WorkosAuth\\Controller'));
     }
 
@@ -50,7 +50,7 @@ final class LayeringTest
     {
         return PHPat::rule()
             ->classes(Selector::classname(LoginController::class))
-            ->shouldNotDependOn()
+            ->shouldNot()->dependOn()
             ->classes(
                 Selector::classname(AccountController::class),
                 Selector::classname(TeamController::class),
@@ -68,7 +68,7 @@ final class LayeringTest
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Webconsulting\\WorkosAuth\\Security'))
-            ->shouldNotDependOn()
+            ->shouldNot()->dependOn()
             ->classes(
                 Selector::inNamespace('Webconsulting\\WorkosAuth\\Controller'),
                 Selector::inNamespace('Webconsulting\\WorkosAuth\\Middleware'),
@@ -88,7 +88,7 @@ final class LayeringTest
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Webconsulting\\WorkosAuth\\Service'))
-            ->shouldNotDependOn()
+            ->shouldNot()->dependOn()
             ->classes(
                 Selector::inNamespace('Webconsulting\\WorkosAuth\\Controller'),
                 Selector::inNamespace('Webconsulting\\WorkosAuth\\Middleware'),

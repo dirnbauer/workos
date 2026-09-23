@@ -218,8 +218,8 @@ final class WorkosConfigurationTest extends TestCase
         );
         $settings = $configuration->normalizeInput(['apiKey' => 'sk_test_saved', 'clientId' => 'client_saved']);
 
-        $extensionConfiguration->expects(self::once())->method('set')->with(WorkosConfiguration::EXTENSION_KEY, $settings);
-        $cacheManager->expects(self::once())->method('flushCachesInGroup')->with('system');
+        $extensionConfiguration->expects($this->once())->method('set')->with(WorkosConfiguration::EXTENSION_KEY, $settings);
+        $cacheManager->expects($this->once())->method('flushCachesInGroup')->with('system');
 
         $configuration->save($settings);
 
