@@ -10,26 +10,22 @@ on:
 permissions:
     contents: read
 
-env:
-    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
     lint:
         name: Lint + composer validate/audit (PHP ${{ matrix.php }})
         runs-on: ubuntu-latest
-        continue-on-error: ${{ matrix.php == '8.5' }}
         strategy:
             fail-fast: false
             matrix:
                 php: ['8.4', '8.5']
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - uses: shivammathur/setup-php@v2
               with:
                   php-version: ${{ matrix.php }}
                   coverage: none
                   tools: composer:v2
-            - uses: actions/cache@v4
+            - uses: actions/cache@v6
               with:
                   path: ~/.cache/composer
                   key: composer-${{ matrix.php }}-${{ hashFiles('composer.json') }}
@@ -47,13 +43,13 @@ jobs:
         name: Coding standards (dry-run)
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - uses: shivammathur/setup-php@v2
               with:
                   php-version: '8.4'
                   coverage: none
                   tools: composer:v2
-            - uses: actions/cache@v4
+            - uses: actions/cache@v6
               with:
                   path: ~/.cache/composer
                   key: composer-8.4-${{ hashFiles('composer.json') }}
@@ -67,13 +63,13 @@ jobs:
         name: PHPStan (level 8 + phpat layering rules)
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - uses: shivammathur/setup-php@v2
               with:
                   php-version: '8.4'
                   coverage: none
                   tools: composer:v2
-            - uses: actions/cache@v4
+            - uses: actions/cache@v6
               with:
                   path: ~/.cache/composer
                   key: composer-8.4-${{ hashFiles('composer.json') }}
@@ -86,19 +82,18 @@ jobs:
     unit:
         name: Unit tests (PHP ${{ matrix.php }})
         runs-on: ubuntu-latest
-        continue-on-error: ${{ matrix.php == '8.5' }}
         strategy:
             fail-fast: false
             matrix:
                 php: ['8.4', '8.5']
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - uses: shivammathur/setup-php@v2
               with:
                   php-version: ${{ matrix.php }}
                   coverage: none
                   tools: composer:v2
-            - uses: actions/cache@v4
+            - uses: actions/cache@v6
               with:
                   path: ~/.cache/composer
                   key: composer-${{ matrix.php }}-${{ hashFiles('composer.json') }}
@@ -109,17 +104,16 @@ jobs:
               run: Build/Scripts/runTests.sh -s unit
 
     functional:
-        name: Functional tests (PHP ${{ matrix.php }}, MariaDB 10.11)
+        name: Functional tests (PHP ${{ matrix.php }}, MariaDB 11.4)
         runs-on: ubuntu-latest
         needs: [unit]
-        continue-on-error: ${{ matrix.php == '8.5' }}
         strategy:
             fail-fast: false
             matrix:
                 php: ['8.4', '8.5']
         services:
             mariadb:
-                image: mariadb:10.11
+                image: mariadb:11.4
                 env:
                     MYSQL_ROOT_PASSWORD: root
                     MYSQL_DATABASE: typo3_test
@@ -137,13 +131,13 @@ jobs:
             typo3DatabasePassword: root
             typo3DatabaseName: typo3_test
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - uses: shivammathur/setup-php@v2
               with:
                   php-version: ${{ matrix.php }}
                   coverage: none
                   tools: composer:v2
-            - uses: actions/cache@v4
+            - uses: actions/cache@v6
               with:
                   path: ~/.cache/composer
                   key: composer-${{ matrix.php }}-${{ hashFiles('composer.json') }}
@@ -157,10 +151,10 @@ jobs:
         name: User Management widget bundle is up to date
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v7
               with:
-                  node-version: '22'
+                  node-version: '24'
                   cache: npm
                   cache-dependency-path: Build/user-management-widget/package-lock.json
             - name: Install widget build dependencies
