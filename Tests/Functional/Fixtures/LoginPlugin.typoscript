@@ -1,0 +1,8 @@
+# Renders the WorkOS Login plugin as the whole page, so a functional test
+# can follow the links it prints.
+page = PAGE
+page.10 = EXTBASEPLUGIN
+page.10 {
+    extensionName = WorkosAuth
+    pluginName = Login
+}

@@ -289,7 +289,7 @@ final class UserManagementController implements LoggerAwareInterface
     private function workosLoginUri(ServerRequestInterface $request): string
     {
         $backendBasePath = PathUtility::guessBackendBasePath($request->getUri()->getPath());
-        $query = ['returnTo' => PathUtility::joinBaseAndPath($backendBasePath, '/main') . '?redirect=workos_users'];
+        $query = ['returnTo' => PathUtility::backendRouteReturnTarget($backendBasePath, 'workos_users')];
         $email = trim(MixedCaster::string(self::backendUser($request)?->user['email'] ?? null));
         if ($email !== '') {
             $query['login_hint'] = $email;

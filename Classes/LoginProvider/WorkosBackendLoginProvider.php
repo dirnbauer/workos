@@ -7,6 +7,7 @@ namespace Webconsulting\WorkosAuth\LoginProvider;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
+use TYPO3\CMS\Backend\Routing\RouteRedirect;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Security\RequestToken;
@@ -48,11 +49,10 @@ final readonly class WorkosBackendLoginProvider implements LoginProviderInterfac
         $backendBasePath = PathUtility::guessBackendBasePath($request->getUri()->getPath());
         $queryParams = $request->getQueryParams();
 
-        $loginUrl = PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendLoginPath());
-        $redirect = MixedCaster::string($queryParams['redirect'] ?? null);
-        if ($redirect !== '') {
-            $loginUrl = PathUtility::appendQueryParameters($loginUrl, ['returnTo' => $redirect]);
-        }
+        $loginUrl = PathUtility::appendQueryParameters(
+            PathUtility::joinBaseAndPath($backendBasePath, $this->configuration->getBackendLoginPath()),
+            ['returnTo' => $this->returnTarget($request, $backendBasePath)]
+        );
 
         if ($view instanceof FluidViewAdapter) {
             $templatePaths = $view->getRenderingContext()->getTemplatePaths();
@@ -138,6 +138,33 @@ final readonly class WorkosBackendLoginProvider implements LoginProviderInterfac
         ]);
 
         return 'Login/WorkosLoginProvider';
+    }
+
+    /**
+     * Where the WorkOS sign-in continues: the backend route TYPO3 asked the
+     * login screen to open (`redirect` + `redirectParams`), as the entry
+     * point URL Core itself continues with. Core's RouteRedirect drops a
+     * nested redirect from the parameters; '' (the configured success path)
+     * when no route was asked for or the target would be too long.
+     */
+    private function returnTarget(ServerRequestInterface $request, string $backendBasePath): string
+    {
+        try {
+            $redirect = RouteRedirect::createFromRequest($request);
+        } catch (\Throwable) {
+            return '';
+        }
+        if ($redirect === null) {
+            return '';
+        }
+
+        $target = PathUtility::backendRouteReturnTarget(
+            $backendBasePath,
+            $redirect->getName(),
+            $redirect->hasParameters() ? $redirect->getFormattedParameters() : ''
+        );
+
+        return strlen($target) <= PathUtility::MAX_RETURN_TO_LENGTH ? $target : '';
     }
 
     /**

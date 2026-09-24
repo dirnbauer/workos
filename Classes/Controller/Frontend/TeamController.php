@@ -164,7 +164,7 @@ final class TeamController extends AbstractFrontendController implements LoggerA
 
         try {
             $this->teamService->assertMemberOfOrganization($workosUserId, $organizationId);
-            $link = $this->teamService->generatePortalLink($organizationId, $intent, (string)$this->request->getUri())->link;
+            $link = $this->teamService->generatePortalLink($organizationId, $intent, $this->portalReturnUrl($organizationId))->link;
             if ($link === '') {
                 throw new \RuntimeException('Empty portal link returned.', 1744278050);
             }
@@ -278,6 +278,16 @@ final class TeamController extends AbstractFrontendController implements LoggerA
         $stored = $this->getFrontendUser()->getSessionData(self::SESSION_ORG);
 
         return is_string($stored) && isset($organizations[$stored]) ? $stored : array_key_first($organizations);
+    }
+
+    /**
+     * Where the Admin Portal sends the admin back: the dashboard of the
+     * organization, built fresh. The URL of this POST request would carry
+     * the `launchPortal` action, which answers a plain GET with an error.
+     */
+    private function portalReturnUrl(string $organizationId): string
+    {
+        return $this->uriBuilder->reset()->setCreateAbsoluteUri(true)->uriFor('dashboard', ['organizationId' => $organizationId]);
     }
 
     private function redirectToDashboard(string $organizationId): ResponseInterface

@@ -96,7 +96,137 @@ final class PathUtilityTest extends TestCase
         $request = self::request('https://app.local/login');
 
         self::assertSame('/dashboard', PathUtility::sanitizeReturnTo($request, '/dashboard', '/'));
-        self::assertSame('https://app.local/profile', PathUtility::sanitizeReturnTo($request, 'https://app.local/profile', '/'));
+        self::assertSame('/profile', PathUtility::sanitizeReturnTo($request, 'https://app.local/profile', '/'), 'A same-origin URL comes back as its path');
+        self::assertSame('/profile?tab=2#mfa', PathUtility::sanitizeReturnTo($request, 'https://app.local/profile?tab=2#mfa', '/'));
+        self::assertSame('/', PathUtility::sanitizeReturnTo($request, 'https://app.local', '/fallback'));
+    }
+
+    public function testSanitizeReturnToRefusesASameOriginUrlWhosePathIsProtocolRelative(): void
+    {
+        // As a path, `//evil.example/x` would leave the site.
+        self::assertSame(
+            '/fallback',
+            PathUtility::sanitizeReturnTo(self::request('https://app.local/login'), 'https://app.local//evil.example/x', '/fallback')
+        );
+    }
+
+    public function testSanitizeReturnToFlattensANestedReturnTarget(): void
+    {
+        $request = self::request('https://app.local/de/login/');
+        $nested = 'https://app.local/de/login/?' . http_build_query([
+            'tx_workosauth_login' => [
+                'action' => 'signUp',
+                'controller' => 'Frontend\\Login',
+                'returnTo' => 'https://app.local/de/login/?' . http_build_query(['returnTo' => '/deeper']),
+            ],
+            'cHash' => 'e3b0c44298fc1c149afbf4c8996fb924',
+        ]);
+
+        self::assertSame('/de/login/', PathUtility::sanitizeReturnTo($request, $nested, '/'));
+    }
+
+    public function testSanitizeReturnToRefusesTargetsOverTheLengthLimit(): void
+    {
+        $request = self::request('https://app.local/login');
+        $longest = '/' . str_repeat('a', PathUtility::MAX_RETURN_TO_LENGTH - 1);
+
+        self::assertSame($longest, PathUtility::sanitizeReturnTo($request, $longest, '/fallback'));
+        self::assertSame('/fallback', PathUtility::sanitizeReturnTo($request, $longest . 'a', '/fallback'));
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function canonicalReturnTargetProvider(): array
+    {
+        return [
+            'plain path' => ['/de/login/', '/de/login/'],
+            'nested return target' => ['/login/?returnTo=%2Fmembers%2F', '/login/'],
+            'plugin toggle of 2.3.1' => [
+                '/login/?tx_workosauth_login%5Baction%5D=signUp&tx_workosauth_login%5Bcontroller%5D=Frontend%5CLogin'
+                . '&tx_workosauth_login%5BreturnTo%5D=https%3A%2F%2Fapp.local%2Flogin%2F&cHash=abc',
+                '/login/',
+            ],
+            'raw brackets' => ['/login/?tx_workosauth_login[returnTo]=/x&tx_workosauth_team[organizationId]=org_1', '/login/'],
+            'names PHP rewrites' => ['/login/?tx.workosauth.login%5BreturnTo%5D=%2Fx&%20returnTo=%2Fy', '/login/'],
+            'foreign parameter kept' => ['/shop/?page=2&returnTo=%2Fx', '/shop/?page=2'],
+            'signed query left intact' => ['/news/?tx_news_pi1%5Bnews%5D=5&cHash=abc', '/news/?tx_news_pi1%5Bnews%5D=5&cHash=abc'],
+            'signed query that lost arguments' => ['/news/?tx_news_pi1%5Bnews%5D=5&tx_workosauth_login%5Baction%5D=show&cHash=abc', '/news/'],
+            'lone cHash' => ['/page/?cHash=abc', '/page/'],
+            'one-shot tokens' => [
+                '/typo3/login?loginProvider=1744276800&workosMessage=a&magicAuthState=b&emailVerificationState=c&__RequestToken=d&login_hint=e%40example.com',
+                '/typo3/login?loginProvider=1744276800',
+            ],
+            'backend route target' => ['/typo3/main?redirect=workos_users', '/typo3/main?redirect=workos_users'],
+            'fragment kept' => ['/page/?returnTo=%2Fx#section', '/page/#section'],
+            'empty pairs dropped' => ['/page/?&a=1&&', '/page/?a=1'],
+            'relative path' => ['login/', ''],
+            'protocol-relative' => ['//evil.example/x', ''],
+            'backslash variant' => ['/\\evil.example/x', ''],
+        ];
+    }
+
+    #[DataProvider('canonicalReturnTargetProvider')]
+    public function testCanonicalReturnTarget(string $target, string $expected): void
+    {
+        self::assertSame($expected, PathUtility::canonicalReturnTarget($target));
+    }
+
+    public function testTogglingAnyNumberOfTimesYieldsTheSameReturnTarget(): void
+    {
+        // Mirrors the Login plugin: the requested target is the plugin
+        // argument of the current URL, the fallback the current page.
+        $url = 'https://app.local/de/login/';
+        $lengths = [];
+        for ($toggle = 0; $toggle < 20; $toggle++) {
+            $request = self::request($url);
+            parse_str((string)parse_url($url, PHP_URL_QUERY), $query);
+            $arguments = is_array($query['tx_workosauth_login'] ?? null) ? $query['tx_workosauth_login'] : [];
+            $returnTo = PathUtility::sanitizeReturnTo(
+                $request,
+                is_string($arguments['returnTo'] ?? null) ? $arguments['returnTo'] : '',
+                PathUtility::currentPageReturnTarget($request)
+            );
+            self::assertSame('/de/login/', $returnTo);
+
+            $action = $toggle % 2 === 0 ? 'signUp' : 'show';
+            $url = 'https://app.local/de/login/?' . http_build_query([
+                'tx_workosauth_login' => [
+                    'action' => $action,
+                    'controller' => 'Frontend\\Login',
+                    'returnTo' => $returnTo,
+                ],
+                'cHash' => hash('sha256', (string)$toggle),
+            ]);
+            $lengths[$action][] = strlen($url);
+        }
+
+        self::assertCount(1, array_unique($lengths['signUp']), 'Toggle N times, same length as toggling once');
+        self::assertCount(1, array_unique($lengths['show']), 'Toggle N times, same length as toggling once');
+    }
+
+    public function testCurrentPageReturnTarget(): void
+    {
+        self::assertSame('/de/login/', PathUtility::currentPageReturnTarget(self::request(
+            'https://app.local/de/login/?tx_workosauth_login%5Baction%5D=show&tx_workosauth_login%5BreturnTo%5D=%2Fx&cHash=abc'
+        )));
+        self::assertSame('/shop/?page=2', PathUtility::currentPageReturnTarget(self::request('https://app.local/shop/?page=2&returnTo=%2Fx')));
+        self::assertSame('/', PathUtility::currentPageReturnTarget(self::request('https://app.local')));
+        self::assertSame('/', PathUtility::currentPageReturnTarget(self::request('https://app.local//evil.example/')));
+        self::assertSame(
+            '/shop/',
+            PathUtility::currentPageReturnTarget(self::request('https://app.local/shop/?q=' . str_repeat('a', PathUtility::MAX_RETURN_TO_LENGTH))),
+            'A query over the limit is dropped, the page stays'
+        );
+    }
+
+    public function testBackendRouteReturnTarget(): void
+    {
+        self::assertSame('/typo3/main?redirect=workos_users', PathUtility::backendRouteReturnTarget('/typo3', 'workos_users'));
+        self::assertSame(
+            '/typo3/main?redirect=web_layout&redirectParams=id%3D1%26x%5By%5D%3D2',
+            PathUtility::backendRouteReturnTarget('/typo3/', 'web_layout', 'id=1&x[y]=2')
+        );
     }
 
     public function testSanitizeReturnToRejectsForeignOrigins(): void

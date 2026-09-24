@@ -60,10 +60,7 @@ final class LoginController extends AbstractFrontendController implements Logger
     public function showAction(): ResponseInterface
     {
         $isLoggedIn = $this->isFrontendUserLoggedIn();
-        $returnToUrl = $this->sanitizeReturnTo(
-            MixedCaster::string($this->request->getQueryParams()['returnTo'] ?? null),
-            (string)$this->request->getUri()
-        );
+        $returnToUrl = $this->sanitizeReturnTo($this->requestedReturnTo(), PathUtility::currentPageReturnTarget($this->request));
 
         $workosProfile = $isLoggedIn
             ? $this->identityService->findProfileByLocalUser(LoginContext::Frontend, MixedCaster::int($this->getFrontendUser()->user['uid'] ?? null))
@@ -113,8 +110,8 @@ final class LoginController extends AbstractFrontendController implements Logger
             'savedFirstName' => MixedCaster::string($savedForm['firstName'] ?? null),
             'savedLastName' => MixedCaster::string($savedForm['lastName'] ?? null),
             'returnToUrl' => $this->sanitizeReturnTo(
-                $savedReturnTo !== '' ? $savedReturnTo : MixedCaster::string($this->request->getQueryParams()['returnTo'] ?? null),
-                (string)$this->request->getUri()
+                $savedReturnTo !== '' ? $savedReturnTo : $this->requestedReturnTo(),
+                PathUtility::currentPageReturnTarget($this->request)
             ),
             'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
@@ -131,7 +128,7 @@ final class LoginController extends AbstractFrontendController implements Logger
             'email' => $email,
             'firstName' => $body->trimmedString('firstName'),
             'lastName' => $body->trimmedString('lastName'),
-            'returnTo' => $this->sanitizeReturnTo($body->string('returnTo'), $this->configuration->getFrontendSuccessRedirect()),
+            'returnTo' => $this->sanitizeReturnTo($this->requestedReturnTo(), $this->configuration->getFrontendSuccessRedirect()),
         ];
 
         $validationError = match (true) {
@@ -164,7 +161,7 @@ final class LoginController extends AbstractFrontendController implements Logger
         $body = RequestBody::fromRequest($this->request);
         $email = $body->trimmedString('email');
         $password = $body->string('password');
-        $returnTo = $this->sanitizeReturnTo($body->string('returnTo'), $this->configuration->getFrontendSuccessRedirect());
+        $returnTo = $this->sanitizeReturnTo($this->requestedReturnTo(), $this->configuration->getFrontendSuccessRedirect());
 
         if (!$this->hasValidRequestToken()) {
             return $this->redirectToShowWithError($this->translate('error.csrfTokenInvalid'));
@@ -188,7 +185,7 @@ final class LoginController extends AbstractFrontendController implements Logger
     {
         $body = RequestBody::fromRequest($this->request);
         $email = $body->trimmedString('email');
-        $returnTo = $this->sanitizeReturnTo($body->string('returnTo'), $this->configuration->getFrontendSuccessRedirect());
+        $returnTo = $this->sanitizeReturnTo($this->requestedReturnTo(), $this->configuration->getFrontendSuccessRedirect());
 
         if (!$this->hasValidRequestToken()) {
             return $this->redirectToShowWithError($this->translate('error.csrfTokenInvalid'));
@@ -405,6 +402,26 @@ final class LoginController extends AbstractFrontendController implements Logger
     private function sanitizeReturnTo(string $candidate, string $fallback): string
     {
         return PathUtility::sanitizeReturnTo($this->request, $candidate, $fallback);
+    }
+
+    /**
+     * The return target the visitor asked for: the plugin argument (the
+     * sign-in / sign-up links and the hidden form fields carry it as
+     * `tx_workosauth_login[returnTo]`), else a plain `returnTo` form field or
+     * query parameter (links into the login page from elsewhere).
+     */
+    private function requestedReturnTo(): string
+    {
+        if ($this->request->hasArgument('returnTo')) {
+            $argument = trim(MixedCaster::string($this->request->getArgument('returnTo')));
+            if ($argument !== '') {
+                return $argument;
+            }
+        }
+
+        $posted = RequestBody::fromRequest($this->request)->trimmedString('returnTo');
+
+        return $posted !== '' ? $posted : trim(MixedCaster::string($this->request->getQueryParams()['returnTo'] ?? null));
     }
 
     private function resolveAuthenticationError(\Throwable $exception): string
