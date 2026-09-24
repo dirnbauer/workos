@@ -75,7 +75,7 @@
         "typo3/cms": {
             "app-dir": ".Build",
             "extension-key": "workos_auth",
-            "version": "2.3.1",
+            "version": "2.3.2",
             "web-dir": ".Build/public"
         }
     },

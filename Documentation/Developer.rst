@@ -78,6 +78,10 @@ Security notes
     refused before it reaches the cache.
 -   ``returnTo`` accepts same-origin targets only and rejects control
     characters and backslashes, which browsers would turn into another host.
+    It is kept as a path of at most 2,048 characters, without a nested
+    ``returnTo``, WorkOS plugin arguments or one-shot tokens
+    (``PathUtility::canonicalReturnTarget()``), so return targets never
+    grow from link to link.
 -   Accounts are matched by email only for a WorkOS-verified email and only
     when exactly one active account uses it; disabled or expired accounts
     never sign in.

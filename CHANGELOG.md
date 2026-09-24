@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.2 - 2026-09-24
+
+### Fixed
+
+- **Sign-in / sign-up links grew until `414 URI Too Long`:** the Login plugin put the whole current URL, its own `returnTo` included, into the `returnTo` of the "Sign up" and "Sign in" links, so every toggle nested the previous URL; a link crawl found links of about 8,700 characters. Return targets are now canonical same-site paths: a nested `returnTo`, the arguments of the WorkOS plugins, one-shot state tokens, the login hint and a `cHash` that no longer matches are dropped. Toggling any number of times yields the same link, and links printed by 2.3.1 are flattened when opened.
+- **A requested return target got lost:** the plugin read `returnTo` only as a plain query parameter, while its own links and hidden form fields send it as `tx_workosauth_login[returnTo]`. A `returnTo` given to the login page now survives the toggle and is honoured by the password, email-code and sign-up forms.
+- **Admin Portal return:** the Team plugin gave WorkOS the URL of its `launchPortal` POST as return URL, which answered the way back with an error. The portal now returns to the organization's dashboard.
+- **Backend login provider:** "Login with WorkOS" passed the route TYPO3 asked the login screen to open (`redirect=web_layout`) as `returnTo`, which the login endpoint refused. It now continues with that route through `/typo3/main?redirect=…&redirectParams=…`, as Core does; the user management sign-in from 2.3.1 uses the same helper.
+
+### Security
+
+- `returnTo` stays a same-host target (2.3.0 validation unchanged) and is stored and embedded as a path: a same-origin URL is reduced to its path, a same-origin URL whose path starts with `//` is refused, and a target longer than 2,048 characters falls back to the default, so a crafted link cannot produce over-long URLs either.
+
+### Changed
+
+- Without a requested `returnTo`, the password, email-code and sign-up forms of the Login plugin return to the page of the plugin, like its hosted-login and social buttons always did. Before, the forms posted that page under the plugin namespace, the value was ignored, and they went to `frontendSuccessRedirect`. `frontendSuccessRedirect` still applies to `/workos-auth/frontend/login` without `returnTo`.
+
+### Tests
+
+- Functional tests render the Login plugin through the TYPO3 frontend and follow its sign-in / sign-up links for eight rounds (the same links every time, `returnTo` a path), replay a nested 2.3.1 link, a requested target, foreign targets and a sign-up submission, and check what the frontend login endpoint stores. Backend tests cover the login provider's route target and the state the backend login endpoint stores. Unit tests cover the canonical form, the toggle loop and the length limit.
+
 ## 2.3.1 - 2026-09-23
 
 ### Fixed

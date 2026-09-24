@@ -8,6 +8,39 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
+..  _changelog-2-3-2:
+
+2.3.2 - Return targets that do not grow
+=======================================
+
+..  rubric:: Fixed
+
+-   The :guilabel:`Sign up` / :guilabel:`Sign in` links of the Login plugin
+    put the whole current URL, its own ``returnTo`` included, into a new
+    ``returnTo``; every toggle nested the previous URL until the server
+    answered ``414 URI Too Long``. Return targets are now canonical
+    same-site paths without a nested ``returnTo``, plugin arguments,
+    one-shot tokens or a stale ``cHash``: toggling any number of times
+    yields the same link, and links printed by 2.3.1 are flattened.
+-   A ``returnTo`` given to the login page survives the toggle and is
+    honoured by the password, email-code and sign-up forms (they send it as
+    ``tx_workosauth_login[returnTo]``, which was ignored).
+-   The Admin Portal returns to the organization's dashboard instead of the
+    ``launchPortal`` action.
+-   :guilabel:`Login with WorkOS` on the backend login screen continues with
+    the route TYPO3 asked for (``/typo3/main?redirect=…``).
+
+..  rubric:: Security
+
+-   ``returnTo`` is kept as a same-host path of at most 2,048 characters;
+    a same-origin URL whose path starts with ``//`` is refused.
+
+..  rubric:: Changed
+
+-   Without a requested ``returnTo``, the forms of the Login plugin return
+    to the page of the plugin, like its hosted-login buttons. Before, they
+    went to ``frontendSuccessRedirect``.
+
 ..  _changelog-2-3-1:
 
 2.3.1 - User management sign-in and German buttons

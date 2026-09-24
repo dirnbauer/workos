@@ -26,6 +26,10 @@ Add the content elements from the **WorkOS** group to pages:
     Directory Sync, Audit Logs, Log Streams, Domain Verification and
     Certificate Renewal.
 
+The Login plugin sends visitors back to the ``returnTo`` its page was
+opened with, else to the page itself; its :guilabel:`Sign up` /
+:guilabel:`Sign in` links keep that target without growing.
+
 The plugins render a generic markup; project styling belongs in the
 sitepackage, which can override the templates in
 :file:`Resources/Private/Templates/Frontend/`.
@@ -50,7 +54,8 @@ Login URL parameters
     *   -   ``organization``
         -   WorkOS organization id (``org_...``)
     *   -   ``returnTo``
-        -   Relative path or same-origin URL; anything else falls back to
+        -   Relative path or same-origin URL (kept as its path, at most
+            2,048 characters); anything else falls back to
             ``frontendSuccessRedirect``
 
 ``/workos-auth/frontend/logout?returnTo=...`` ends the TYPO3 frontend
