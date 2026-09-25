@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.3.3 - 2026-09-25
+
+### Fixed
+
+- **Signed in, and still on the login page:** since 2.3.2 the Login plugin used its own page as the default return target and printed it into the password, email-code and sign-up forms, the "Sign up" / "Sign in" links and the social buttons, so a visitor who signed in without a requested target stayed on the login page. Without a requested target the plugin prints no `returnTo` again, and every sign-in (password, email code, the email-verification step, sign-up and the social buttons) ends at `frontendSuccessRedirect`, as the forms did before 2.3.2. A requested target that is the login page itself, which is what 2.3.2 printed, counts as none.
+- A requested `returnTo` keeps working as in 2.3.2: it survives any number of sign-up / sign-in toggles without nesting, stays a canonical same-site path of at most 2,048 characters, and a foreign target is dropped (the sign-in then ends at `frontendSuccessRedirect`). Signing out still returns to the current page.
+- Templates a sitepackage overrode for 2.3.2 or earlier keep working: without a target the `returnToUrl` variable is null, so their `arguments="{returnTo: returnToUrl}"` links carry no `returnTo`; the plugin's own templates use the new `returnArguments` variable and print the hidden `returnTo` field only for a requested target.
+
+### Changed
+
+- The social buttons of the Login plugin follow the same rule: without a requested target they carry no `returnTo`, so the hosted login ends at `frontendSuccessRedirect`. Before 2.3.2 they returned to the login page.
+
+### Documentation
+
+- Links into a login page with `?returnTo=...` need `returnTo` in `$GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedParameters']`; with `enforceValidation`, TYPO3 answers them with 404 otherwise.
+
+### Tests
+
+- Functional tests sign in through the TYPO3 frontend against a faked WorkOS API (test extension `workos_fake_api`, handed to the SDK through the new optional Guzzle handler of `WorkosClientFactory`) and check where the password, email-code, email-verification and sign-up flows end: without a target, with a requested one, with the login page and with a foreign target. They also check the target the social buttons hand to the hosted login, that the eight-round sign-in / sign-up toggle carries no target, and that signing out still returns to the page. A template override written for 2.3.2 prints no empty `returnTo`. Unit tests cover `PathUtility::requestedReturnTarget()`.
+
 ## 2.3.2 - 2026-09-24
 
 ### Fixed

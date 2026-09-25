@@ -104,7 +104,11 @@ Development
     deprecation rules; no baseline.
 -   PHPUnit 13: unit tests in :file:`Tests/Unit`, functional tests
     (sqlite locally, MariaDB 11.4 in CI, PHP 8.4 and 8.5) in
-    :file:`Tests/Functional`.
+    :file:`Tests/Functional`. The test extension
+    :file:`Tests/Functional/Fixtures/Extensions/workos_fake_api` answers
+    the WorkOS API in-process (``FakeWorkosApi``, handed to
+    ``WorkosClientFactory`` as Guzzle handler), so functional tests can
+    complete a sign-in through the TYPO3 frontend.
 -   The User Management widget bundle is built with esbuild in
     :file:`Build/user-management-widget` (``npm ci && npm run build``); the
     output in :file:`Resources/Public/JavaScript/` is committed and checked

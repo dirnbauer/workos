@@ -26,9 +26,20 @@ Add the content elements from the **WorkOS** group to pages:
     Directory Sync, Audit Logs, Log Streams, Domain Verification and
     Certificate Renewal.
 
-The Login plugin sends visitors back to the ``returnTo`` its page was
-opened with, else to the page itself; its :guilabel:`Sign up` /
-:guilabel:`Sign in` links keep that target without growing.
+After a sign-in, the Login plugin sends visitors to the ``returnTo`` its
+page was opened with, else to ``frontendSuccessRedirect``; its
+:guilabel:`Sign up` / :guilabel:`Sign in` links keep that target without
+growing. A ``returnTo`` that is the login page itself counts as none.
+Signing out returns to the current page.
+
+TYPO3 answers a page URL with a query parameter it cannot validate with
+404 (``FE.cacheHash.enforceValidation``). To link into a login page with
+``?returnTo=...``, exclude the parameter from the cache hash:
+
+..  code-block:: php
+    :caption: config/system/additional.php
+
+    $GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedParameters'][] = 'returnTo';
 
 The plugins render a generic markup; project styling belongs in the
 sitepackage, which can override the templates in

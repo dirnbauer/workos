@@ -8,6 +8,40 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
+..  _changelog-2-3-3:
+
+2.3.3 - Signed in, back on the success page
+===========================================
+
+..  rubric:: Fixed
+
+-   Since 2.3.2 the Login plugin used its own page as default return
+    target, so a visitor who signed in there stayed on the login page.
+    Without a requested ``returnTo`` its forms, :guilabel:`Sign up` /
+    :guilabel:`Sign in` links and social buttons carry no target again, and
+    every sign-in (password, email code, email verification, sign-up,
+    social) ends at ``frontendSuccessRedirect``. A requested target that is
+    the login page itself counts as none.
+-   A requested ``returnTo`` keeps every 2.3.2 guarantee: it survives the
+    toggle without nesting, stays a canonical same-site path of at most
+    2,048 characters, and a foreign target is dropped. Signing out still
+    returns to the current page.
+-   Templates overridden for 2.3.2 or earlier keep working: without a
+    target ``returnToUrl`` is null, so a link with
+    ``arguments="{returnTo: returnToUrl}"`` carries no ``returnTo``. The
+    plugin's own templates use ``returnArguments``.
+
+..  rubric:: Changed
+
+-   Without a requested target, the social buttons end at
+    ``frontendSuccessRedirect`` too; before 2.3.2 they returned to the
+    login page.
+
+..  rubric:: Documentation
+
+-   Links into a login page with ``?returnTo=...`` need ``returnTo`` in
+    ``FE.cacheHash.excludedParameters``, see :ref:`usage-frontend`.
+
 ..  _changelog-2-3-2:
 
 2.3.2 - Return targets that do not grow
