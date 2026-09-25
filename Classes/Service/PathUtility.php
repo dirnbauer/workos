@@ -201,54 +201,27 @@ final class PathUtility
      */
     public static function sanitizeReturnTo(ServerRequestInterface $request, ?string $candidate, string $fallback): string
     {
-        $fallback = trim($fallback) !== '' ? trim($fallback) : '/';
-        $candidate = trim((string)$candidate);
-        if ($candidate === '') {
-            return $fallback;
+        return self::validReturnTarget($request, $candidate) ?? (trim($fallback) !== '' ? trim($fallback) : '/');
+    }
+
+    /**
+     * The return target a visitor asked for, validated and in canonical form
+     * like {@see sanitizeReturnTo()}, or '' when there is none to follow:
+     * nothing requested, a candidate that is not a path or URL of the
+     * requested host or too long, or the page of the current request itself.
+     *
+     * A sign-in form that sends the visitor back to itself has no target:
+     * 2.3.2 printed the login page into the links and forms of the Login
+     * plugin, and those must end at the configured success page too.
+     */
+    public static function requestedReturnTarget(ServerRequestInterface $request, ?string $candidate): string
+    {
+        $target = self::validReturnTarget($request, $candidate);
+        if ($target === null || self::isSamePage($target, self::currentPageReturnTarget($request))) {
+            return '';
         }
 
-        // Browsers drop tabs and line breaks while parsing a URL and treat a
-        // backslash like a slash, so `/<TAB>/evil.com` or `/\evil.com` become
-        // `//evil.com`. A legitimate target never contains either, raw.
-        if (preg_match('/[\x00-\x20\x7F\\\\]/', $candidate) === 1) {
-            return $fallback;
-        }
-
-        // Reject protocol-relative URLs (`//evil.com/path`). Browsers follow
-        // `Location: //host/path` as `scheme://host/path`, so these
-        // would be open redirects if treated as safe paths.
-        if (self::startsWithTwoSlashVariant($candidate)) {
-            return $fallback;
-        }
-
-        if (str_starts_with($candidate, '/')) {
-            return self::boundedReturnTarget(self::canonicalReturnTarget($candidate), $fallback);
-        }
-
-        $parsedCandidate = parse_url($candidate);
-        $requestUri = $request->getUri();
-
-        if (!is_array($parsedCandidate) || !isset($parsedCandidate['host'], $parsedCandidate['scheme'])) {
-            return $fallback;
-        }
-
-        $sameHost = $parsedCandidate['host'] === $requestUri->getHost();
-        $sameScheme = $parsedCandidate['scheme'] === $requestUri->getScheme();
-        $candidatePort = $parsedCandidate['port'] ?? null;
-        $samePort = $candidatePort === null || $candidatePort === $requestUri->getPort();
-        if (!$sameHost || !$sameScheme || !$samePort) {
-            return $fallback;
-        }
-
-        $target = ($parsedCandidate['path'] ?? '') !== '' ? $parsedCandidate['path'] : '/';
-        if (isset($parsedCandidate['query'])) {
-            $target .= '?' . $parsedCandidate['query'];
-        }
-        if (isset($parsedCandidate['fragment'])) {
-            $target .= '#' . $parsedCandidate['fragment'];
-        }
-
-        return self::boundedReturnTarget(self::canonicalReturnTarget($target), $fallback);
+        return $target;
     }
 
     /**
@@ -343,9 +316,87 @@ final class PathUtility
         return self::joinBaseAndPath($backendBasePath, '/main') . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
     }
 
+    /**
+     * The candidate as a canonical same-site target, or null when it is
+     * empty, too long or not a path / URL of the requested host.
+     */
+    private static function validReturnTarget(ServerRequestInterface $request, ?string $candidate): ?string
+    {
+        $candidate = trim((string)$candidate);
+        if ($candidate === '') {
+            return null;
+        }
+
+        // Browsers drop tabs and line breaks while parsing a URL and treat a
+        // backslash like a slash, so `/<TAB>/evil.com` or `/\evil.com` become
+        // `//evil.com`. A legitimate target never contains either, raw.
+        if (preg_match('/[\x00-\x20\x7F\\\\]/', $candidate) === 1) {
+            return null;
+        }
+
+        // Reject protocol-relative URLs (`//evil.com/path`). Browsers follow
+        // `Location: //host/path` as `scheme://host/path`, so these
+        // would be open redirects if treated as safe paths.
+        if (self::startsWithTwoSlashVariant($candidate)) {
+            return null;
+        }
+
+        if (str_starts_with($candidate, '/')) {
+            return self::withinLengthLimit(self::canonicalReturnTarget($candidate));
+        }
+
+        $parsedCandidate = parse_url($candidate);
+        $requestUri = $request->getUri();
+
+        if (!is_array($parsedCandidate) || !isset($parsedCandidate['host'], $parsedCandidate['scheme'])) {
+            return null;
+        }
+
+        $sameHost = $parsedCandidate['host'] === $requestUri->getHost();
+        $sameScheme = $parsedCandidate['scheme'] === $requestUri->getScheme();
+        $candidatePort = $parsedCandidate['port'] ?? null;
+        $samePort = $candidatePort === null || $candidatePort === $requestUri->getPort();
+        if (!$sameHost || !$sameScheme || !$samePort) {
+            return null;
+        }
+
+        $target = ($parsedCandidate['path'] ?? '') !== '' ? $parsedCandidate['path'] : '/';
+        if (isset($parsedCandidate['query'])) {
+            $target .= '?' . $parsedCandidate['query'];
+        }
+        if (isset($parsedCandidate['fragment'])) {
+            $target .= '#' . $parsedCandidate['fragment'];
+        }
+
+        return self::withinLengthLimit(self::canonicalReturnTarget($target));
+    }
+
+    /**
+     * Whether two canonical targets open the same page: the fragment never
+     * reaches the server and TYPO3 answers a path with or without its
+     * trailing slash, so neither tells two pages apart.
+     */
+    private static function isSamePage(string $target, string $page): bool
+    {
+        $pageOf = static function (string $target): string {
+            [$pathAndQuery] = explode('#', $target, 2);
+            [$path, $query] = array_pad(explode('?', $pathAndQuery, 2), 2, '');
+            $path = rtrim($path, '/');
+
+            return ($path !== '' ? $path : '/') . ($query !== '' ? '?' . $query : '');
+        };
+
+        return $pageOf($target) === $pageOf($page);
+    }
+
     private static function boundedReturnTarget(string $target, string $fallback): string
     {
-        return $target !== '' && strlen($target) <= self::MAX_RETURN_TO_LENGTH ? $target : $fallback;
+        return self::withinLengthLimit($target) ?? $fallback;
+    }
+
+    private static function withinLengthLimit(string $target): ?string
+    {
+        return $target !== '' && strlen($target) <= self::MAX_RETURN_TO_LENGTH ? $target : null;
     }
 
     /**

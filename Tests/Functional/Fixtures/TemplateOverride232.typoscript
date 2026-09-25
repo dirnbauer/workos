@@ -1,0 +1,2 @@
+# A sitepackage template of the sign-in view written for 2.3.2 or earlier.
+plugin.tx_workosauth.view.templateRootPaths.10 = EXT:workos_auth/Tests/Functional/Fixtures/Templates232/

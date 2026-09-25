@@ -1,0 +1,7 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<!-- How a sitepackage overrode the sign-in view up to 2.3.2. -->
+<f:form action="passwordAuth" method="post" requestToken="{requestToken}">
+    <f:form.hidden name="returnTo" value="{returnToUrl}" />
+</f:form>
+<f:link.action action="signUp" arguments="{returnTo: returnToUrl}">Sign up</f:link.action>
+</html>

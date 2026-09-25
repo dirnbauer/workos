@@ -20,10 +20,12 @@ use Webconsulting\WorkosAuth\Security\StateService;
 use Webconsulting\WorkosAuth\Service\PathUtility;
 
 /**
- * The Login plugin carries its return target as a same-site path that
- * never contains an earlier one. 2.3.1 embedded the whole current URL,
- * `returnTo` included, so every sign-in / sign-up toggle nested the
- * previous URL; a few rounds ended in `414 URI Too Long`.
+ * The Login plugin carries a requested return target as a same-site path
+ * that never contains an earlier one, and carries none when nobody asked
+ * for one. 2.3.1 embedded the whole current URL, `returnTo` included, so
+ * every sign-in / sign-up toggle nested the previous URL; a few rounds ended
+ * in `414 URI Too Long`. 2.3.2 carried the login page itself, so a sign-in
+ * there ended on the login page instead of `frontendSuccessRedirect`.
  */
 final class LoginReturnTargetTest extends FunctionalTestCase
 {
@@ -45,6 +47,7 @@ final class LoginReturnTargetTest extends FunctionalTestCase
                 'apiKey' => 'sk_test_dummy',
                 'clientId' => 'client_dummy',
                 'frontendAutoCreateUsers' => '0',
+                'frontendSuccessRedirect' => '/welcome',
             ],
         ],
         // Lets a test replay a hand-built 2.3.1 link, which has no valid cHash.
@@ -78,8 +81,8 @@ final class LoginReturnTargetTest extends FunctionalTestCase
 
         self::assertCount(1, array_unique($signUpLinks), 'The sign-up link does not change from toggle to toggle');
         self::assertCount(1, array_unique($signInLinks), 'The sign-in link does not change from toggle to toggle');
-        self::assertSame('/login', self::pluginArgument($signUpLinks[0], 'returnTo'), 'The return target is the page path, not its URL');
-        self::assertSame('/login', self::pluginArgument($signInLinks[0], 'returnTo'));
+        self::assertStringNotContainsString('returnTo', $signUpLinks[0], 'Without a requested target the links carry none');
+        self::assertStringNotContainsString('returnTo', $signInLinks[0]);
         self::assertLessThan(300, strlen($signUpLinks[0]));
     }
 
@@ -100,14 +103,15 @@ final class LoginReturnTargetTest extends FunctionalTestCase
 
         $html = $this->render($nested);
 
-        self::assertSame('/login', self::pluginArgument($this->pluginLink($html, $action === 'show' ? 'signUp' : 'show'), 'returnTo'));
+        // Flattened, the target is the login page itself: no target at all.
+        self::assertStringNotContainsString('returnTo', $this->pluginLink($html, $action === 'show' ? 'signUp' : 'show'));
         self::assertStringNotContainsString('returnTo%5D%3D', $html, 'No link carries a nested return target');
     }
 
     public function testARequestedReturnTargetSurvivesEveryToggle(): void
     {
         $url = '/login?returnTo=' . rawurlencode('/members?tab=2');
-        for ($round = 0; $round < 4; $round++) {
+        for ($round = 0; $round < 8; $round++) {
             $url = $this->pluginLink($this->render($this->pluginLink($this->render($url), 'signUp')), 'show');
         }
 
@@ -126,13 +130,23 @@ final class LoginReturnTargetTest extends FunctionalTestCase
         );
     }
 
-    public function testAForeignReturnTargetIsReplacedByThePage(): void
+    public function testAForeignReturnTargetIsDropped(): void
     {
         foreach (['https://evil.example/phish', '//evil.example/phish', '/\\evil.example'] as $foreign) {
             $html = $this->render('/login?returnTo=' . rawurlencode($foreign));
 
-            self::assertSame('/login', self::pluginArgument($this->pluginLink($html, 'signUp'), 'returnTo'), $foreign);
+            self::assertStringNotContainsString('returnTo', $this->pluginLink($html, 'signUp'), $foreign);
             self::assertStringNotContainsString('evil.example', $html, $foreign);
+        }
+    }
+
+    public function testTheLoginPageAsRequestedTargetCountsAsNone(): void
+    {
+        // What 2.3.2 printed into its links: the login page itself.
+        foreach (['/login', '/login/', self::BASE . '/login', '/login#top'] as $loginPage) {
+            $html = $this->render('/login?returnTo=' . rawurlencode($loginPage));
+
+            self::assertStringNotContainsString('returnTo', $html, $loginPage);
         }
     }
 
@@ -140,22 +154,37 @@ final class LoginReturnTargetTest extends FunctionalTestCase
     {
         $signUpPage = $this->render($this->pluginLink($this->render('/login'), 'signUp'));
         self::assertSame(1, preg_match('/<form[^>]+action="([^"]+signUpSubmit[^"]+)"/', $signUpPage, $form), 'The sign-up form is rendered');
-        $nested = self::BASE . '/login?' . http_build_query(['tx_workosauth_login' => [
+        $nested = static fn(string $page): string => self::BASE . $page . '?' . http_build_query(['tx_workosauth_login' => [
             'action' => 'show',
             'returnTo' => self::BASE . '/login?' . http_build_query(['returnTo' => '/deeper']),
         ]]);
 
         // No request token: the plugin answers with the sign-up form again,
         // which keeps the (sanitized) return target of the submission.
-        $response = $this->executeFrontendSubRequest(
-            new InternalRequest(self::BASE . html_entity_decode($form[1]))
-                ->withMethod('POST')
-                ->withParsedBody(['tx_workosauth_login' => ['returnTo' => $nested]])
-        );
+        foreach (['/members' => '/members', '/login' => ''] as $page => $expected) {
+            $response = $this->executeFrontendSubRequest(
+                new InternalRequest(self::BASE . html_entity_decode($form[1]))
+                    ->withMethod('POST')
+                    ->withParsedBody(['tx_workosauth_login' => ['returnTo' => $nested($page)]])
+            );
 
-        self::assertSame(303, $response->getStatusCode());
-        self::assertSame('signUp', self::pluginArgument($response->getHeaderLine('Location'), 'action'));
-        self::assertSame('/login', self::pluginArgument($response->getHeaderLine('Location'), 'returnTo'));
+            self::assertSame(303, $response->getStatusCode());
+            self::assertSame('signUp', self::pluginArgument($response->getHeaderLine('Location'), 'action'));
+            self::assertSame($expected, self::pluginArgument($response->getHeaderLine('Location'), 'returnTo'), $page);
+        }
+    }
+
+    public function testTheHostedLoginLinksEndAtTheSuccessPageWithoutATarget(): void
+    {
+        $socialLink = static function (string $html): string {
+            self::assertSame(1, preg_match('/href="(\/workos-auth\/frontend\/login\?[^"]*provider=GoogleOAuth)"/', $html, $link));
+
+            return html_entity_decode($link[1], ENT_QUOTES | ENT_HTML5);
+        };
+
+        self::assertSame('/welcome', $this->storedReturnTargetOf($socialLink($this->render('/login'))));
+        self::assertSame('/welcome', $this->storedReturnTargetOf($socialLink($this->render('/login?returnTo=%2Flogin'))));
+        self::assertSame('/members?tab=2', $this->storedReturnTargetOf($socialLink($this->render('/login?returnTo=' . rawurlencode('/members?tab=2')))));
     }
 
     public function testTheHostedLoginEndpointStoresAFlatReturnTarget(): void
@@ -167,14 +196,24 @@ final class LoginReturnTargetTest extends FunctionalTestCase
 
         self::assertSame('/login', $this->storedFrontendReturnTarget($nested));
         self::assertSame('/members?tab=2', $this->storedFrontendReturnTarget(self::BASE . '/members?tab=2&returnTo=%2Fdeeper'));
-        self::assertSame('/', $this->storedFrontendReturnTarget('/' . str_repeat('a', PathUtility::MAX_RETURN_TO_LENGTH)));
+        self::assertSame('/welcome', $this->storedFrontendReturnTarget('/' . str_repeat('a', PathUtility::MAX_RETURN_TO_LENGTH)));
     }
 
     private function storedFrontendReturnTarget(string $returnTo): string
     {
+        return $this->storedReturnTargetOf('/workos-auth/frontend/login?' . http_build_query(['returnTo' => $returnTo]));
+    }
+
+    /**
+     * The return target the frontend login endpoint stores for the hosted
+     * login a link starts.
+     */
+    private function storedReturnTargetOf(string $loginLink): string
+    {
         $site = new Site('website', 1, ['base' => self::BASE . '/']);
-        $request = new ServerRequest(self::BASE . '/workos-auth/frontend/login?' . http_build_query(['returnTo' => $returnTo]))
-            ->withQueryParams(['returnTo' => $returnTo])
+        parse_str(MixedCaster::string(parse_url($loginLink, PHP_URL_QUERY)), $queryParams);
+        $request = new ServerRequest(self::BASE . $loginLink)
+            ->withQueryParams($queryParams)
             ->withAttribute('site', $site);
         $handler = new class implements RequestHandlerInterface {
             #[\Override]

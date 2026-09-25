@@ -172,30 +172,37 @@ final class PathUtilityTest extends TestCase
         self::assertSame($expected, PathUtility::canonicalReturnTarget($target));
     }
 
-    public function testTogglingAnyNumberOfTimesYieldsTheSameReturnTarget(): void
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function toggleProvider(): array
+    {
+        return [
+            'no target' => ['https://app.local/de/login/', ''],
+            'a requested target' => ['https://app.local/de/login/?returnTo=' . rawurlencode('/de/members/?tab=2'), '/de/members/?tab=2'],
+            'the login page as target' => ['https://app.local/de/login/?returnTo=%2Fde%2Flogin', ''],
+        ];
+    }
+
+    #[DataProvider('toggleProvider')]
+    public function testTogglingAnyNumberOfTimesYieldsTheSameReturnTarget(string $url, string $expected): void
     {
         // Mirrors the Login plugin: the requested target is the plugin
-        // argument of the current URL, the fallback the current page.
-        $url = 'https://app.local/de/login/';
+        // argument of the current URL, else its plain `returnTo`; a link
+        // carries it only when there is one.
         $lengths = [];
         for ($toggle = 0; $toggle < 20; $toggle++) {
             $request = self::request($url);
             parse_str((string)parse_url($url, PHP_URL_QUERY), $query);
             $arguments = is_array($query['tx_workosauth_login'] ?? null) ? $query['tx_workosauth_login'] : [];
-            $returnTo = PathUtility::sanitizeReturnTo(
-                $request,
-                is_string($arguments['returnTo'] ?? null) ? $arguments['returnTo'] : '',
-                PathUtility::currentPageReturnTarget($request)
-            );
-            self::assertSame('/de/login/', $returnTo);
+            $candidate = $arguments['returnTo'] ?? $query['returnTo'] ?? '';
+            $returnTo = PathUtility::requestedReturnTarget($request, is_string($candidate) ? $candidate : '');
+            self::assertSame($expected, $returnTo);
 
             $action = $toggle % 2 === 0 ? 'signUp' : 'show';
             $url = 'https://app.local/de/login/?' . http_build_query([
-                'tx_workosauth_login' => [
-                    'action' => $action,
-                    'controller' => 'Frontend\\Login',
-                    'returnTo' => $returnTo,
-                ],
+                'tx_workosauth_login' => ['action' => $action, 'controller' => 'Frontend\\Login']
+                    + ($returnTo !== '' ? ['returnTo' => $returnTo] : []),
                 'cHash' => hash('sha256', (string)$toggle),
             ]);
             $lengths[$action][] = strlen($url);
@@ -203,6 +210,45 @@ final class PathUtilityTest extends TestCase
 
         self::assertCount(1, array_unique($lengths['signUp']), 'Toggle N times, same length as toggling once');
         self::assertCount(1, array_unique($lengths['show']), 'Toggle N times, same length as toggling once');
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string|null, 2: string}>
+     */
+    public static function requestedReturnTargetProvider(): array
+    {
+        return [
+            'nothing requested' => ['https://app.local/de/login/', null, ''],
+            'blank' => ['https://app.local/de/login/', '  ', ''],
+            'another page' => ['https://app.local/de/login/', '/de/members/?tab=2#list', '/de/members/?tab=2#list'],
+            'same-origin URL as its path' => ['https://app.local/de/login/', 'https://app.local/de/members/', '/de/members/'],
+            'the login page' => ['https://app.local/de/login/', '/de/login/', ''],
+            'the login page without trailing slash' => ['https://app.local/de/login/', '/de/login', ''],
+            'the login page with a fragment' => ['https://app.local/de/login/', '/de/login/#form', ''],
+            'the login page as same-origin URL' => ['https://app.local/de/login/', 'https://app.local/de/login', ''],
+            'the login page, nested by 2.3.1' => [
+                'https://app.local/de/login/',
+                'https://app.local/de/login/?' . http_build_query(['tx_workosauth_login' => ['action' => 'signUp', 'returnTo' => '/deeper']]),
+                '',
+            ],
+            'the login page seen from its form action' => [
+                'https://app.local/de/login/?tx_workosauth_login%5Baction%5D=passwordAuth&tx_workosauth_login%5Bcontroller%5D=Frontend%5CLogin&cHash=abc',
+                '/de/login',
+                '',
+            ],
+            'the login page with another query' => ['https://app.local/de/login/', '/de/login/?campaign=spring', '/de/login/?campaign=spring'],
+            'the site root is a page of its own' => ['https://app.local/de/login/', '/', '/'],
+            'a page below the login page' => ['https://app.local/de/login/', '/de/login/help', '/de/login/help'],
+            'foreign host' => ['https://app.local/de/login/', 'https://evil.example/de/login/', ''],
+            'protocol-relative' => ['https://app.local/de/login/', '//evil.example/', ''],
+            'over the length limit' => ['https://app.local/de/login/', '/' . str_repeat('a', PathUtility::MAX_RETURN_TO_LENGTH), ''],
+        ];
+    }
+
+    #[DataProvider('requestedReturnTargetProvider')]
+    public function testRequestedReturnTarget(string $currentUrl, ?string $candidate, string $expected): void
+    {
+        self::assertSame($expected, PathUtility::requestedReturnTarget(self::request($currentUrl), $candidate));
     }
 
     public function testCurrentPageReturnTarget(): void

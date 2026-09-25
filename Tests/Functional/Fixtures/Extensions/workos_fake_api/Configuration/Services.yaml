@@ -1,0 +1,16 @@
+# The WorkOS SDK of workos_auth talks to FakeWorkosApi instead of
+# api.workos.com. Every frontend sub-request builds its own container, so the
+# fake keeps its state in static properties the test sets.
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  workos_fake_api.handler:
+    class: GuzzleHttp\HandlerStack
+    factory: ['Webconsulting\WorkosAuth\Tests\Functional\Fixtures\FakeWorkosApi', 'handlerStack']
+
+  Webconsulting\WorkosAuth\Service\WorkosClientFactory:
+    arguments:
+      $handler: '@workos_fake_api.handler'

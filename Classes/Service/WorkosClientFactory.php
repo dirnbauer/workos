@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Service;
 
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Promise\PromiseInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use WorkOS\WorkOS;
 
@@ -14,8 +18,14 @@ use WorkOS\WorkOS;
  */
 final readonly class WorkosClientFactory
 {
+    /**
+     * @param HandlerStack<callable(RequestInterface, array<array-key, mixed>): PromiseInterface<ResponseInterface, mixed>>|null $handler
+     *        Guzzle handler of the SDK's HTTP client; null (the default) is
+     *        Guzzle's own. The functional tests answer the WorkOS API through it.
+     */
     public function __construct(
         private WorkosConfiguration $configuration,
+        private ?HandlerStack $handler = null,
     ) {}
 
     /**
@@ -30,6 +40,7 @@ final readonly class WorkosClientFactory
         return new WorkOS(
             apiKey: $this->configuration->getApiKey(),
             clientId: $this->configuration->getClientId(),
+            handler: $this->handler,
         );
     }
 }

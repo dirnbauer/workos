@@ -60,7 +60,7 @@ final class LoginController extends AbstractFrontendController implements Logger
     public function showAction(): ResponseInterface
     {
         $isLoggedIn = $this->isFrontendUserLoggedIn();
-        $returnToUrl = $this->sanitizeReturnTo($this->requestedReturnTo(), PathUtility::currentPageReturnTarget($this->request));
+        $returnTo = $this->requestedReturnTarget();
 
         $workosProfile = $isLoggedIn
             ? $this->identityService->findProfileByLocalUser(LoginContext::Frontend, MixedCaster::int($this->getFrontendUser()->user['uid'] ?? null))
@@ -70,7 +70,9 @@ final class LoginController extends AbstractFrontendController implements Logger
         $siteBasePath = $site instanceof Site ? $site->getBase()->getPath() : '';
         $loginPath = PathUtility::joinBaseAndPath($siteBasePath, $this->configuration->getFrontendLoginPath());
         $logoutPath = PathUtility::joinBaseAndPath($siteBasePath, $this->configuration->getFrontendLogoutPath());
-        $returnParam = ['returnTo' => $returnToUrl];
+        // Empty without a requested target: the hosted login then ends at
+        // frontendSuccessRedirect, like the forms of this plugin.
+        $returnParam = ['returnTo' => $returnTo];
 
         $this->view->assignMultiple([
             'configured' => $this->configuration->isFrontendReady(),
@@ -78,7 +80,9 @@ final class LoginController extends AbstractFrontendController implements Logger
             'displayName' => $isLoggedIn ? $this->resolveDisplayName() : '',
             'loginUrl' => PathUtility::appendQueryParameters($loginPath, $returnParam),
             'signUpUrl' => PathUtility::appendQueryParameters($loginPath, $returnParam + ['screen' => 'sign-up']),
-            'logoutUrl' => PathUtility::appendQueryParameters($logoutPath, $returnParam),
+            'logoutUrl' => PathUtility::appendQueryParameters($logoutPath, [
+                'returnTo' => $returnTo !== '' ? $returnTo : PathUtility::currentPageReturnTarget($this->request),
+            ]),
             'socialProviders' => array_map(fn(SocialProvider $provider): array => [
                 'key' => $provider->value,
                 'label' => $this->translate($provider->labelKey()),
@@ -87,7 +91,10 @@ final class LoginController extends AbstractFrontendController implements Logger
             'workosProfile' => $workosProfile,
             'avatarUrl' => $this->resolveAvatarUrl($workosProfile),
             'authError' => $isLoggedIn ? null : $this->consumeSessionString(self::SESSION_ERROR),
-            'returnToUrl' => $returnToUrl,
+            // Null without a target: sitepackage templates written for 2.3.2
+            // pass it as link argument, and a null argument is left out.
+            'returnToUrl' => $returnTo !== '' ? $returnTo : null,
+            'returnArguments' => self::returnArguments($returnTo),
             'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
 
@@ -102,6 +109,7 @@ final class LoginController extends AbstractFrontendController implements Logger
 
         $savedForm = $this->consumeSessionArray(self::SESSION_SIGNUP_FORM) ?? [];
         $savedReturnTo = MixedCaster::string($savedForm['returnTo'] ?? null);
+        $returnTo = $this->requestedReturnTarget($savedReturnTo !== '' ? $savedReturnTo : null);
 
         $this->view->assignMultiple([
             'configured' => $this->configuration->isFrontendReady(),
@@ -109,10 +117,8 @@ final class LoginController extends AbstractFrontendController implements Logger
             'savedEmail' => MixedCaster::string($savedForm['email'] ?? null),
             'savedFirstName' => MixedCaster::string($savedForm['firstName'] ?? null),
             'savedLastName' => MixedCaster::string($savedForm['lastName'] ?? null),
-            'returnToUrl' => $this->sanitizeReturnTo(
-                $savedReturnTo !== '' ? $savedReturnTo : $this->requestedReturnTo(),
-                PathUtility::currentPageReturnTarget($this->request)
-            ),
+            'returnToUrl' => $returnTo !== '' ? $returnTo : null,
+            'returnArguments' => self::returnArguments($returnTo),
             'requestToken' => $this->requestTokenService->create(self::REQUEST_TOKEN_SCOPE),
         ]);
 
@@ -128,7 +134,7 @@ final class LoginController extends AbstractFrontendController implements Logger
             'email' => $email,
             'firstName' => $body->trimmedString('firstName'),
             'lastName' => $body->trimmedString('lastName'),
-            'returnTo' => $this->sanitizeReturnTo($this->requestedReturnTo(), $this->configuration->getFrontendSuccessRedirect()),
+            'returnTo' => $this->requestedReturnTarget(),
         ];
 
         $validationError = match (true) {
@@ -146,9 +152,9 @@ final class LoginController extends AbstractFrontendController implements Logger
             $this->workosAuthenticationService->createUser($email, $password, $formData['firstName'], $formData['lastName']);
             $session = $this->workosAuthenticationService->authenticateWithPassword($this->request, $email, $password);
 
-            return $this->createLoginResponse($session, $formData['returnTo']);
+            return $this->createLoginResponse($session, $this->landingTarget($formData['returnTo']));
         } catch (EmailVerificationRequiredException $e) {
-            return $this->startEmailVerificationFlow($e, $formData['returnTo']);
+            return $this->startEmailVerificationFlow($e, $this->landingTarget($formData['returnTo']));
         } catch (\Throwable $e) {
             $this->logger?->error('WorkOS sign-up error: ' . SecretRedactor::redact($e->getMessage()));
 
@@ -161,7 +167,7 @@ final class LoginController extends AbstractFrontendController implements Logger
         $body = RequestBody::fromRequest($this->request);
         $email = $body->trimmedString('email');
         $password = $body->string('password');
-        $returnTo = $this->sanitizeReturnTo($this->requestedReturnTo(), $this->configuration->getFrontendSuccessRedirect());
+        $returnTo = $this->landingTarget($this->requestedReturnTarget());
 
         if (!$this->hasValidRequestToken()) {
             return $this->redirectToShowWithError($this->translate('error.csrfTokenInvalid'));
@@ -185,7 +191,7 @@ final class LoginController extends AbstractFrontendController implements Logger
     {
         $body = RequestBody::fromRequest($this->request);
         $email = $body->trimmedString('email');
-        $returnTo = $this->sanitizeReturnTo($this->requestedReturnTo(), $this->configuration->getFrontendSuccessRedirect());
+        $returnTo = $this->landingTarget($this->requestedReturnTarget());
 
         if (!$this->hasValidRequestToken()) {
             return $this->redirectToShowWithError($this->translate('error.csrfTokenInvalid'));
@@ -236,7 +242,7 @@ final class LoginController extends AbstractFrontendController implements Logger
             return $this->redirect('magicAuthCode');
         }
 
-        $returnTo = MixedCaster::string($sessionData['returnTo'] ?? null, '/');
+        $returnTo = $this->landingTarget(MixedCaster::string($sessionData['returnTo'] ?? null));
         try {
             $session = $this->workosAuthenticationService->authenticateWithMagicAuth($this->request, $code, $email);
             $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_MAGIC_AUTH, null);
@@ -293,7 +299,7 @@ final class LoginController extends AbstractFrontendController implements Logger
             );
             $this->getFrontendUser()->setAndSaveSessionData(self::SESSION_EMAIL_VERIFICATION, null);
 
-            return $this->createLoginResponse($session, MixedCaster::string($sessionData['returnTo'] ?? null, '/'));
+            return $this->createLoginResponse($session, $this->landingTarget(MixedCaster::string($sessionData['returnTo'] ?? null)));
         } catch (\Throwable $e) {
             return $this->redirectToVerifyEmailWithError($this->resolveAuthenticationError($e));
         }
@@ -346,7 +352,7 @@ final class LoginController extends AbstractFrontendController implements Logger
         return $this->typo3SessionService->createFrontendLoginResponse(
             $this->request,
             $this->userProvisioningService->resolve(LoginContext::Frontend, $session->user),
-            $returnTo !== '' ? $returnTo : '/',
+            $this->landingTarget($returnTo),
             $session->sessionId,
         );
     }
@@ -367,7 +373,7 @@ final class LoginController extends AbstractFrontendController implements Logger
             'pendingToken' => $exception->pendingAuthenticationToken,
             'email' => $exception->email,
             'userId' => $exception->userId,
-            'returnTo' => $returnTo !== '' ? $returnTo : '/',
+            'returnTo' => $this->landingTarget($returnTo),
         ]);
 
         return $this->redirect('verifyEmail');
@@ -396,12 +402,38 @@ final class LoginController extends AbstractFrontendController implements Logger
         $frontendUser->setAndSaveSessionData(self::SESSION_ERROR, $message);
         $frontendUser->setAndSaveSessionData(self::SESSION_SIGNUP_FORM, $formData);
 
-        return $this->redirect('signUp', null, null, $formData['returnTo'] !== '' ? ['returnTo' => $formData['returnTo']] : []);
+        return $this->redirect('signUp', null, null, self::returnArguments($formData['returnTo']));
     }
 
-    private function sanitizeReturnTo(string $candidate, string $fallback): string
+    /**
+     * The target the visitor asked for (see {@see requestedReturnTo()}),
+     * sanitized and canonical, or '' when there is none: nothing asked for,
+     * a foreign or malformed target, or this login page itself. Without a
+     * target, links and forms carry no `returnTo` and a sign-in ends at
+     * {@see landingTarget()}.
+     */
+    private function requestedReturnTarget(?string $candidate = null): string
     {
-        return PathUtility::sanitizeReturnTo($this->request, $candidate, $fallback);
+        return PathUtility::requestedReturnTarget($this->request, $candidate ?? $this->requestedReturnTo());
+    }
+
+    /**
+     * Where a successful sign-in lands: the requested target, else the
+     * configured success page (`frontendSuccessRedirect`).
+     */
+    private function landingTarget(string $requestedTarget): string
+    {
+        return $requestedTarget !== '' ? $requestedTarget : $this->configuration->getFrontendSuccessRedirect();
+    }
+
+    /**
+     * Plugin arguments of the sign-in / sign-up links: none without a target.
+     *
+     * @return array<string, string>
+     */
+    private static function returnArguments(string $returnTo): array
+    {
+        return $returnTo !== '' ? ['returnTo' => $returnTo] : [];
     }
 
     /**

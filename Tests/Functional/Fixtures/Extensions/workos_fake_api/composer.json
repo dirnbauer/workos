@@ -1,0 +1,14 @@
+{
+    "name": "webconsulting/workos-fake-api",
+    "type": "typo3-cms-extension",
+    "description": "Functional test fixture: answers the WorkOS API of the login flows without the network.",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "webconsulting/workos-auth": "*"
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "workos_fake_api"
+        }
+    }
+}
