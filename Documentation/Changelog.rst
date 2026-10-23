@@ -8,6 +8,14 @@ Changelog
 
 All notable changes to this extension are documented in this file.
 
+2.3.4 - Updated widget assets
+============================
+
+-   Rebuild User Management with WorkOS Widgets 1.20.2, React 19.3.1 and
+    TanStack Query 5.104.5. Resolve the stylesheet through its public package
+    export so builds include the current widget CSS.
+-   Update Playwright to 1.64.1 and the E2E Node type definitions.
+
 ..  _changelog-2-3-3:
 
 2.3.3 - Signed in, back on the success page

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.4 — 2026-10-23
+
+- Refresh the User Management widget to WorkOS Widgets 1.20.2, React 19.3.1 and TanStack Query 5.104.5; rebuild its JavaScript and CSS.
+- Resolve the widget stylesheet through its public package export so stylesheet layout changes cannot leave a stale CSS bundle.
+- Update Playwright to 1.64.1 and Node type definitions for the E2E suite.
+
 ## 2.3.3 - 2026-09-25
 
 ### Fixed

@@ -47,7 +47,7 @@ await build({
 });
 
 // Bundle CSS (flatten @import trees, inline everything).
-const widgetsCss = join(__dirname, 'node_modules', '@workos-inc', 'widgets', 'dist', 'css', 'styles.css');
+const widgetsCss = fileURLToPath(import.meta.resolve('@workos-inc/widgets/styles.css'));
 if (existsSync(widgetsCss)) {
     await build({
         entryPoints: [widgetsCss],
