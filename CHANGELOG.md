@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.5 — 2026-10-24
+
+- Refresh the Radix UI widget dependencies and rebuild the User Management bundle on Node 26.12.1 with npm 12.2.1. Refresh the browser-test lock.
+
 ## 2.3.4 — 2026-10-23
 
 - Refresh the User Management widget to WorkOS Widgets 1.20.2, React 19.3.1 and TanStack Query 5.104.5; rebuild its JavaScript and CSS.
