@@ -9,11 +9,13 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Authentication\Mfa\MfaRequiredException;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use Webconsulting\WorkosAuth\Authentication\WorkosTypo3AuthenticationService;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Domain\LoginContext;
 use Webconsulting\WorkosAuth\Security\MixedCaster;
 
@@ -22,7 +24,7 @@ use Webconsulting\WorkosAuth\Security\MixedCaster;
  * authentication lifecycle. The request gets a server-side "pending login"
  * attribute that {@see WorkosTypo3AuthenticationService} consumes, so TYPO3
  * core creates the session (with session fixation protection, login logging
- * and backend MFA evaluation intact) instead of this extension.
+ * and the configured backend MFA policy) instead of this extension.
  */
 final readonly class Typo3SessionService
 {
@@ -40,6 +42,7 @@ final readonly class Typo3SessionService
 
     public function __construct(
         private LoggerInterface $logger,
+        private WorkosConfiguration $configuration,
     ) {}
 
     /**
@@ -92,8 +95,24 @@ final readonly class Typo3SessionService
         $backendUser->setLogger($this->logger);
         $GLOBALS['BE_USER'] = $backendUser;
         $loginRequest = $this->createPendingLoginRequest($request, LoginContext::Backend, $userRow);
-        $backendUser->start($loginRequest);
+        $requireMfa = $this->configuration->all()['backendRequireMfa'];
+        try {
+            $backendUser->start($loginRequest);
+        } catch (MfaRequiredException $exception) {
+            if ($requireMfa) {
+                throw $exception;
+            }
+            // Core has authenticated the first factor and persisted its
+            // session before asking for an already-enrolled MFA provider.
+        }
         $this->assertAuthenticatedUser($backendUser, $userRow, LoginContext::Backend);
+        if (!$requireMfa) {
+            // This session came from verified WorkOS authentication. Opting
+            // into the external policy satisfies Core's local challenge gate
+            // for this session only, including the mandatory-enrollment gate.
+            // It does not assert that WorkOS performed multiple factors.
+            $backendUser->setAndSaveSessionData('mfa', true);
+        }
         $backendUser->initializeBackendLogin($loginRequest);
         if ($workosUserId !== '') {
             $backendUser->setAndSaveSessionData(self::SESSION_WORKOS_USER_ID, $workosUserId);

@@ -44,6 +44,10 @@ vendor/bin/typo3 extension:setup --extension=workos_auth
 4. Optional: frontend storage PID and default groups, backend auto-create
    with a domain allow-list, AuthKit hints. The MCP mode and AuthKit domain
    are set in **WorkOS → MCP Server**.
+5. For email-code-only backend login, disable **Require TYPO3 MFA after WorkOS
+   sign-in** (`backendRequireMfa`, enabled by default). This skips the extra
+   TYPO3 authenticator step only for successful WorkOS sessions. Classic
+   TYPO3 password logins retain their MFA policy. WorkOS policies still apply.
 
 ## Use
 

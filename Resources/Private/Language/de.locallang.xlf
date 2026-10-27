@@ -2425,5 +2425,35 @@
         <target>Danach kehren Sie zu diesem Modul zurück. Die beiden Konten werden über die bestätigte E-Mail-Adresse des WorkOS-Benutzers verknüpft.</target>
       </segment>
     </unit>
+    <unit id="backend.login.magic.title">
+      <segment>
+        <source>Sign in by email</source>
+        <target>Mit E-Mail anmelden</target>
+      </segment>
+    </unit>
+    <unit id="backend.login.magic.description">
+      <segment>
+        <source>We will send a six-digit sign-in code to your email. No password needed.</source>
+        <target>Wir senden einen sechsstelligen Anmeldecode an Ihre E-Mail-Adresse. Kein Passwort erforderlich.</target>
+      </segment>
+    </unit>
+    <unit id="backend.login.password.title">
+      <segment>
+        <source>Sign in with a password</source>
+        <target>Mit Passwort anmelden</target>
+      </segment>
+    </unit>
+    <unit id="setup.backend.requireMfa">
+      <segment>
+        <source>Require TYPO3 MFA after WorkOS sign-in</source>
+        <target>TYPO3-MFA nach WorkOS-Anmeldung verlangen</target>
+      </segment>
+    </unit>
+    <unit id="setup.backend.requireMfa.description">
+      <segment>
+        <source>When disabled, successful WorkOS sign-ins skip TYPO3 authenticator challenges and enrollment. Authentication policy is handled by WorkOS. Classic TYPO3 logins keep their MFA requirements.</source>
+        <target>Wenn deaktiviert, entfällt nach erfolgreicher WorkOS-Anmeldung die zusätzliche TYPO3-Authentifizierung und Einrichtung einer Authenticator-App. WorkOS übernimmt die Anmelderichtlinie. Klassische TYPO3-Anmeldungen behalten ihre MFA-Anforderungen.</target>
+      </segment>
+    </unit>
   </file>
 </xliff>

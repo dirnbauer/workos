@@ -34,6 +34,9 @@ frontendSuccessRedirect = /
 # cat=backend/basic; type=boolean; label=Enable backend login
 backendEnabled = 1
 
+# cat=backend/basic; type=boolean; label=Require TYPO3 MFA after WorkOS sign-in: Disable only when WorkOS should own authentication policy. Classic TYPO3 logins keep their MFA requirements.
+backendRequireMfa = 1
+
 # cat=backend/basic; type=boolean; label=Create missing backend users automatically
 backendAutoCreateUsers = 0
 

@@ -129,6 +129,7 @@
 
         <h2><f:translate key="workos_auth.messages:setup.backend.title" /></h2>
         <f:render partial="Backend/Field" section="Switch" arguments="{name: 'backendEnabled', label: 'setup.backend.enable', description: 'setup.backend.enable.description', checked: formValues.backendEnabled}" />
+        <f:render partial="Backend/Field" section="Switch" arguments="{name: 'backendRequireMfa', label: 'setup.backend.requireMfa', description: 'setup.backend.requireMfa.description', checked: formValues.backendRequireMfa}" />
         <f:if condition="{formValues.backendEnabled}">
             <f:if condition="{backendCookieSameSiteCompatible}">
                 <f:else>

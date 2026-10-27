@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.4.0 — 2026-10-27
+
+- Give backend email-code login its own labelled email field and form. Show email login first, with password login in an expandable section. Enter submits the selected method, and code requests never include password-form fields.
+- Add `backendRequireMfa` (default enabled) to the Setup Assistant. When explicitly disabled, verified WorkOS sign-ins satisfy TYPO3's local MFA gate for that session, avoiding both enrollment and an existing authenticator challenge. Classic TYPO3 password logins retain their MFA requirements; WorkOS retains its own authentication policy.
+- Cover both local MFA policies, accounts with and without an enrolled authenticator, ordinary password authentication, and the rendered email/password form separation.
+
 ## 2.3.5 — 2026-10-24
 
 - Refresh the Radix UI widget dependencies and rebuild the User Management bundle on Node 26.12.1 with npm 12.2.1. Refresh the browser-test lock.

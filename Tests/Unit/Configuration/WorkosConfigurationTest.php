@@ -43,6 +43,7 @@ final class WorkosConfigurationTest extends TestCase
         self::assertSame('', $settings['apiKey']);
         self::assertTrue($settings['frontendEnabled']);
         self::assertFalse($settings['backendAutoCreateUsers']);
+        self::assertTrue($settings['backendRequireMfa']);
         self::assertSame('/workos-auth/frontend/login', $settings['frontendLoginPath']);
         self::assertSame('/main', $settings['backendSuccessPath']);
         self::assertSame(McpAuthenticationMode::Auto, $this->configuration->getMcpAuthenticationMode());

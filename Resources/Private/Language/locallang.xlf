@@ -2024,5 +2024,30 @@
         <source>Afterwards you come back to this module. The two accounts are linked through the verified email address of the WorkOS user.</source>
       </segment>
     </unit>
+    <unit id="backend.login.magic.title">
+      <segment>
+        <source>Sign in by email</source>
+      </segment>
+    </unit>
+    <unit id="backend.login.magic.description">
+      <segment>
+        <source>We will send a six-digit sign-in code to your email. No password needed.</source>
+      </segment>
+    </unit>
+    <unit id="backend.login.password.title">
+      <segment>
+        <source>Sign in with a password</source>
+      </segment>
+    </unit>
+    <unit id="setup.backend.requireMfa">
+      <segment>
+        <source>Require TYPO3 MFA after WorkOS sign-in</source>
+      </segment>
+    </unit>
+    <unit id="setup.backend.requireMfa.description">
+      <segment>
+        <source>When disabled, successful WorkOS sign-ins skip TYPO3 authenticator challenges and enrollment. Authentication policy is handled by WorkOS. Classic TYPO3 logins keep their MFA requirements.</source>
+      </segment>
+    </unit>
   </file>
 </xliff>

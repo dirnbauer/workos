@@ -37,6 +37,7 @@ Keys and defaults
             'frontendSuccessRedirect' => '/',     // when no returnTo is given
 
             'backendEnabled' => '1',
+            'backendRequireMfa' => '1',           // additionally require TYPO3 MFA
             'backendAutoCreateUsers' => '0',      // off: backend access stays explicit
             'backendLinkByEmail' => '1',
             'backendDefaultGroupUids' => '',      // required when auto-create is on
@@ -67,6 +68,23 @@ Paths are normalized to a leading slash without a trailing slash;
 WorkOS accepts one connection selector per login: a social provider chosen
 on the login screen wins, then ``authkitConnectionId``, then the hosted
 AuthKit screen (optionally pinned by ``authkitOrganizationId``).
+
+..  _configuration-backend-policy:
+
+Backend authentication policy
+=============================
+
+``backendRequireMfa`` defaults to enabled: WorkOS sign-ins follow TYPO3's
+normal MFA requirements. Disable it in the Setup Assistant when WorkOS
+should own the authentication policy, for example to allow email-code-only
+login. Successful WorkOS logins then skip both TYPO3 authenticator setup
+and challenges for existing authenticators, for that session only. This
+does not claim that an email code constitutes multiple factors, change
+WorkOS policies, remove enrolled authenticators, or change the MFA policy
+for classic TYPO3 password logins. Existing sessions must sign in again.
+
+The backend login screen presents a separate email-code form first. Password
+login is available in an expandable section with its own email field.
 
 ..  _configuration-validation:
 

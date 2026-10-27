@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace Webconsulting\WorkosAuth\Tests\Functional\Service;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Authentication\Mfa\MfaRequiredException;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\SecurityAspect;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
+use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+use Webconsulting\WorkosAuth\Configuration\WorkosConfiguration;
 use Webconsulting\WorkosAuth\Service\Typo3SessionService;
 
 final class Typo3SessionServiceTest extends FunctionalTestCase
@@ -155,6 +162,81 @@ final class Typo3SessionServiceTest extends FunctionalTestCase
         $service->createFrontendLoginResponse($request->withAttribute('frontend.user', $frontendUser), $userRow, '/welcome', 'session_789');
 
         self::assertSame('session_789', $frontendUser->getSessionData(Typo3SessionService::SESSION_WORKOS_SESSION_ID));
+    }
+
+    /** @return iterable<string, array{bool, bool}> */
+    public static function backendMfaPolicyProvider(): iterable
+    {
+        yield 'external policy, no authenticator enrolled' => [false, false];
+        yield 'external policy, authenticator already enrolled' => [false, true];
+        yield 'TYPO3 policy, no authenticator enrolled' => [true, false];
+        yield 'TYPO3 policy, authenticator already enrolled' => [true, true];
+    }
+
+    #[DataProvider('backendMfaPolicyProvider')]
+    public function testWorkosLoginAppliesOnlyItsConfiguredMfaPolicy(bool $requireMfa, bool $enrolled): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['BE']['requireMfa'] = 3;
+        $configuration = $this->get(WorkosConfiguration::class);
+        $configuration->save($configuration->normalizeInput(['backendRequireMfa' => $requireMfa]));
+        $connection = $this->connectionPool()->getConnectionForTable('be_users');
+        $connection->insert('be_users', [
+            'username' => 'workos-admin',
+            'password' => 'unused',
+            'email' => 'admin@example.com',
+            'admin' => 1,
+            'mfa' => $enrolled ? json_encode(['totp' => ['active' => true, 'secret' => 'synthetic-test-secret']], JSON_THROW_ON_ERROR) : '',
+        ]);
+        $userRow = $this->fetchUserRow('be_users', (int)$connection->lastInsertId());
+        if ($requireMfa && $enrolled) {
+            $this->expectException(MfaRequiredException::class);
+        }
+
+        $response = $this->get(Typo3SessionService::class)->createBackendLoginResponse(
+            $this->createRequest('https://app.local/typo3/workos-auth/backend/magic-verify'),
+            $userRow,
+            '/typo3/main',
+            'user_verified',
+            'session_verified',
+        );
+
+        self::assertSame(200, $response->getStatusCode());
+        $backendUser = $GLOBALS['BE_USER'];
+        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
+        self::assertSame(!$requireMfa, (bool)$backendUser->getSessionData('mfa'));
+        self::assertSame(3, $GLOBALS['TYPO3_CONF_VARS']['BE']['requireMfa'], 'The global administrator policy stays enabled');
+        // A fresh ordinary login still has to enroll MFA, even for the same user.
+        $ordinaryUser = new BackendUserAuthentication();
+        $ordinaryUser->user = $userRow;
+        $ordinaryUser->initializeUserSessionManager();
+        self::assertTrue($ordinaryUser->isMfaSetupRequired());
+        self::assertFalse((bool)$ordinaryUser->getSessionData('mfa'));
+    }
+
+    public function testClassicPasswordLoginStillRequiresItsEnrolledAuthenticator(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['BE']['requireMfa'] = 3;
+        $configuration = $this->get(WorkosConfiguration::class);
+        $configuration->save($configuration->normalizeInput(['backendRequireMfa' => false]));
+        $connection = $this->connectionPool()->getConnectionForTable('be_users');
+        $connection->insert('be_users', [
+            'username' => 'classic-admin',
+            'password' => $this->get(PasswordHashFactory::class)->getDefaultHashInstance('BE')->getHashedPassword('synthetic-test-password'),
+            'admin' => 1,
+            'mfa' => json_encode(['totp' => ['active' => true, 'secret' => 'synthetic-test-secret']], JSON_THROW_ON_ERROR),
+        ]);
+        SecurityAspect::provideIn($this->get(Context::class))->setReceivedRequestToken(RequestToken::create('core/user-auth/be'));
+        $request = $this->createRequest('https://app.local/typo3/login')->withMethod('POST')->withParsedBody([
+            'login_status' => 'login',
+            'username' => 'classic-admin',
+            'userident' => 'synthetic-test-password',
+        ]);
+        $backendUser = new BackendUserAuthentication();
+        $backendUser->setLogger(new NullLogger());
+        $GLOBALS['BE_USER'] = $backendUser;
+
+        $this->expectException(MfaRequiredException::class);
+        $backendUser->start($request);
     }
 
     private function createRequest(string $uri): ServerRequestInterface

@@ -3,7 +3,7 @@
  *
  * The Core renders a provider's fields inside its own login form, whose
  * submit handling belongs to the username/password login. The WorkOS fields
- * therefore move into a form of their own. Every submit button names its
+ * therefore move into a form per sign-in method. Every submit button names its
  * endpoint (data-workos-action) and the fields it needs
  * (data-workos-requires); the browser then posts natively to that endpoint.
  * Pressing Enter uses the first button of the step, as in any form.
@@ -22,18 +22,27 @@ function mountWorkosLogin() {
     return;
   }
 
-  const form = document.createElement('form');
-  form.method = 'post';
-  form.noValidate = true;
   const hostForm = region.closest('form');
   if (hostForm) {
-    hostForm.after(form);
-  } else {
-    region.before(form);
+    hostForm.after(region);
   }
-  form.append(region);
+  const requestToken = region.querySelector('[data-workos-request-token]');
+  for (const fields of region.querySelectorAll('[data-workos-form]')) {
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.noValidate = true;
+    fields.before(form);
+    form.append(fields);
+    if (requestToken) {
+      form.append(requestToken.cloneNode(true));
+    }
+    mountForm(form, region);
+  }
+  requestToken?.remove();
+}
 
-  const buttons = [...region.querySelectorAll('button[data-workos-action]')];
+function mountForm(form, region) {
+  const buttons = [...form.querySelectorAll('button[data-workos-action]')];
   for (const button of buttons) {
     const url = region.dataset[ENDPOINTS[button.dataset.workosAction] ?? ''] ?? '';
     if (url === '') {
@@ -53,7 +62,7 @@ function mountWorkosLogin() {
     const required = (submitter.dataset.workosRequires ?? '').split(' ').filter(Boolean);
     for (const control of form.querySelectorAll('input[name]:not([type="hidden"])')) {
       control.required = required.includes(control.name);
-      // A request for a sign-in code never carries the password along.
+      // Code requests are independent of the password form.
       control.disabled = control.name === 'password' && !required.includes('password');
     }
     if (!form.reportValidity()) {

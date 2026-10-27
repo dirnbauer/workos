@@ -9,8 +9,7 @@
 <f:section name="loginFormFields">
     <f:comment>
         The Core wraps these fields into its own login form. workos-login.js
-        moves them into a form of their own, so nothing here reaches the
-        username/password login, and every button posts to its WorkOS endpoint.
+        gives each sign-in method its own form and WorkOS endpoint.
     </f:comment>
     <div
         class="workos-login"
@@ -21,7 +20,7 @@
         data-email-verify-url="{emailVerifyUrl}"
         data-email-verify-resend-url="{emailVerifyResendUrl}"
     >
-        <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" />
+        <input type="hidden" name="{requestTokenName}" value="{requestTokenValue}" data-workos-request-token />
 
         <f:if condition="{authError}">
             <div class="mb-3" role="alert">
@@ -87,53 +86,78 @@
 </f:section>
 
 <f:section name="SignIn">
-    <div class="form-group">
-        <div class="form-control-wrap">
-            <div class="form-control-holder">
-                <label class="form-label" for="workos-email"><f:translate key="workos_auth.messages:backend.login.email" /></label>
-                <div class="input-group">
-                    <input
-                        type="email"
-                        id="workos-email"
-                        name="email"
-                        class="form-control input-login"
-                        autocomplete="username"
-                        autocapitalize="off"
-                        spellcheck="false"
-                        autofocus="autofocus"
-                        required="required"
-                    />
+    <fieldset data-workos-form="magic-send" class="workos-login-method">
+        <legend class="h4 mb-2"><f:translate key="workos_auth.messages:backend.login.magic.title" /></legend>
+        <div class="form-group">
+            <label class="form-label" for="workos-magic-email"><f:translate key="workos_auth.messages:backend.login.email" /></label>
+            <input
+                type="email"
+                id="workos-magic-email"
+                name="email"
+                class="form-control input-login"
+                autocomplete="username"
+                autocapitalize="off"
+                spellcheck="false"
+                autofocus="autofocus"
+                required="required"
+                aria-describedby="workos-magic-description"
+            />
+            <div class="form-text" id="workos-magic-description"><f:translate key="workos_auth.messages:backend.login.magic.description" /></div>
+        </div>
+        <div class="form-group d-grid">
+            <button type="submit" class="btn btn-login d-block" data-workos-action="magic-send" data-workos-requires="email">
+                <f:translate key="workos_auth.messages:backend.login.magic.send" />
+            </button>
+        </div>
+    </fieldset>
+
+    <details class="workos-password-login">
+        <summary><f:translate key="workos_auth.messages:backend.login.password.title" /></summary>
+        <fieldset data-workos-form="password">
+            <legend class="visually-hidden"><f:translate key="workos_auth.messages:backend.login.password.title" /></legend>
+            <div class="form-group">
+                <div class="form-control-wrap">
+                    <div class="form-control-holder">
+                        <label class="form-label" for="workos-email"><f:translate key="workos_auth.messages:backend.login.email" /></label>
+                        <div class="input-group">
+                            <input
+                                type="email"
+                                id="workos-email"
+                                name="email"
+                                class="form-control input-login"
+                                autocomplete="username"
+                                autocapitalize="off"
+                                spellcheck="false"
+                                required="required"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="form-control-wrap">
-            <div class="form-control-holder">
-                <label class="form-label" for="workos-password"><f:translate key="workos_auth.messages:backend.login.password" /></label>
-                <div class="input-group">
-                    <input
-                        type="password"
-                        id="workos-password"
-                        name="password"
-                        class="form-control input-login"
-                        autocomplete="current-password"
-                        spellcheck="false"
-                    />
+            <div class="form-group">
+                <div class="form-control-wrap">
+                    <div class="form-control-holder">
+                        <label class="form-label" for="workos-password"><f:translate key="workos_auth.messages:backend.login.password" /></label>
+                        <div class="input-group">
+                            <input
+                                type="password"
+                                id="workos-password"
+                                name="password"
+                                class="form-control input-login"
+                                autocomplete="current-password"
+                                spellcheck="false"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="form-group d-grid mb-2">
-        <button type="submit" class="btn btn-login d-block" data-workos-action="password" data-workos-requires="email password">
-            <f:translate key="workos_auth.messages:backend.login.signIn" />
-        </button>
-    </div>
-    <div class="form-group d-grid">
-        <button type="submit" class="btn btn-default d-block" data-workos-action="magic-send" data-workos-requires="email">
-            <f:translate key="workos_auth.messages:backend.login.magic.send" />
-        </button>
-    </div>
+            <div class="form-group d-grid mb-2">
+                <button type="submit" class="btn btn-login d-block" data-workos-action="password" data-workos-requires="email password">
+                    <f:translate key="workos_auth.messages:backend.login.signIn" />
+                </button>
+            </div>
+        </fieldset>
+    </details>
 
     <ul class="list-unstyled d-grid gap-2 mb-2 workos-login-providers" role="list">
         <f:for each="{socialProviders}" as="provider">
@@ -154,34 +178,38 @@
 </f:section>
 
 <f:section name="MagicAuthCode">
-    <p><f:translate key="workos_auth.messages:backend.login.magic.codeSent" arguments="{email: magicAuthEmail}" /></p>
-    <input type="hidden" name="magicAuthState" value="{magicAuthState}" />
-    <f:render section="CodeField" arguments="{id: 'workos-magic-code', label: 'backend.login.magic.codeLabel'}" />
-    <div class="form-group d-grid mb-2">
-        <button type="submit" class="btn btn-login d-block" data-workos-action="magic-verify" data-workos-requires="code">
-            <f:translate key="workos_auth.messages:backend.login.magic.verify" />
-        </button>
+    <div data-workos-form="magic-verify">
+        <p><f:translate key="workos_auth.messages:backend.login.magic.codeSent" arguments="{email: magicAuthEmail}" /></p>
+        <input type="hidden" name="magicAuthState" value="{magicAuthState}" />
+        <f:render section="CodeField" arguments="{id: 'workos-magic-code', label: 'backend.login.magic.codeLabel'}" />
+        <div class="form-group d-grid mb-2">
+            <button type="submit" class="btn btn-login d-block" data-workos-action="magic-verify" data-workos-requires="code">
+                <f:translate key="workos_auth.messages:backend.login.magic.verify" />
+            </button>
+        </div>
+        <p class="text-end"><a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a></p>
     </div>
-    <p class="text-end"><a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a></p>
 </f:section>
 
 <f:section name="EmailVerification">
-    <p><f:translate key="workos_auth.messages:backend.login.verifyEmail.subtitle" arguments="{email: emailVerificationEmail}" /></p>
-    <input type="hidden" name="emailVerificationState" value="{emailVerificationState}" />
-    <f:render section="CodeField" arguments="{id: 'workos-email-code', label: 'backend.login.verifyEmail.codeLabel'}" />
-    <div class="form-group d-grid mb-2">
-        <button type="submit" class="btn btn-login d-block" data-workos-action="email-verify" data-workos-requires="code">
-            <f:translate key="workos_auth.messages:backend.login.verifyEmail.submit" />
-        </button>
-    </div>
-    <f:if condition="{emailVerificationCanResend}">
-        <div class="form-group d-grid">
-            <button type="submit" class="btn btn-default d-block" data-workos-action="email-verify-resend">
-                <f:translate key="workos_auth.messages:backend.login.verifyEmail.resend" />
+    <div data-workos-form="email-verify">
+        <p><f:translate key="workos_auth.messages:backend.login.verifyEmail.subtitle" arguments="{email: emailVerificationEmail}" /></p>
+        <input type="hidden" name="emailVerificationState" value="{emailVerificationState}" />
+        <f:render section="CodeField" arguments="{id: 'workos-email-code', label: 'backend.login.verifyEmail.codeLabel'}" />
+        <div class="form-group d-grid mb-2">
+            <button type="submit" class="btn btn-login d-block" data-workos-action="email-verify" data-workos-requires="code">
+                <f:translate key="workos_auth.messages:backend.login.verifyEmail.submit" />
             </button>
         </div>
-    </f:if>
-    <p class="text-end"><a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a></p>
+        <f:if condition="{emailVerificationCanResend}">
+            <div class="form-group d-grid">
+                <button type="submit" class="btn btn-default d-block" data-workos-action="email-verify-resend">
+                    <f:translate key="workos_auth.messages:backend.login.verifyEmail.resend" />
+                </button>
+            </div>
+        </f:if>
+        <p class="text-end"><a href="{backToLoginUrl}"><f:translate key="workos_auth.messages:backend.login.magic.back" /></a></p>
+    </div>
 </f:section>
 
 <f:section name="CodeField">
